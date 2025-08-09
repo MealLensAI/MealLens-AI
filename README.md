@@ -387,8 +387,8 @@ If you encounter any issues or have questions:
 
 **MealLens AI** is developed by a passionate team dedicated to revolutionizing nutrition technology:
 
-- **🎯 CEO & AI Engineer**: [Daniel Etekudo](https://github.com/danieletekudo) - Leading AI innovation and strategic vision
-- **💻 CTO & Full-Stack Developer**: [Oluu Graham](https://github.com/oluugraham) - Technical leadership and full-stack development
+- **🎯 CEO & AI Engineer**: [Daniel Etekudo](https://github.com/danieletukudo) - Leading AI innovation and strategic vision
+- **💻 CTO & Full-Stack Developer**: [Oluu Graham](https://github.com/olusiekwin) - Technical leadership and full-stack development
 - **🤖 AI Engineering**: Advanced machine learning and computer vision for food detection
 - **🏗️ Full-Stack Development**: Complete end-to-end application architecture
 

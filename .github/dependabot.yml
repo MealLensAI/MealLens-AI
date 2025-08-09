@@ -16,11 +16,11 @@ updates:
       prefix: "⬆️"
       include: "scope"
     reviewers:
-      - "danieletekudo"
-      - "oluugraham"
+      - "danieletukudo"
+      - "olusiekwin"
     assignees:
-      - "danieletekudo"
-      - "oluugraham"
+      - "danieletukudo"
+      - "olusiekwin"
 
   # 🐍 Backend Dependencies (pip)
   - package-ecosystem: "pip"
@@ -38,11 +38,11 @@ updates:
       prefix: "⬆️"
       include: "scope"
     reviewers:
-      - "danieletekudo"
-      - "oluugraham"
+      - "danieletukudo"
+      - "olusiekwin"
     assignees:
-      - "danieletekudo"
-      - "oluugraham"
+      - "danieletukudo"
+      - "olusiekwin"
 
   # 🐳 Docker Dependencies
   - package-ecosystem: "docker"
@@ -60,11 +60,11 @@ updates:
       prefix: "⬆️"
       include: "scope"
     reviewers:
-      - "danieletekudo"
-      - "oluugraham"
+      - "danieletukudo"
+      - "olusiekwin"
     assignees:
-      - "danieletekudo"
-      - "oluugraham"
+      - "danieletukudo"
+      - "olusiekwin"
 
   # ⚙️ GitHub Actions
   - package-ecosystem: "github-actions"
@@ -82,8 +82,8 @@ updates:
       prefix: "⬆️"
       include: "scope"
     reviewers:
-      - "danieletekudo"
-      - "oluugraham"
+      - "danieletukudo"
+      - "olusiekwin"
     assignees:
-      - "danieletekudo"
-      - "oluugraham"
+      - "danieletukudo"
+      - "olusiekwin"

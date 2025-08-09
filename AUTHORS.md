@@ -6,7 +6,7 @@
 **CEO & AI Engineer**
 - **Role**: Leading AI innovation and strategic vision
 - **Expertise**: Machine Learning, Computer Vision, AI Strategy
-- **GitHub**: [@danieletekudo](https://github.com/danieletekudo)
+- **GitHub**: [@danieletukudo](https://github.com/danieletukudo)
 - **Contributions**: 
   - AI/ML architecture and implementation
   - Food detection algorithms
@@ -17,7 +17,7 @@
 **CTO & Full-Stack Developer**
 - **Role**: Technical leadership and full-stack development
 - **Expertise**: Full-Stack Development, System Architecture, DevOps
-- **GitHub**: [@oluugraham](https://github.com/oluugraham)
+- **GitHub**: [@olusiekwin](https://github.com/olusiekwin)
 - **Contributions**:
   - Full-stack application architecture
   - Backend API development (Python/Flask)

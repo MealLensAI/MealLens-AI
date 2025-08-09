@@ -261,7 +261,7 @@ show_completion() {
     echo "   • Check README.md for detailed documentation"
     echo "   • Review CI_CD_SETUP.md for advanced setup"
     echo "   • Create an issue on GitHub for bugs or questions"
-    echo "   • Contact Daniel Etekudo or Oluu Graham for technical support"
+    echo "   • Contact Daniel Etekudo (@danieletukudo) or Oluu Graham (@olusiekwin) for technical support"
     echo ""
 }
 

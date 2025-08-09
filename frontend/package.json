@@ -1,8 +1,29 @@
 {
   "name": "meallensai",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "AI-powered food detection and meal planning platform",
   "type": "module",
+  "authors": [
+    {
+      "name": "Daniel Etekudo",
+      "role": "CEO & AI Engineer",
+      "github": "https://github.com/danieletekudo"
+    },
+    {
+      "name": "Oluu Graham", 
+      "role": "CTO & Full-Stack Developer",
+      "github": "https://github.com/oluugraham"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MealLensAI/MealLens-AI.git"
+  },
+  "homepage": "https://github.com/MealLensAI/MealLens-AI",
+  "bugs": {
+    "url": "https://github.com/MealLensAI/MealLens-AI/issues"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

@@ -541,11 +541,22 @@ getTTFB(console.log)
 
 ---
 
+## 👥 MealLens AI Team
+
+**Developed by:**
+- **🎯 CEO & AI Engineer**: Daniel Etekudo - AI innovation and strategic vision
+- **💻 CTO & Full-Stack Developer**: Oluu Graham - Technical leadership and architecture
+
 ## 📞 Support
 
 - **Documentation**: README.md, CI_CD_SETUP.md
 - **Issues**: GitHub Issues for bug reports
 - **Discussions**: GitHub Discussions for questions
 - **Wiki**: Project wiki for additional guides
+- **Team Contact**: Reach out to Daniel Etekudo or Oluu Graham for technical questions
 
 **Happy coding with MealLens AI!** 🍽️✨
+
+---
+
+**Built with ❤️ by Daniel Etekudo & Oluu Graham**

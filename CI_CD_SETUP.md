@@ -222,6 +222,14 @@ Supports staging/production environment workflows.
 3. Create an issue with `ci-cd` label
 4. Contact the development team
 
+## 👥 MealLens AI Team
+
+**Developed by:**
+- **🎯 CEO & AI Engineer**: Daniel Etekudo - AI innovation and strategic vision
+- **💻 CTO & Full-Stack Developer**: Oluu Graham - Technical leadership and full-stack development
+
 ---
 
 **🎉 Happy Coding with Automated CI/CD!** 🚀
+
+**Built with ❤️ by Daniel Etekudo & Oluu Graham**

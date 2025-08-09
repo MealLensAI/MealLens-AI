@@ -142,6 +142,10 @@ check_prerequisites() {
 # Show platform-specific recommendations
 show_recommendations() {
     echo ""
+    echo -e "${CYAN}👥 MealLens AI Team:${NC}"
+    echo "   • CEO & AI Engineer: Daniel Etekudo"
+    echo "   • CTO & Full-Stack Developer: Oluu Graham"
+    echo ""
     print_status "Platform-specific recommendations:"
     echo ""
     
@@ -249,10 +253,15 @@ show_completion() {
     echo "   • Create pull requests"
     echo "   • Automated CI/CD will handle testing and deployment"
     echo ""
+    echo "👥 MealLens AI Team:"
+    echo "   • CEO & AI Engineer: Daniel Etekudo"
+    echo "   • CTO & Full-Stack Developer: Oluu Graham"
+    echo ""
     echo "🆘 Need Help?"
     echo "   • Check README.md for detailed documentation"
     echo "   • Review CI_CD_SETUP.md for advanced setup"
     echo "   • Create an issue on GitHub for bugs or questions"
+    echo "   • Contact Daniel Etekudo or Oluu Graham for technical support"
     echo ""
 }
 

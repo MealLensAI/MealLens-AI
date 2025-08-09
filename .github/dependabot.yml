@@ -16,9 +16,11 @@ updates:
       prefix: "⬆️"
       include: "scope"
     reviewers:
-      - "MealLensAI"
+      - "danieletekudo"
+      - "oluugraham"
     assignees:
-      - "MealLensAI"
+      - "danieletekudo"
+      - "oluugraham"
 
   # 🐍 Backend Dependencies (pip)
   - package-ecosystem: "pip"
@@ -36,9 +38,11 @@ updates:
       prefix: "⬆️"
       include: "scope"
     reviewers:
-      - "MealLensAI"
+      - "danieletekudo"
+      - "oluugraham"
     assignees:
-      - "MealLensAI"
+      - "danieletekudo"
+      - "oluugraham"
 
   # 🐳 Docker Dependencies
   - package-ecosystem: "docker"
@@ -56,9 +60,11 @@ updates:
       prefix: "⬆️"
       include: "scope"
     reviewers:
-      - "MealLensAI"
+      - "danieletekudo"
+      - "oluugraham"
     assignees:
-      - "MealLensAI"
+      - "danieletekudo"
+      - "oluugraham"
 
   # ⚙️ GitHub Actions
   - package-ecosystem: "github-actions"
@@ -76,6 +82,8 @@ updates:
       prefix: "⬆️"
       include: "scope"
     reviewers:
-      - "MealLensAI"
+      - "danieletekudo"
+      - "oluugraham"
     assignees:
-      - "MealLensAI"
+      - "danieletekudo"
+      - "oluugraham"

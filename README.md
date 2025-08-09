@@ -83,7 +83,7 @@ MealLens AI is an intelligent food detection and meal planning application that 
 
 3. **Frontend Setup**
    ```bash
-   cd Frontend
+   cd frontend
    npm install
    ```
 
@@ -94,7 +94,7 @@ MealLens AI is an intelligent food detection and meal planning application that 
    # Edit .env with your configuration
 
    # Frontend
-   cp Frontend/.env.example Frontend/.env.local
+   cp frontend/.env.example frontend/.env.local
    # Edit .env.local with your configuration
    ```
 
@@ -111,7 +111,7 @@ MealLens AI is an intelligent food detection and meal planning application that 
    python app.py
 
    # Frontend (Terminal 2)
-   cd Frontend
+   cd frontend
    npm run dev
    ```
 
@@ -139,7 +139,7 @@ MealLens-AI/
 │   ├── utils/              # Utility functions
 │   ├── scripts/            # Database scripts
 │   └── app.py              # Main application entry
-├── Frontend/               # React TypeScript frontend
+├── frontend/               # React TypeScript frontend
 │   ├── src/
 │   │   ├── components/     # Reusable UI components
 │   │   ├── pages/          # Page components
@@ -163,7 +163,7 @@ FIREBASE_CREDENTIALS_PATH=path_to_firebase_credentials
 FLASK_ENV=development
 ```
 
-**Frontend (`Frontend/.env.local`)**
+**Frontend (`frontend/.env.local`)**
 ```env
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -204,7 +204,7 @@ python -m pytest tests/
 
 ### Frontend Tests
 ```bash
-cd Frontend
+cd frontend
 npm test
 ```
 

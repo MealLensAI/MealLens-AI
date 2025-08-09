@@ -59,17 +59,148 @@ MealLens AI is an intelligent food detection and meal planning application that 
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 🎯 One-Command Setup (Recommended)
+
+**For all platforms, simply run:**
+
+```bash
+# Clone the repository
+git clone https://github.com/MealLensAI/MealLens-AI.git
+cd MealLens-AI
+
+# Run the universal setup script
+./setup.sh
+```
+
+**On Windows:**
+```cmd
+# Clone and setup
+git clone https://github.com/MealLensAI/MealLens-AI.git
+cd MealLens-AI
+setup.bat
+```
+
+The setup script will:
+- ✅ Detect your platform automatically
+- ✅ Install all required dependencies
+- ✅ Configure environment files
+- ✅ Start the application
+- ✅ Open it in your browser
+
+### 🐳 Docker Setup (Universal)
+
+**Works on all platforms with Docker:**
+
+```bash
+git clone https://github.com/MealLensAI/MealLens-AI.git
+cd MealLens-AI
+./setup.sh --docker
+```
+
+Or run the Docker setup directly:
+```bash
+./scripts/setup/docker-setup.sh
+```
+
+### 📋 Platform-Specific Setup
+
+Choose your platform for detailed instructions:
+
+<details>
+<summary>🪟 <strong>Windows Setup</strong></summary>
+
+**Prerequisites:** Windows 10/11 with PowerShell
+
+**Option 1: Automatic Setup**
+```cmd
+setup.bat
+```
+
+**Option 2: Manual PowerShell Setup**
+```powershell
+.\scripts\setup\windows-setup.ps1
+```
+
+**Option 3: Docker Setup**
+```cmd
+setup.bat --docker
+```
+
+**What gets installed:**
+- Node.js (via Chocolatey)
+- Python 3
+- All project dependencies
+- Environment files
+
+</details>
+
+<details>
+<summary>🍎 <strong>macOS Setup</strong></summary>
+
+**Prerequisites:** macOS 10.15+ with Terminal
+
+**Automatic Setup:**
+```bash
+./setup.sh
+```
+
+**Manual Setup:**
+```bash
+./scripts/setup/macos-setup.sh
+```
+
+**What gets installed:**
+- Xcode Command Line Tools
+- Homebrew package manager
+- Node.js and Python via Homebrew
+- PostgreSQL and Redis (optional)
+- Development tools (optional)
+
+</details>
+
+<details>
+<summary>🐧 <strong>Ubuntu/Linux Setup</strong></summary>
+
+**Prerequisites:** Ubuntu 18.04+ or compatible Linux distribution
+
+**Automatic Setup:**
+```bash
+./setup.sh
+```
+
+**Manual Setup:**
+```bash
+./scripts/setup/ubuntu-setup.sh
+```
+
+**What gets installed:**
+- Node.js (latest LTS)
+- Python 3 and pip
+- Build tools and dependencies
+- PostgreSQL and Redis (optional)
+
+**Supported distributions:**
+- Ubuntu/Debian (apt)
+- Fedora/CentOS/RHEL (dnf/yum)
+- Arch Linux (pacman)
+
+</details>
+
+### 🔧 Manual Installation
+
+<details>
+<summary>Manual setup instructions (if automatic setup fails)</summary>
+
+**Prerequisites:**
 - **Node.js** (v18 or higher)
 - **Python** (v3.8 or higher)
-- **PostgreSQL** (for local development)
 - **Git**
 
-### Installation
+**Steps:**
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/MealLens-AI.git
+   git clone https://github.com/MealLensAI/MealLens-AI.git
    cd MealLens-AI
    ```
 
@@ -98,16 +229,11 @@ MealLens AI is an intelligent food detection and meal planning application that 
    # Edit .env.local with your configuration
    ```
 
-5. **Database Setup**
-   ```bash
-   cd backend
-   python scripts/init_db.py
-   ```
-
-6. **Run the Application**
+5. **Run the Application**
    ```bash
    # Backend (Terminal 1)
    cd backend
+   source venv/bin/activate
    python app.py
 
    # Frontend (Terminal 2)
@@ -115,7 +241,11 @@ MealLens AI is an intelligent food detection and meal planning application that 
    npm run dev
    ```
 
-Visit `http://localhost:5173` to access the application.
+</details>
+
+**🌐 Access Your Application:**
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://localhost:5000
 
 ## 🐳 Docker Deployment
 

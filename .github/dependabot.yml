@@ -1,0 +1,81 @@
+version: 2
+updates:
+  # 📦 Frontend Dependencies (npm)
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "frontend"
+      - "auto-merge"
+    commit-message:
+      prefix: "⬆️"
+      include: "scope"
+    reviewers:
+      - "MealLensAI"
+    assignees:
+      - "MealLensAI"
+
+  # 🐍 Backend Dependencies (pip)
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday" 
+      time: "09:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "backend"
+      - "auto-merge"
+    commit-message:
+      prefix: "⬆️"
+      include: "scope"
+    reviewers:
+      - "MealLensAI"
+    assignees:
+      - "MealLensAI"
+
+  # 🐳 Docker Dependencies
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "auto-merge"
+    commit-message:
+      prefix: "⬆️"
+      include: "scope"
+    reviewers:
+      - "MealLensAI"
+    assignees:
+      - "MealLensAI"
+
+  # ⚙️ GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "auto-merge"
+    commit-message:
+      prefix: "⬆️"
+      include: "scope"
+    reviewers:
+      - "MealLensAI"
+    assignees:
+      - "MealLensAI"

@@ -1,365 +1,218 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Utensils, 
-  ChefHat, 
-  Calendar, 
-  Zap, 
-  Crown, 
-  Shield, 
-  ArrowRight, 
-  Play,
-  Star,
-  Users,
-  Globe
-} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/lib/utils';
+import Logo from '@/components/Logo';
 
 const WelcomePage: React.FC = () => {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+
+  const handleTryMealLensAI = () => {
+    if (!user) {
+      navigate('/login');
+    } else {
+      navigate('/ai-kitchen');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-400 to-orange-400">
       {/* Header */}
-      <header className="relative z-10">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-xl flex items-center justify-center">
-                <Utensils className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">MealLens</h1>
-                <p className="text-sm text-gray-600">AI-Powered Nutrition</p>
-              </div>
+      <header className="bg-white shadow-lg">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <Logo size="lg" showText={true} onClick={() => navigate('/')} />
             </div>
-
-            {/* Navigation */}
-            <nav className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-[#FF6B6B] transition-colors">
-                Features
-              </a>
-              <a href="#pricing" className="text-gray-600 hover:text-[#FF6B6B] transition-colors">
-                Pricing
-              </a>
-              <a href="#about" className="text-gray-600 hover:text-[#FF6B6B] transition-colors">
-                About
-              </a>
+            <nav className="hidden md:flex space-x-6 lg:space-x-8">
+              <a href="#home" className="text-gray-700 hover:text-red-500 text-sm lg:text-base transition-colors">Home</a>
+              <a href="#features" className="text-gray-700 hover:text-red-500 text-sm lg:text-base transition-colors">Features</a>
+              <a href="#about" className="text-gray-700 hover:text-red-500 text-sm lg:text-base transition-colors">About</a>
             </nav>
-
-            {/* CTA Buttons */}
-            <div className="flex items-center space-x-4">
-              <Link to="/login">
-                <Button variant="ghost" className="text-gray-600 hover:text-[#FF6B6B]">
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/signup">
-                <Button className="bg-[#FF6B6B] hover:bg-[#FF5252] text-white">
-                  Get Started
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              {!user ? (
+                <>
+                  <button 
+                    onClick={() => navigate('/login')}
+                    className="bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-600 text-sm sm:text-base transition-colors"
+                  >
+                    Sign In
+                  </button>
+                </>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <span className="hidden sm:block text-gray-700 text-sm lg:text-base truncate max-w-32 lg:max-w-none">{user.email}</span>
+                  <button 
+                    onClick={signOut}
+                    className="bg-gray-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-600 text-sm sm:text-base transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="relative pt-20 pb-32 overflow-hidden">
+      <section id="home" className="py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-4xl mx-auto">
-            <Badge className="mb-6 bg-[#FF6B6B]/10 text-[#FF6B6B] border-[#FF6B6B]/20">
-              <Zap className="mr-2 h-4 w-4" />
-              AI-Powered Nutrition Assistant
-            </Badge>
-            
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Transform Your
-              <span className="text-[#FF6B6B]"> Nutrition</span>
-              <br />
-              with AI
-            </h1>
-            
-            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Discover personalized meal plans, analyze your food photos, and get expert nutrition advice powered by advanced artificial intelligence.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-              <Link to="/signup">
-                <Button size="lg" className="bg-[#FF6B6B] hover:bg-[#FF5252] text-white px-8 py-4 text-lg">
-                  Start Free Trial
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Button size="lg" variant="outline" className="px-8 py-4 text-lg">
-                <Play className="mr-2 h-5 w-5" />
-                Watch Demo
-              </Button>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="text-center lg:text-left">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 sm:mb-6">
+                Discover Meals with MealLensAI
+              </h1>
+              <p className="text-lg sm:text-xl text-white mb-6 sm:mb-8 leading-relaxed">
+                MealLensAI is your smart kitchen assistant. Snap a picture of your ingredients or a
+                meal, and let AI guide you with recipes, cooking tips, and personalized suggestions.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 sm:space-x-4 justify-center lg:justify-start">
+                <button 
+                  onClick={handleTryMealLensAI}
+                  className="bg-white text-red-500 px-6 sm:px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-sm sm:text-base"
+                >
+                  Try MealLensAI Now For Free!
+                </button>
+                <a 
+                  href="#features"
+                  className="border-2 border-white text-white px-6 sm:px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-red-500 transition-colors text-center text-sm sm:text-base"
+                >
+                  Explore Features
+                </a>
+              </div>
             </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-2xl mx-auto">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-[#FF6B6B] mb-2">10K+</div>
-                <div className="text-gray-600">Active Users</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-[#FF6B6B] mb-2">50K+</div>
-                <div className="text-gray-600">Meals Analyzed</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-[#FF6B6B] mb-2">4.9★</div>
-                <div className="text-gray-600">User Rating</div>
-              </div>
+            <div className="flex justify-center order-first lg:order-last">
+              <video 
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                className="rounded-lg shadow-2xl w-full max-w-md lg:max-w-full h-auto"
+                style={{ maxHeight: '400px' }}
+              >
+                <source src="/assets/okay.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
             </div>
           </div>
         </div>
-
-        {/* Background Elements */}
-        <div className="absolute top-20 left-10 w-20 h-20 bg-[#FF6B6B]/10 rounded-full blur-xl"></div>
-        <div className="absolute top-40 right-20 w-32 h-32 bg-[#FF6B6B]/5 rounded-full blur-xl"></div>
-        <div className="absolute bottom-20 left-1/4 w-16 h-16 bg-[#FF6B6B]/10 rounded-full blur-xl"></div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-white">
+      <section id="features" className="py-12 sm:py-16 lg:py-20 bg-[#f8fafc]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Everything You Need for Better Nutrition
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Our AI-powered platform provides comprehensive nutrition tools to help you achieve your health goals.
-            </p>
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#2D3436] mb-4">Our Features</h2>
+            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">Discover why MealLensAI is the ultimate kitchen companion.</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
-              <CardHeader className="text-center pb-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Utensils className="h-8 w-8 text-white" />
-                </div>
-                <CardTitle className="text-xl">AI Food Detection</CardTitle>
-                <CardDescription>
-                  Simply take a photo of your meal and get instant nutritional analysis, ingredients breakdown, and health insights.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            {/* Feature 2 */}
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
-              <CardHeader className="text-center pb-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <ChefHat className="h-8 w-8 text-white" />
-                </div>
-                <CardTitle className="text-xl">Smart Meal Planning</CardTitle>
-                <CardDescription>
-                  Get personalized meal plans based on your preferences, dietary restrictions, and nutritional goals.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            {/* Feature 3 */}
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
-              <CardHeader className="text-center pb-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Calendar className="h-8 w-8 text-white" />
-                </div>
-                <CardTitle className="text-xl">Progress Tracking</CardTitle>
-                <CardDescription>
-                  Monitor your nutrition journey with detailed analytics, progress reports, and personalized recommendations.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Choose Your Plan
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Start with a free trial and upgrade when you're ready to unlock all features.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Free Plan */}
-            <Card className="border-2 border-gray-200 relative">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Free</CardTitle>
-                <div className="text-4xl font-bold text-gray-900">$0</div>
-                <CardDescription>Perfect for getting started</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <Shield className="h-5 w-5 text-green-500 mr-3" />
-                    <span>3-day free trial</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Shield className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Basic food detection</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Shield className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Limited meal plans</span>
-                  </div>
-                </div>
-                <Link to="/signup">
-                  <Button variant="outline" className="w-full">
-                    Get Started
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Pro Plan */}
-            <Card className="border-2 border-[#FF6B6B] relative transform scale-105">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-[#FF6B6B] text-white px-4 py-2">
-                  <Crown className="mr-2 h-4 w-4" />
-                  Most Popular
-                </Badge>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div className="text-center p-6 sm:p-8 rounded-2xl shadow-sm border border-[#e2e8f0] bg-white hover:shadow-lg transition-shadow duration-300">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-pink-500 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
+                <span className="text-2xl sm:text-3xl">📷</span>
               </div>
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Pro</CardTitle>
-                <div className="text-4xl font-bold text-gray-900">$9.99</div>
-                <CardDescription>per month</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <Crown className="h-5 w-5 text-[#FF6B6B] mr-3" />
-                    <span>Unlimited food detection</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Crown className="h-5 w-5 text-[#FF6B6B] mr-3" />
-                    <span>Advanced meal planning</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Crown className="h-5 w-5 text-[#FF6B6B] mr-3" />
-                    <span>Priority support</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Crown className="h-5 w-5 text-[#FF6B6B] mr-3" />
-                    <span>Detailed analytics</span>
-                  </div>
-                </div>
-                <Link to="/signup">
-                  <Button className="w-full bg-[#FF6B6B] hover:bg-[#FF5252]">
-                    Start Free Trial
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Enterprise Plan */}
-            <Card className="border-2 border-gray-200 relative">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Enterprise</CardTitle>
-                <div className="text-4xl font-bold text-gray-900">Custom</div>
-                <CardDescription>For teams and organizations</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <Users className="h-5 w-5 text-blue-500 mr-3" />
-                    <span>Team management</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Users className="h-5 w-5 text-blue-500 mr-3" />
-                    <span>Custom integrations</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Users className="h-5 w-5 text-blue-500 mr-3" />
-                    <span>Dedicated support</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Users className="h-5 w-5 text-blue-500 mr-3" />
-                    <span>Advanced analytics</span>
-                  </div>
-                </div>
-                <Button variant="outline" className="w-full">
-                  Contact Sales
-                </Button>
-              </CardContent>
-            </Card>
+              <h3 className="text-xl sm:text-2xl font-bold text-[#2D3436] mb-3 sm:mb-4">Smart Ingredient Recognition</h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+                Snap a picture or upload an image of your ingredients, and let MealLensAI
+                identify them instantly using cutting-edge AI technology.
+              </p>
+            </div>
+            
+            <div className="text-center p-6 sm:p-8 rounded-2xl shadow-sm border border-[#e2e8f0] bg-white hover:shadow-lg transition-shadow duration-300">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
+                <span className="text-2xl sm:text-3xl">🍽️</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold text-[#2D3436] mb-3 sm:mb-4">Recipe Suggestions & AI Review</h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+                Discover recipes based on your ingredients, get quick meal ideas, and missing ingredients.
+                Also snap your finished dish, and let AI score how well you made it.
+              </p>
+            </div>
+            
+            <div className="text-center p-6 sm:p-8 rounded-2xl shadow-sm border border-[#e2e8f0] bg-white hover:shadow-lg transition-shadow duration-300 md:col-span-2 lg:col-span-1">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
+                <span className="text-2xl sm:text-3xl">🔍</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold text-[#2D3436] mb-3 sm:mb-4">Smart Food Detection</h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+                Capture a photo of any prepared meal, and let our AI identify the dish and provide
+                the full recipe with ingredient list and step-by-step cooking instructions.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E]">
+      {/* About Section */}
+      <section id="about" className="py-12 sm:py-16 lg:py-20 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="order-2 lg:order-1">
+              <img 
+                src="/assets/images/pics1.png" 
+                alt="About MealLensAI" 
+                className="rounded-2xl shadow-lg w-full h-auto max-w-lg mx-auto lg:max-w-full"
+              />
+            </div>
+            <div className="order-1 lg:order-2 text-center lg:text-left">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#2D3436] mb-4 sm:mb-6">
+                Transform Your Culinary Experience!
+              </h2>
+              <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8 leading-relaxed">
+                MealLensAI is your ultimate kitchen companion. Whether you're a seasoned chef or a
+                curious beginner, MealLensAI empowers you to identify ingredients, explore new
+                recipes, and plan meals effortlessly.
+              </p>
+              <button 
+                onClick={handleTryMealLensAI}
+                className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 sm:px-8 py-3 rounded-xl font-bold shadow-lg hover:from-red-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
+              >
+                Try MealLensAI Now
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Waitlist Section */}
+      <section className="py-12 sm:py-16 lg:py-20 bg-[#f8fafc]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Ready to Transform Your Nutrition?
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#2D3436] mb-4 sm:mb-6">
+            Join Our Mobile App Waitlist Today!
           </h2>
-          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Join thousands of users who have already improved their health with AI-powered nutrition guidance.
+          <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto">
+            Be among the first to experience our app—join the waitlist today!
           </p>
-          <Link to="/signup">
-            <Button size="lg" className="bg-white text-[#FF6B6B] hover:bg-gray-100 px-8 py-4 text-lg">
-              Start Your Free Trial
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
+          <a 
+            href="https://forms.gle/aUnxiV1Rhx8yhjCz7"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 sm:px-8 py-3 rounded-xl font-bold shadow-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105 inline-block text-sm sm:text-base"
+          >
+            Join Waitlist
+          </a>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-lg flex items-center justify-center">
-                  <Utensils className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xl font-bold">MealLens</span>
-              </div>
-              <p className="text-gray-400">
-                AI-powered nutrition assistant helping you achieve your health goals.
-              </p>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
-              </ul>
+      <footer className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-8 sm:py-12">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4 sm:mb-6">Stay Updated with MealLensAI</h3>
+          <div className="max-w-md mx-auto">
+            <div className="flex flex-col sm:flex-row rounded-xl overflow-hidden shadow-lg">
+              <input 
+                type="email" 
+                placeholder="Enter Your Email..." 
+                className="flex-1 px-4 py-3 text-gray-800 border-0 focus:outline-none focus:ring-2 focus:ring-pink-500 text-sm sm:text-base"
+              />
+              <button className="bg-gradient-to-r from-pink-500 to-orange-500 text-white px-4 sm:px-6 py-3 hover:from-pink-600 hover:to-orange-600 transition-all duration-300 font-semibold text-sm sm:text-base">
+                Subscribe
+              </button>
             </div>
           </div>
-          
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 MealLens. All rights reserved.</p>
+          <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-700">
+            <p className="text-gray-400 text-sm sm:text-base">© 2024 MealLensAI. All rights reserved.</p>
           </div>
         </div>
       </footer>

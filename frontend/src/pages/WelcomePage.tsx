@@ -7,9 +7,9 @@ const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
-  // Redirect authenticated users to home
+  // Redirect authenticated users to home only if they're on the root path
   useEffect(() => {
-    if (user) {
+    if (user && window.location.pathname === '/') {
       navigate('/home');
     }
   }, [user, navigate]);

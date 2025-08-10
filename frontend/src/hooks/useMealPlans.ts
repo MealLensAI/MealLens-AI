@@ -51,18 +51,23 @@ export const useMealPlans = () => {
           setSavedPlans(plans);
           if (plans.length > 0) setCurrentPlan(plans[0]);
         } else {
-          console.error('Error fetching meal plans:', result.message);
+          console.warn('No meal plans found or API returned error:', result.message);
           setSavedPlans([]);
           setCurrentPlan(null);
         }
       } catch (error) {
-        console.error('Error fetching meal plans:', error);
+        console.warn('Error fetching meal plans (this is normal for new users):', error);
+        // Don't throw error, just set empty state
         setSavedPlans([]);
         setCurrentPlan(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
-    fetchPlans();
+    
+    // Add a small delay to prevent race conditions
+    const timer = setTimeout(fetchPlans, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const generateWeekDates = (startDate: Date): { startDate: string; endDate: string; name: string } => {

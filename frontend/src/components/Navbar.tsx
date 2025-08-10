@@ -47,8 +47,9 @@ const Navbar = () => {
 
   // Helper function to check if a route is active
   const isActiveRoute = (path: string) => {
+    if (path === "/home" && location.pathname === "/home") return true
     if (path === "/" && location.pathname === "/") return true
-    if (path !== "/" && location.pathname.startsWith(path)) return true
+    if (path !== "/" && path !== "/home" && location.pathname.startsWith(path)) return true
     return false
   }
 
@@ -73,9 +74,9 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-1">
             <Button
               variant="ghost"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/home")}
               className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                isActiveRoute("/") 
+                isActiveRoute("/home") 
                   ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md" 
                   : "text-gray-700 hover:text-orange-500 hover:bg-orange-50"
               }`}

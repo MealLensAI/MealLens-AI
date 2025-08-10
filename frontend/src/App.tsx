@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react"
 import {
   createBrowserRouter,
   RouterProvider,
@@ -21,6 +22,48 @@ import ProfilePage from "./pages/ProfilePage"
 import SettingsPage from "./pages/SettingsPage"
 import WelcomePage from "./pages/WelcomePage"
 import OnboardingPage from "./pages/OnboardingPage"
+import LaunchCountdown from "./components/LaunchCountdown"
+import LoadingScreen from "./components/LoadingScreen"
+
+// Launch countdown wrapper component
+const LaunchCountdownWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isLaunched, setIsLaunched] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if launch time has passed
+    const checkLaunchStatus = async () => {
+      try {
+        const response = await fetch('/api/server-time');
+        const data = await response.json();
+        const serverTime = new Date(data.serverTime);
+        const launchDate = new Date('2024-12-25T00:00:00Z'); // Same as in LaunchCountdown
+        
+        if (serverTime >= launchDate) {
+          setIsLaunched(true);
+        }
+      } catch (error) {
+        console.error('Failed to check launch status:', error);
+        // If we can't get server time, allow access
+        setIsLaunched(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkLaunchStatus();
+  }, []);
+
+  if (isLoading) {
+    return <LoadingScreen message="Checking launch status..." />;
+  }
+
+  if (!isLaunched) {
+    return <LaunchCountdown onLaunchComplete={() => setIsLaunched(true)} />;
+  }
+
+  return <>{children}</>;
+};
 
 // Create router with future flags to eliminate deprecation warnings
 const router = createBrowserRouter([
@@ -28,7 +71,16 @@ const router = createBrowserRouter([
     path: "/",
     element: <WelcomePage />
   },
-
+  {
+    path: "/home",
+    element: (
+      <ProtectedRoute>
+        <MainLayout>
+          <MealPlanner />
+        </MainLayout>
+      </ProtectedRoute>
+    )
+  },
   {
     path: "/login",
     element: <Login />
@@ -47,13 +99,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: (
-      <ProtectedRoute>
-        <MainLayout>
-          <MealPlanner />
-        </MainLayout>
-      </ProtectedRoute>
-    )
+    element: <Navigate to="/home" replace />
   },
   {
     path: "/ai-kitchen",
@@ -109,9 +155,7 @@ const router = createBrowserRouter([
     path: "/payment",
     element: (
       <ProtectedRoute>
-        <MainLayout>
-          <Payment />
-        </MainLayout>
+        <Payment />
       </ProtectedRoute>
     )
   },
@@ -137,7 +181,7 @@ const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: <Navigate to="/dashboard" replace />
+    element: <Navigate to="/" replace />
   }
 ], {
   future: {
@@ -145,24 +189,22 @@ const router = createBrowserRouter([
   }
 })
 
-// Wrapper component to ensure AuthProvider is properly initialized
 const RouterWrapper = () => {
   return (
-    <AuthProvider>
-      <SubscriptionProvider>
-        <RouterProvider router={router} />
-        <Toaster />
-      </SubscriptionProvider>
-    </AuthProvider>
+    <LaunchCountdownWrapper>
+      <RouterProvider router={router} />
+    </LaunchCountdownWrapper>
   )
 }
 
 function App() {
   return (
-    <div className="App">
-      <RouterWrapper />
-      <Toaster />
-    </div>
+    <AuthProvider>
+      <SubscriptionProvider>
+        <RouterWrapper />
+        <Toaster />
+      </SubscriptionProvider>
+    </AuthProvider>
   )
 }
 

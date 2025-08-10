@@ -103,6 +103,8 @@ export default function ProfilePage() {
   const [illnessName, setIllnessName] = useState("")
   const [dateOfBirth, setDateOfBirth] = useState("")
   const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [weight, setWeight] = useState(0)
+  const [height, setHeight] = useState(0)
   const [emergencyContact, setEmergencyContact] = useState({
     name: "",
     phone: "",

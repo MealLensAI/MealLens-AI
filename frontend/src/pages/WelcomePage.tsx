@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/utils';
 import Logo from '@/components/Logo';
@@ -7,11 +7,18 @@ const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
+  // Redirect authenticated users to home
+  useEffect(() => {
+    if (user) {
+      navigate('/home');
+    }
+  }, [user, navigate]);
+
   const handleTryMealLensAI = () => {
     if (!user) {
       navigate('/login');
     } else {
-      navigate('/ai-kitchen');
+      navigate('/home');
     }
   };
 

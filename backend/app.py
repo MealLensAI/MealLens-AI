@@ -28,6 +28,7 @@ from routes.auth_routes import auth_bp
 from routes.ai_session_routes import ai_session_bp
 from routes.session_routes import session_bp
 from routes.settings_routes import settings_bp
+from routes.server_time_routes import server_time_routes
 
 # Payment routes import
 try:
@@ -150,6 +151,7 @@ def create_app():
   app.register_blueprint(ai_session_bp, url_prefix='/api')
   app.register_blueprint(session_bp, url_prefix='/api')
   app.register_blueprint(settings_bp, url_prefix='/api')
+  app.register_blueprint(server_time_routes, url_prefix='/api')
   
   # Register payment routes if enabled
   if PAYMENT_ROUTES_ENABLED:

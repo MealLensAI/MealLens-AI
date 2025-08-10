@@ -118,6 +118,14 @@ backend/*.tiff
 *.mkv
 *.m4v
 
+# Large image files (over 1MB) - backend only
+backend/*.png
+backend/*.jpg
+backend/*.jpeg
+backend/*.gif
+backend/*.bmp
+backend/*.tiff
+
 # Allow frontend assets
 !frontend/public/
 !frontend/public/assets/

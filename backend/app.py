@@ -59,7 +59,7 @@ def create_app():
       app,
       resources={
           r"/api/*": {
-              "origins": ["http://localhost:5173","https://new-meallensai.vercel.app"],
+              "origins": ["http://localhost:5173","https://new-meallensai.vercel.app","https://meallensai.com/"],
               "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
               "allow_headers": ["Content-Type", "Authorization"],
               "supports_credentials": True,

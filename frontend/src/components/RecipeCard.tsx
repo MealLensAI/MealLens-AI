@@ -103,10 +103,10 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ title, image, time, rating, mea
       className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer transform hover:scale-105"
       onClick={onClick}
     >
-      <div className="relative h-48">
+      <div className="relative h-40 sm:h-48">
         {imageLoading && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
-            <div className="text-gray-400 text-sm">Loading image...</div>
+            <div className="text-gray-400 text-xs sm:text-sm">Loading image...</div>
           </div>
         )}
         <img 
@@ -117,14 +117,14 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ title, image, time, rating, mea
           onError={handleImageError}
           style={{ display: imageLoading ? 'none' : 'block' }}
         />
-        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-full w-8 h-8 flex items-center justify-center shadow-sm">
-          <span className="text-lg">{getMealTypeIcon()}</span>
+        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-white/90 backdrop-blur-sm rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center shadow-sm">
+          <span className="text-sm sm:text-lg">{getMealTypeIcon()}</span>
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
       </div>
       
-      <div className="p-4">
-        <h3 className="font-semibold text-[#2D3436] mb-2 text-sm leading-tight line-clamp-2">
+      <div className="p-3 sm:p-4">
+        <h3 className="font-semibold text-[#2D3436] mb-2 text-xs sm:text-sm leading-tight line-clamp-2">
           {originalTitle || title}
         </h3>
         

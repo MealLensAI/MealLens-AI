@@ -9,7 +9,9 @@ import MealPlanManager from '../components/MealPlanManager';
 import WeekSelector from '../components/WeekSelector';
 import { useMealPlans, SavedMealPlan, MealPlan } from '../hooks/useMealPlans';
 import { useToast } from '@/hooks/use-toast';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { api } from '@/lib/api';
+import FeatureLock from '@/components/FeatureLock';
 // Removed old sickness settings - now using profile data
 
 // Countries list for the dropdown
@@ -53,6 +55,8 @@ const MealPlanner = () => {
   const [location, setLocation] = useState('');
   const [budget, setBudget] = useState('');
   const [isAutoGenerateEnabled, setIsAutoGenerateEnabled] = useState(false);
+
+  const { isFeatureLocked, recordFeatureUsage } = useSubscription();
 
   const {
     currentPlan,
@@ -98,6 +102,22 @@ const MealPlanner = () => {
     }
     prevShowPlanManager.current = showPlanManager;
   }, [showPlanManager, refreshMealPlans]);
+
+  // Check if feature is locked
+  if (isFeatureLocked('meal_planning')) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="w-full max-w-md">
+          <FeatureLock
+            featureName="meal_planning"
+            featureTitle="Smart Meal Planning"
+            featureDescription="Create personalized weekly meal plans, get recipe suggestions, and manage your nutrition with AI-powered recommendations."
+            icon={<Calendar className="h-8 w-8 text-green-600" />}
+          />
+        </div>
+      </div>
+    )
+  }
 
   useEffect(() => {
     if (!currentPlan) {
@@ -205,6 +225,13 @@ const MealPlanner = () => {
     }
 
     setIsLoading(true);
+
+    try {
+      // Record feature usage
+      await recordFeatureUsage('meal_planning');
+    } catch (error) {
+      console.error('Error recording feature usage:', error);
+    }
 
     try {
       const formData = new FormData();
@@ -500,11 +527,11 @@ const MealPlanner = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc]">
-      <div className="w-full flex gap-6 p-6">
+      <div className="w-full flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 sm:p-6">
         {/* Sidebar */}
-        <div className="w-64 space-y-4">
+        <div className="w-full lg:w-64 space-y-4">
           {/* Weekly Planner */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-[#e2e8f0]">
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-[#e2e8f0]">
             <WeeklyPlanner
               selectedDay={selectedDay}
               onDaySelect={setSelectedDay}
@@ -518,29 +545,30 @@ const MealPlanner = () => {
         <div className="flex-1">
           {currentPlan ? (
             <React.Fragment>
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-bold text-[#2D3436]">Recipes for {savedWeeks[currentWeekIndex]?.name || weekDates.name}</h2>
+              <div className="mb-4 sm:mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    <h2 className="text-xl sm:text-2xl font-bold text-[#2D3436]">Recipes for {savedWeeks[currentWeekIndex]?.name || weekDates.name}</h2>
                     {sicknessInfo?.hasSickness && (
-                      <div className="flex items-center gap-2 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
+                      <div className="flex items-center gap-2 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs sm:text-sm font-medium w-fit">
                         <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
                         Health-aware meal plan
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-lg font-semibold text-[#2D3436]">
+                  <div className="flex items-center gap-2 text-base sm:text-lg font-semibold text-[#2D3436]">
                     <button
                       onClick={handlePrevWeek}
                       disabled={currentWeekIndex <= 0}
                       className={`p-1 rounded hover:bg-gray-100 transition-colors ${currentWeekIndex <= 0 ? 'opacity-30 cursor-not-allowed' : ''}`}
                       title="Previous Saved Week"
                     >
-                      <ChevronLeft className="w-5 h-5 text-[#2D3436]" />
+                      <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-[#2D3436]" />
                     </button>
-                    <span className="flex items-center gap-1 text-[#2D3436]">
-                      <Calendar className="w-5 h-5 text-[#2D3436]" />
-                      {savedWeeks[currentWeekIndex]?.name || weekDates.name}
+                    <span className="flex items-center gap-1 text-[#2D3436] text-sm sm:text-base">
+                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-[#2D3436]" />
+                      <span className="hidden sm:inline">{savedWeeks[currentWeekIndex]?.name || weekDates.name}</span>
+                      <span className="sm:hidden">{(savedWeeks[currentWeekIndex]?.name || weekDates.name).split(' ')[0]}</span>
                     </span>
                     <button
                       onClick={handleNextWeek}
@@ -548,7 +576,7 @@ const MealPlanner = () => {
                       className={`p-1 rounded hover:bg-gray-100 transition-colors ${currentWeekIndex === -1 || currentWeekIndex >= savedWeeks.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
                       title="Next Saved Week"
                     >
-                      <ChevronRight className="w-5 h-5 text-[#2D3436]" />
+                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-[#2D3436]" />
                     </button>
                   </div>
                 </div>
@@ -567,7 +595,7 @@ const MealPlanner = () => {
           fullScreen={false}
         />
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                   {getRecipesForSelectedDay().map((recipe, index) => (
                     <RecipeCard
                       key={`${selectedDay}-${recipe.type}-${index}`}
@@ -583,20 +611,20 @@ const MealPlanner = () => {
               )}
             </React.Fragment>
           ) : (
-            <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-[#e2e8f0]">
-              <ChefHat className="w-16 h-16 text-[#e2e8f0] mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-[#2D3436] mb-2">No Meal Plan Selected</h3>
-              <p className="text-[#1e293b] mb-6">Create a new meal plan or select an existing one to get started!</p>
-              <div className="flex gap-3 justify-center">
+            <div className="bg-white rounded-xl p-6 sm:p-8 lg:p-12 text-center shadow-sm border border-[#e2e8f0]">
+              <ChefHat className="w-12 h-12 sm:w-16 sm:h-16 text-[#e2e8f0] mx-auto mb-4" />
+              <h3 className="text-lg sm:text-xl font-semibold text-[#2D3436] mb-2">No Meal Plan Selected</h3>
+              <p className="text-sm sm:text-base text-[#1e293b] mb-6">Create a new meal plan or select an existing one to get started!</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={handleNewPlan}
-                  className="bg-[#FF6B6B] text-white px-6 py-3 rounded-lg hover:bg-[#FF8E53] transition-colors"
+                  className="bg-[#FF6B6B] text-white px-4 sm:px-6 py-3 rounded-lg hover:bg-[#FF8E53] transition-colors text-sm sm:text-base"
                 >
                   Create New Plan
                 </button>
                 <button
                   onClick={() => setShowPlanManager(true)}
-                  className="bg-gray-100 text-[#2D3436] px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="bg-gray-100 text-[#2D3436] px-4 sm:px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors text-sm sm:text-base"
                 >
                   View Saved Plans
                 </button>
@@ -609,12 +637,12 @@ const MealPlanner = () => {
       {/* Plan Manager Modal */}
       {showPlanManager && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#2D3436]">Manage Meal Plans</h2>
+          <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-[#2D3436]">Manage Meal Plans</h2>
               <button
                 onClick={() => setShowPlanManager(false)}
-                className="text-[#1e293b] hover:text-[#FF6B6B] transition-colors"
+                className="text-[#1e293b] hover:text-[#FF6B6B] transition-colors text-xl sm:text-2xl"
               >
                 ✕
               </button>
@@ -634,12 +662,12 @@ const MealPlanner = () => {
       {/* Input Modal */}
       {showInputModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#2D3436]">Create Your Meal Plan</h2>
+          <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-[#2D3436]">Create Your Meal Plan</h2>
               <button
                 onClick={() => setShowInputModal(false)}
-                className="text-[#1e293b] hover:text-[#FF6B6B] transition-colors"
+                className="text-[#1e293b] hover:text-[#FF6B6B] transition-colors text-xl sm:text-2xl"
               >
                 ✕
               </button>
@@ -704,35 +732,35 @@ const MealPlanner = () => {
 
             {/* Toggle Buttons - Only show when auto-generate is OFF */}
             {!isAutoGenerateEnabled && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 <button
                   onClick={() => setInputType('ingredient_list')}
-                  className={`p-4 rounded-xl border-2 transition-all ${inputType === 'ingredient_list'
+                  className={`p-3 sm:p-4 rounded-xl border-2 transition-all ${inputType === 'ingredient_list'
                     ? 'border-[#FF6B6B] bg-[#FF6B6B] text-white'
                     : 'border-[#e2e8f0] bg-white text-[#2D3436] hover:border-[#FF8E53]'
                     }`}
                 >
                   <div className="flex items-center justify-center">
-                    <List className="w-5 h-5 mr-3" />
-                    <div>
-                      <div className="font-semibold">Type Ingredients</div>
-                      <div className="text-sm opacity-90">Enter manually</div>
+                    <List className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3" />
+                    <div className="text-left">
+                      <div className="font-semibold text-sm sm:text-base">Type Ingredients</div>
+                      <div className="text-xs sm:text-sm opacity-90">Enter manually</div>
                     </div>
                   </div>
                 </button>
 
                 <button
                   onClick={() => setInputType('image')}
-                  className={`p-4 rounded-xl border-2 transition-all ${inputType === 'image'
+                  className={`p-3 sm:p-4 rounded-xl border-2 transition-all ${inputType === 'image'
                     ? 'border-[#FF6B6B] bg-[#FF6B6B] text-white'
                     : 'border-[#e2e8f0] bg-white text-[#2D3436] hover:border-[#FF8E53]'
                     }`}
                 >
                   <div className="flex items-center justify-center">
-                    <Camera className="w-5 h-5 mr-3" />
-                    <div>
-                      <div className="font-semibold">Upload Image</div>
-                      <div className="text-sm opacity-90">Take a photo</div>
+                    <Camera className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3" />
+                    <div className="text-left">
+                      <div className="font-semibold text-sm sm:text-base">Upload Image</div>
+                      <div className="text-xs sm:text-sm opacity-90">Take a photo</div>
                     </div>
                   </div>
                 </button>

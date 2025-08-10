@@ -84,4 +84,624 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
   }
+
+  /* Responsive utilities */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .text-responsive {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+
+  .heading-responsive {
+    @apply text-xl sm:text-2xl lg:text-3xl xl:text-4xl;
+  }
+
+  .padding-responsive {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+
+  .gap-responsive {
+    @apply gap-3 sm:gap-4 lg:gap-6;
+  }
+
+  /* Mobile-first responsive grid */
+  .grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  /* Responsive flex layouts */
+  .flex-responsive {
+    @apply flex flex-col sm:flex-row;
+  }
+
+  .flex-center-responsive {
+    @apply flex flex-col sm:flex-row items-center justify-center;
+  }
+
+  /* Responsive spacing */
+  .space-responsive {
+    @apply space-y-4 sm:space-y-6 lg:space-y-8;
+  }
+
+  /* Responsive button sizing */
+  .btn-responsive {
+    @apply text-sm sm:text-base px-3 sm:px-4 lg:px-6 py-2 sm:py-3;
+  }
+
+  /* Responsive card sizing */
+  .card-responsive {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+
+  /* Responsive image sizing */
+  .img-responsive {
+    @apply w-full h-auto max-w-full;
+  }
+
+  /* Responsive modal sizing */
+  .modal-responsive {
+    @apply w-full max-w-md sm:max-w-lg lg:max-w-xl xl:max-w-2xl mx-auto;
+  }
+
+  /* Responsive text sizing */
+  .text-xs-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  .text-sm-responsive {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-base-responsive {
+    @apply text-base sm:text-lg;
+  }
+
+  .text-lg-responsive {
+    @apply text-lg sm:text-xl;
+  }
+
+  /* Responsive border radius */
+  .rounded-responsive {
+    @apply rounded-lg sm:rounded-xl lg:rounded-2xl;
+  }
+
+  /* Responsive shadow */
+  .shadow-responsive {
+    @apply shadow-sm sm:shadow-md lg:shadow-lg;
+  }
+
+  /* Responsive margin and padding */
+  .m-responsive {
+    @apply m-2 sm:m-4 lg:m-6;
+  }
+
+  .p-responsive {
+    @apply p-2 sm:p-4 lg:p-6;
+  }
+
+  .mx-responsive {
+    @apply mx-2 sm:mx-4 lg:mx-6;
+  }
+
+  .my-responsive {
+    @apply my-2 sm:my-4 lg:my-6;
+  }
+
+  .px-responsive {
+    @apply px-2 sm:px-4 lg:px-6;
+  }
+
+  .py-responsive {
+    @apply py-2 sm:py-4 lg:py-6;
+  }
+
+  /* Responsive height and width */
+  .h-responsive {
+    @apply h-32 sm:h-40 lg:h-48;
+  }
+
+  .w-responsive {
+    @apply w-full sm:w-auto;
+  }
+
+  /* Responsive icon sizing */
+  .icon-responsive {
+    @apply w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6;
+  }
+
+  /* Responsive form elements */
+  .input-responsive {
+    @apply text-sm sm:text-base p-2 sm:p-3 lg:p-4;
+  }
+
+  .select-responsive {
+    @apply text-sm sm:text-base p-2 sm:p-3 lg:p-4;
+  }
+
+  /* Responsive navigation */
+  .nav-responsive {
+    @apply text-xs sm:text-sm lg:text-base;
+  }
+
+  /* Responsive table */
+  .table-responsive {
+    @apply text-xs sm:text-sm lg:text-base;
+  }
+
+  /* Responsive list */
+  .list-responsive {
+    @apply space-y-2 sm:space-y-3 lg:space-y-4;
+  }
+
+  /* Responsive badge */
+  .badge-responsive {
+    @apply text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2;
+  }
+
+  /* Responsive avatar */
+  .avatar-responsive {
+    @apply w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12;
+  }
+
+  /* Responsive loading spinner */
+  .spinner-responsive {
+    @apply w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10;
+  }
+
+  /* Responsive video container */
+  .video-responsive {
+    @apply w-full aspect-video;
+  }
+
+  /* Responsive image container */
+  .image-container-responsive {
+    @apply w-full max-w-xs sm:max-w-sm lg:max-w-md h-32 sm:h-40 lg:h-48;
+  }
+
+  /* Responsive modal content */
+  .modal-content-responsive {
+    @apply p-4 sm:p-6 lg:p-8 max-h-[90vh] overflow-y-auto;
+  }
+
+  /* Responsive sidebar */
+  .sidebar-responsive {
+    @apply w-full lg:w-64;
+  }
+
+  /* Responsive main content */
+  .main-content-responsive {
+    @apply flex-1 min-w-0;
+  }
+
+  /* Responsive layout wrapper */
+  .layout-responsive {
+    @apply flex flex-col lg:flex-row gap-4 lg:gap-6;
+  }
+
+  /* Responsive header */
+  .header-responsive {
+    @apply text-center lg:text-left;
+  }
+
+  /* Responsive footer */
+  .footer-responsive {
+    @apply text-center lg:text-left;
+  }
+
+  /* Responsive search bar */
+  .search-responsive {
+    @apply w-full sm:w-64 lg:w-80;
+  }
+
+  /* Responsive filter bar */
+  .filter-responsive {
+    @apply flex flex-wrap gap-2 sm:gap-3 lg:gap-4;
+  }
+
+  /* Responsive pagination */
+  .pagination-responsive {
+    @apply flex flex-wrap justify-center gap-1 sm:gap-2 lg:gap-3;
+  }
+
+  /* Responsive breadcrumb */
+  .breadcrumb-responsive {
+    @apply text-xs sm:text-sm lg:text-base;
+  }
+
+  /* Responsive tooltip */
+  .tooltip-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive progress bar */
+  .progress-responsive {
+    @apply h-2 sm:h-3 lg:h-4;
+  }
+
+  /* Responsive tabs */
+  .tabs-responsive {
+    @apply text-xs sm:text-sm lg:text-base;
+  }
+
+  /* Responsive accordion */
+  .accordion-responsive {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+
+  /* Responsive carousel */
+  .carousel-responsive {
+    @apply h-32 sm:h-40 lg:h-48 xl:h-56;
+  }
+
+  /* Responsive gallery */
+  .gallery-responsive {
+    @apply grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 lg:gap-4;
+  }
+
+  /* Responsive stats */
+  .stats-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8;
+  }
+
+  /* Responsive timeline */
+  .timeline-responsive {
+    @apply space-y-4 sm:space-y-6 lg:space-y-8;
+  }
+
+  /* Responsive chat */
+  .chat-responsive {
+    @apply h-64 sm:h-80 lg:h-96;
+  }
+
+  /* Responsive calendar */
+  .calendar-responsive {
+    @apply text-xs sm:text-sm lg:text-base;
+  }
+
+  /* Responsive map */
+  .map-responsive {
+    @apply h-48 sm:h-64 lg:h-80 xl:h-96;
+  }
+
+  /* Responsive chart */
+  .chart-responsive {
+    @apply h-48 sm:h-64 lg:h-80 xl:h-96;
+  }
+
+  /* Responsive dashboard */
+  .dashboard-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8;
+  }
+
+  /* Responsive sidebar navigation */
+  .sidebar-nav-responsive {
+    @apply flex flex-col space-y-2 sm:space-y-3 lg:space-y-4;
+  }
+
+  /* Responsive top navigation */
+  .top-nav-responsive {
+    @apply flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0;
+  }
+
+  /* Responsive mobile menu */
+  .mobile-menu-responsive {
+    @apply fixed inset-0 z-50 bg-white lg:hidden;
+  }
+
+  /* Responsive desktop menu */
+  .desktop-menu-responsive {
+    @apply hidden lg:flex;
+  }
+
+  /* Responsive overlay */
+  .overlay-responsive {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-40;
+  }
+
+  /* Responsive drawer */
+  .drawer-responsive {
+    @apply fixed inset-y-0 right-0 w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out;
+  }
+
+  /* Responsive popover */
+  .popover-responsive {
+    @apply w-64 sm:w-72 lg:w-80;
+  }
+
+  /* Responsive dropdown */
+  .dropdown-responsive {
+    @apply w-48 sm:w-56 lg:w-64;
+  }
+
+  /* Responsive context menu */
+  .context-menu-responsive {
+    @apply w-48 sm:w-56 lg:w-64;
+  }
+
+  /* Responsive notification */
+  .notification-responsive {
+    @apply w-full sm:w-80 lg:w-96;
+  }
+
+  /* Responsive toast */
+  .toast-responsive {
+    @apply w-full sm:w-80 lg:w-96;
+  }
+
+  /* Responsive alert */
+  .alert-responsive {
+    @apply text-sm sm:text-base;
+  }
+
+  /* Responsive banner */
+  .banner-responsive {
+    @apply text-sm sm:text-base;
+  }
+
+  /* Responsive callout */
+  .callout-responsive {
+    @apply text-sm sm:text-base;
+  }
+
+  /* Responsive quote */
+  .quote-responsive {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+
+  /* Responsive code block */
+  .code-responsive {
+    @apply text-xs sm:text-sm lg:text-base;
+  }
+
+  /* Responsive pre */
+  .pre-responsive {
+    @apply text-xs sm:text-sm lg:text-base overflow-x-auto;
+  }
+
+  /* Responsive kbd */
+  .kbd-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive samp */
+  .samp-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive var */
+  .var-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive mark */
+  .mark-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive del */
+  .del-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive ins */
+  .ins-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive sub */
+  .sub-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive sup */
+  .sup-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive small */
+  .small-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive big */
+  .big-responsive {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+
+  /* Responsive tt */
+  .tt-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive i */
+  .i-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive b */
+  .b-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive u */
+  .u-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive s */
+  .s-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive strike */
+  .strike-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive blink */
+  .blink-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive marquee */
+  .marquee-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive acronym */
+  .acronym-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive abbr */
+  .abbr-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive cite */
+  .cite-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive dfn */
+  .dfn-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive em */
+  .em-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive strong */
+  .strong-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive code */
+  .code-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive kbd */
+  .kbd-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive samp */
+  .samp-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive var */
+  .var-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive mark */
+  .mark-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive del */
+  .del-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive ins */
+  .ins-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive sub */
+  .sub-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive sup */
+  .sup-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive small */
+  .small-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive big */
+  .big-inline-responsive {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+
+  /* Responsive tt */
+  .tt-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive i */
+  .i-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive b */
+  .b-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive u */
+  .u-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive s */
+  .s-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive strike */
+  .strike-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive blink */
+  .blink-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive marquee */
+  .marquee-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive acronym */
+  .acronym-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive abbr */
+  .abbr-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive cite */
+  .cite-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive dfn */
+  .dfn-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive em */
+  .em-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
+
+  /* Responsive strong */
+  .strong-inline-responsive {
+    @apply text-xs sm:text-sm;
+  }
 }

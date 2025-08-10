@@ -1,4 +1,3 @@
-import React from "react"
 import {
   createBrowserRouter,
   RouterProvider,
@@ -16,10 +15,10 @@ import "./App.css"
 import HistoryPage from "./pages/History"
 import HistoryDetailPage from "./pages/HistoryDetailPage"
 import { AuthProvider } from "@/lib/AuthProvider"
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext"
 import Payment from "./pages/Payment"
 import ProfilePage from "./pages/ProfilePage"
 import SettingsPage from "./pages/SettingsPage"
-import Settings from "./pages/Settings"
 import LandingPage from "./pages/LandingPage"
 
 // Create router with future flags to eliminate deprecation warnings
@@ -140,7 +139,10 @@ const router = createBrowserRouter([
 const RouterWrapper = () => {
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <SubscriptionProvider>
+        <RouterProvider router={router} />
+        <Toaster />
+      </SubscriptionProvider>
     </AuthProvider>
   )
 }

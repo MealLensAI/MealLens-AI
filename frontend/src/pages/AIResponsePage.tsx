@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Users, ChefHat, Bookmark, Timer, Utensils, Loader2, Upload, ArrowLeft } from "lucide-react"
 import "@/styles/ai-response.css"
 import { useAuth } from "@/lib/utils"
+import { useSubscription } from "@/contexts/SubscriptionContext"
 import LoadingScreen from "@/components/LoadingScreen"
+import FeatureLock from "@/components/FeatureLock"
 import { handleAuthError } from "@/lib/utils"
 import { api } from "@/lib/api"
 
@@ -54,6 +56,7 @@ const AIResponsePage: FC = () => {
   const [showResults, setShowResults] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { token, isAuthenticated, loading } = useAuth()
+  const { isFeatureLocked, recordFeatureUsage } = useSubscription()
   const [selectedSuggestion, setSelectedSuggestion] = useState<string>("");
 
   if (loading) {
@@ -66,23 +69,39 @@ const AIResponsePage: FC = () => {
   }
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-orange-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center space-y-6">
-          <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl shadow-lg mx-auto">
-            <Utensils className="h-8 w-8 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-orange-50 flex items-center justify-center p-4 sm:p-6">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-6 sm:p-8 text-center space-y-6">
+          <div className="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl shadow-lg mx-auto">
+            <Utensils className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
           </div>
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-800">Authentication Required</h2>
-            <p className="text-gray-600">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Authentication Required</h2>
+            <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
               Please log in to use the AI Kitchen feature and save your recipe discoveries to history.
             </p>
             <Button 
               onClick={() => navigate('/login')}
-              className="w-full py-3 text-lg font-bold bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg hover:from-red-600 hover:to-orange-600 transition-all duration-300"
+              className="w-full py-3 text-base sm:text-lg font-bold bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg hover:from-red-600 hover:to-orange-600 transition-all duration-300"
             >
               Go to Login
             </Button>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Check if feature is locked
+  if (isFeatureLocked('ingredient_detection')) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="w-full max-w-md">
+          <FeatureLock
+            featureName="ingredient_detection"
+            featureTitle="AI Kitchen Assistant"
+            featureDescription="Get personalized recipe suggestions, cooking instructions, and meal planning based on your available ingredients or food photos."
+            icon={<ChefHat className="h-8 w-8 text-purple-600" />}
+          />
         </div>
       </div>
     )
@@ -134,6 +153,13 @@ const AIResponsePage: FC = () => {
     setInstructions("")
     setResources(null)
     setShowResults(false)
+
+    try {
+      // Record feature usage
+      await recordFeatureUsage('ingredient_detection');
+    } catch (error) {
+      console.error('Error recording feature usage:', error);
+    }
     
     // Compress image if provided
     let compressedImageData: string | null = null
@@ -332,7 +358,7 @@ const AIResponsePage: FC = () => {
 
   return (
     <div 
-      className="min-h-screen py-8"
+      className="min-h-screen py-4 sm:py-6 lg:py-8"
       style={{
         fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
         background: "url('https://images.unsplash.com/photo-1495195134817-aeb325a55b65?auto=format&fit=crop&w=2000&q=80') center/cover no-repeat fixed",
@@ -340,24 +366,24 @@ const AIResponsePage: FC = () => {
         lineHeight: "1.6"
       }}
     >
-      <div className="max-w-[1400px] mx-auto">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         <div 
-          className="bg-[rgba(255,255,255,0.95)] rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.1)] overflow-hidden p-12 relative max-w-[800px] mx-auto"
+          className="bg-[rgba(255,255,255,0.95)] rounded-[1.5rem] sm:rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.1)] overflow-hidden p-4 sm:p-6 lg:p-8 xl:p-12 relative max-w-[800px] mx-auto"
         >
           {/* Title */}
           <h1 
-            className="text-[2.5rem] font-extrabold text-center mb-8 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] bg-clip-text text-transparent tracking-[-1px]"
+            className="text-xl sm:text-2xl lg:text-3xl xl:text-[2.5rem] font-extrabold text-center mb-4 sm:mb-6 lg:mb-8 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] bg-clip-text text-transparent tracking-[-1px]"
           >
             Ingredient Detection
           </h1>
 
           {/* Input Form */}
-          <div className="mb-4">
-            <label className="block font-semibold text-lg text-[#2D3436] mb-3">
+          <div className="mb-4 sm:mb-6">
+            <label className="block font-semibold text-base sm:text-lg text-[#2D3436] mb-2 sm:mb-3">
                   How would you like to start?
                 </label>
                 <select
-              className="w-full bg-white border-2 border-[rgba(0,0,0,0.1)] rounded-2xl p-4 text-lg transition-all duration-300 shadow-[0_4px_6px_rgba(0,0,0,0.05)] focus:border-[#FF6B6B] focus:shadow-[0_0_0_4px_rgba(255,107,107,0.2)]"
+              className="w-full bg-white border-2 border-[rgba(0,0,0,0.1)] rounded-xl sm:rounded-2xl p-3 sm:p-4 text-base sm:text-lg transition-all duration-300 shadow-[0_4px_6px_rgba(0,0,0,0.05)] focus:border-[#FF6B6B] focus:shadow-[0_0_0_4px_rgba(255,107,107,0.2)]"
                   value={inputType}
                   onChange={(e) => setInputType(e.target.value as "image" | "ingredient_list")}
                 >
@@ -368,22 +394,22 @@ const AIResponsePage: FC = () => {
 
           {/* Image Input */}
           {inputType === "image" && (
-            <div className="mb-4">
-              <label className="block font-semibold text-lg text-[#2D3436] mb-3">
+            <div className="mb-4 sm:mb-6">
+              <label className="block font-semibold text-base sm:text-lg text-[#2D3436] mb-2 sm:mb-3">
                 Share Your Food Image
                   </label>
                   <input
                     type="file"
                     accept="image/*"
                 onChange={handleImageSelect}
-                className="w-full bg-white border-2 border-[rgba(0,0,0,0.1)] rounded-2xl p-4 text-lg transition-all duration-300 shadow-[0_4px_6px_rgba(0,0,0,0.05)] focus:border-[#FF6B6B] focus:shadow-[0_0_0_4px_rgba(255,107,107,0.2)]"
+                className="w-full bg-white border-2 border-[rgba(0,0,0,0.1)] rounded-xl sm:rounded-2xl p-3 sm:p-4 text-base sm:text-lg transition-all duration-300 shadow-[0_4px_6px_rgba(0,0,0,0.05)] focus:border-[#FF6B6B] focus:shadow-[0_0_0_4px_rgba(255,107,107,0.2)]"
                   />
                   {imagePreview && (
-                <div className="flex justify-center mt-2.5">
+                <div className="flex justify-center mt-3 sm:mt-4">
                       <img
                     src={imagePreview} 
                     alt="Preview" 
-                    className="w-[400px] h-[300px] object-cover rounded-2xl"
+                    className="w-full max-w-xs sm:max-w-sm lg:max-w-md h-48 sm:h-56 lg:h-64 object-cover rounded-lg sm:rounded-xl"
                       />
                     </div>
                   )}
@@ -392,8 +418,8 @@ const AIResponsePage: FC = () => {
 
           {/* Ingredient Input */}
           {inputType === "ingredient_list" && (
-            <div className="mb-4">
-              <label className="block font-semibold text-lg text-[#2D3436] mb-3">
+            <div className="mb-4 sm:mb-6">
+              <label className="block font-semibold text-base sm:text-lg text-[#2D3436] mb-2 sm:mb-3">
                     What ingredients do you have?
                   </label>
               <input
@@ -401,7 +427,7 @@ const AIResponsePage: FC = () => {
                 value={ingredientList}
                 onChange={(e) => setIngredientList(e.target.value)}
                     placeholder="e.g., chicken, tomatoes, basil, olive oil"
-                className="w-full bg-white border-2 border-[rgba(0,0,0,0.1)] rounded-2xl p-4 text-lg transition-all duration-300 shadow-[0_4px_6px_rgba(0,0,0,0.05)] focus:border-[#FF6B6B] focus:shadow-[0_0_0_4px_rgba(255,107,107,0.2)]"
+                className="w-full bg-white border-2 border-[rgba(0,0,0,0.1)] rounded-xl sm:rounded-2xl p-3 sm:p-4 text-base sm:text-lg transition-all duration-300 shadow-[0_4px_6px_rgba(0,0,0,0.05)] focus:border-[#FF6B6B] focus:shadow-[0_0_0_4px_rgba(255,107,107,0.2)]"
                   />
                 </div>
               )}
@@ -410,22 +436,22 @@ const AIResponsePage: FC = () => {
           <button
                 onClick={handleDiscoverRecipes}
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white border-none rounded-2xl py-4 px-8 text-xl font-semibold transition-all duration-300 uppercase tracking-wider shadow-[0_4px_15px_rgba(255,107,107,0.3)] hover:translate-y-[-2px] hover:shadow-[0_6px_20px_rgba(255,107,107,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white border-none rounded-xl sm:rounded-2xl py-3 sm:py-4 px-6 sm:px-8 text-lg sm:text-xl font-semibold transition-all duration-300 uppercase tracking-wider shadow-[0_4px_15px_rgba(255,107,107,0.3)] hover:translate-y-[-2px] hover:shadow-[0_6px_20px_rgba(255,107,107,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Discover Recipes
           </button>
 
           {/* Loading Spinner */}
           {isLoading && (
-            <div className="flex justify-center mt-8">
-              <div className="w-12 h-12 border-4 border-[rgba(255,107,107,0.3)] border-t-[#FF6B6B] rounded-full animate-spin"></div>
+            <div className="flex justify-center mt-6 sm:mt-8">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-[rgba(255,107,107,0.3)] border-t-[#FF6B6B] rounded-full animate-spin"></div>
             </div>
           )}
 
           {/* Results */}
           {showResults && (
-            <div className="mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="mt-4 sm:mt-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {/* AI Detected Ingredients */}
                 <div 
                   className="bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)] hover:translate-y-[-5px] hover:shadow-[0_15px_35px_rgba(0,0,0,0.15)]"
@@ -624,10 +650,10 @@ const AIResponsePage: FC = () => {
 
               {/* Done Button - Only show when we have complete results */}
               {instructions && resources && !loadingResources && (
-                <div className="mt-8 flex justify-center">
+                <div className="mt-6 sm:mt-8 flex justify-center">
                     <button
                     onClick={() => window.location.href = '/history'}
-                    className="bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white font-bold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-[#FF5A5A] hover:to-[#FF7A3A] transform hover:-translate-y-1 text-lg"
+                    className="bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-[#FF5A5A] hover:to-[#FF7A3A] transform hover:-translate-y-1 text-base sm:text-lg"
                   >
                     ✅ Done - View in History
                     </button>

@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://your-backend-app.onrender.com/api/$1"
+      "destination": "https://meallens-ai.onrender.com/api/$1"
     }
   ],
   "headers": [
@@ -30,6 +30,6 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "https://your-backend-app.onrender.com"
+    "VITE_API_URL": "https://meallens-ai.onrender.com"
   }
 } 

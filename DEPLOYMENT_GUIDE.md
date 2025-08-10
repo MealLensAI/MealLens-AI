@@ -70,11 +70,10 @@ CORS_ORIGINS=https://your-frontend-app.vercel.app,http://localhost:5173
 Set these environment variables in Vercel:
 
 ```bash
-VITE_API_URL=https://your-backend-app.onrender.com
+VITE_API_URL=https://meallens-ai.onrender.com
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_PAYSTACK_PUBLIC_KEY=your_paystack_public_key
-```
 
 ### Step 4: Domain Configuration
 - Vercel will provide a `.vercel.app` domain
@@ -89,7 +88,7 @@ The `vercel.json` file includes API proxying to route `/api/*` requests to your 
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://your-backend-app.onrender.com/api/$1"
+      "destination": "https://meallens-ai.onrender.com/api/$1"
     }
   ]
 }
@@ -179,8 +178,8 @@ Both Render and Vercel support automatic deployments:
 
 After deployment, you'll have:
 - **Frontend**: `https://your-app-name.vercel.app`
-- **Backend**: `https://your-backend-app.onrender.com`
-- **Health Check**: `https://your-backend-app.onrender.com/health`
+- **Backend**: `https://meallens-ai.onrender.com`
+- **Health Check**: `https://meallens-ai.onrender.com/health`
 
 ## 📞 Support
 

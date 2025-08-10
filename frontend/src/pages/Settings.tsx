@@ -1,86 +1,145 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/utils';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { useNavigate } from 'react-router-dom';
+import { api } from '@/lib/api';
 import { 
-  Bell, 
-  Download, 
-  Shield, 
-  User, 
-  CreditCard, 
-  LogOut, 
+  ArrowLeft, 
   Settings as SettingsIcon,
-  Eye,
-  EyeOff,
-  Mail,
-  Lock,
-  Globe,
-  Palette,
-  Moon,
+  User, 
+  Bell, 
+  Globe, 
+  Type, 
+  Bold, 
+  Moon, 
   Sun,
-  Monitor,
-  Zap,
   Crown,
   Clock,
+  Shield,
+  CreditCard,
+  LogOut,
+  Save,
   CheckCircle
 } from 'lucide-react';
-import UsageDashboard from '@/components/UsageDashboard';
 
-const Settings = () => {
+interface SettingsData {
+  language: string;
+  textSize: string;
+  boldText: boolean;
+  notifications: {
+    email: boolean;
+    push: boolean;
+    mealReminders: boolean;
+    weeklyReports: boolean;
+  };
+  theme: 'light' | 'dark' | 'auto';
+}
+
+const Settings: React.FC = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const { subscription, isInTrial, getTrialDaysLeft } = useSubscription();
-  const navigate = useNavigate();
+  
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [settings, setSettings] = useState<SettingsData>({
+    language: 'en',
+    textSize: 'medium',
+    boldText: false,
+    notifications: {
+      email: true,
+      push: true,
+      mealReminders: true,
+      weeklyReports: false,
+    },
+    theme: 'light'
+  });
 
-  // Notification settings
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [mealReminders, setMealReminders] = useState(true);
-  const [marketingEmails, setMarketingEmails] = useState(false);
+  // Load settings from localStorage or API
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('meallens-settings');
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        setSettings(prev => ({ ...prev, ...parsed }));
+      } catch (error) {
+        console.error('Error parsing saved settings:', error);
+      }
+    }
+  }, []);
 
-  // Privacy settings
-  const [profileVisibility, setProfileVisibility] = useState('public');
-  const [dataSharing, setDataSharing] = useState(false);
-  const [analyticsTracking, setAnalyticsTracking] = useState(true);
+  // Save settings to localStorage
+  const saveSettings = async () => {
+    setSaving(true);
+    try {
+      localStorage.setItem('meallens-settings', JSON.stringify(settings));
+      
+      // Apply theme
+      if (settings.theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else if (settings.theme === 'light') {
+        document.documentElement.classList.remove('dark');
+      } else {
+        // Auto theme - check system preference
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
 
-  // Theme settings
-  const [theme, setTheme] = useState('system');
+      // Apply text size
+      const textSizeMap = {
+        small: 'text-sm',
+        medium: 'text-base',
+        large: 'text-lg',
+        xlarge: 'text-xl'
+      };
+      
+      // Remove existing text size classes
+      document.body.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
+      // Add new text size class
+      document.body.classList.add(textSizeMap[settings.textSize as keyof typeof textSizeMap]);
 
-  const handleSaveNotifications = () => {
-    toast({
-      title: "Settings Saved",
-      description: "Your notification preferences have been updated.",
-    });
-  };
+      // Apply bold text
+      if (settings.boldText) {
+        document.body.classList.add('font-bold');
+      } else {
+        document.body.classList.remove('font-bold');
+      }
 
-  const handleSavePrivacy = () => {
-    toast({
-      title: "Privacy Updated",
-      description: "Your privacy settings have been saved.",
-    });
-  };
-
-  const handleExportData = () => {
-    toast({
-      title: "Data Export",
-      description: "Your data export has been initiated. You'll receive an email when it's ready.",
-    });
+      toast({
+        title: "Settings Saved",
+        description: "Your preferences have been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSignOut = async () => {
     try {
       await signOut();
+      navigate('/');
       toast({
         title: "Signed Out",
         description: "You have been successfully signed out.",
       });
-      navigate('/login');
     } catch (error) {
       toast({
         title: "Error",
@@ -90,73 +149,236 @@ const Settings = () => {
     }
   };
 
+  const updateSettings = (key: keyof SettingsData, value: any) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const updateNotificationSettings = (key: keyof SettingsData['notifications'], value: boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      notifications: { ...prev.notifications, [key]: value }
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-xl flex items-center justify-center">
-              <SettingsIcon className="h-5 w-5 text-white" />
-            </div>
+        <div className="flex items-center gap-4 mb-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <div>
             <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+            <p className="text-gray-600">Customize your MealLensAI experience</p>
           </div>
-          <p className="text-gray-600">
-            Manage your account settings, preferences, and privacy
-          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Settings */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Account Section */}
+            {/* Appearance Settings */}
+            <Card className="bg-white shadow-sm border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-[#FF6B6B]" />
+                  Appearance & Accessibility
+                </CardTitle>
+                <CardDescription>
+                  Customize how MealLensAI looks and feels
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Language */}
+                <div className="space-y-2">
+                  <Label htmlFor="language">Language</Label>
+                  <Select value={settings.language} onValueChange={(value) => updateSettings('language', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Español</SelectItem>
+                      <SelectItem value="fr">Français</SelectItem>
+                      <SelectItem value="de">Deutsch</SelectItem>
+                      <SelectItem value="it">Italiano</SelectItem>
+                      <SelectItem value="pt">Português</SelectItem>
+                      <SelectItem value="ru">Русский</SelectItem>
+                      <SelectItem value="zh">中文</SelectItem>
+                      <SelectItem value="ja">日本語</SelectItem>
+                      <SelectItem value="ko">한국어</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Text Size */}
+                <div className="space-y-2">
+                  <Label htmlFor="textSize">Text Size</Label>
+                  <Select value={settings.textSize} onValueChange={(value) => updateSettings('textSize', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select text size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="small">Small</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="large">Large</SelectItem>
+                      <SelectItem value="xlarge">Extra Large</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Bold Text */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="boldText">Bold Text</Label>
+                    <p className="text-sm text-gray-500">Make text easier to read</p>
+                  </div>
+                  <Switch
+                    id="boldText"
+                    checked={settings.boldText}
+                    onCheckedChange={(checked) => updateSettings('boldText', checked)}
+                  />
+                </div>
+
+                {/* Theme */}
+                <div className="space-y-2">
+                  <Label htmlFor="theme">Theme</Label>
+                  <Select value={settings.theme} onValueChange={(value) => updateSettings('theme', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select theme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">
+                        <div className="flex items-center gap-2">
+                          <Sun className="h-4 w-4" />
+                          Light
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="dark">
+                        <div className="flex items-center gap-2">
+                          <Moon className="h-4 w-4" />
+                          Dark
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="auto">
+                        <div className="flex items-center gap-2">
+                          <Globe className="h-4 w-4" />
+                          Auto (System)
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Notification Settings */}
+            <Card className="bg-white shadow-sm border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-[#FF6B6B]" />
+                  Notifications
+                </CardTitle>
+                <CardDescription>
+                  Choose what notifications you want to receive
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="emailNotifications">Email Notifications</Label>
+                    <p className="text-sm text-gray-500">Receive updates via email</p>
+                  </div>
+                  <Switch
+                    id="emailNotifications"
+                    checked={settings.notifications.email}
+                    onCheckedChange={(checked) => updateNotificationSettings('email', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="pushNotifications">Push Notifications</Label>
+                    <p className="text-sm text-gray-500">Receive notifications on your device</p>
+                  </div>
+                  <Switch
+                    id="pushNotifications"
+                    checked={settings.notifications.push}
+                    onCheckedChange={(checked) => updateNotificationSettings('push', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="mealReminders">Meal Reminders</Label>
+                    <p className="text-sm text-gray-500">Get reminded about meal times</p>
+                  </div>
+                  <Switch
+                    id="mealReminders"
+                    checked={settings.notifications.mealReminders}
+                    onCheckedChange={(checked) => updateNotificationSettings('mealReminders', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="weeklyReports">Weekly Reports</Label>
+                    <p className="text-sm text-gray-500">Receive weekly nutrition summaries</p>
+                  </div>
+                  <Switch
+                    id="weeklyReports"
+                    checked={settings.notifications.weeklyReports}
+                    onCheckedChange={(checked) => updateNotificationSettings('weeklyReports', checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Save Button */}
+            <div className="flex justify-end">
+              <Button
+                onClick={saveSettings}
+                disabled={saving}
+                className="bg-[#FF6B6B] hover:bg-[#FF5252]"
+              >
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Settings
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Account Info */}
             <Card className="bg-white shadow-sm border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5 text-[#FF6B6B]" />
                   Account
                 </CardTitle>
-                <CardDescription>
-                  Manage your account information and profile
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                      <User className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Profile & Health</h3>
-                      <p className="text-sm text-gray-600">Manage personal info and health conditions</p>
-                    </div>
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-full flex items-center justify-center text-white text-xl font-bold mx-auto mb-3">
+                    {user?.email?.charAt(0).toUpperCase()}
                   </div>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate('/profile')}
-                    className="bg-white"
-                  >
-                    Manage
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                      <CreditCard className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Payment & Subscription</h3>
-                      <p className="text-sm text-gray-600">Manage billing and subscription</p>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate('/payment')}
-                    className="bg-white"
-                  >
-                    Manage
-                  </Button>
+                  <p className="font-semibold text-gray-900">{user?.email}</p>
+                  <p className="text-sm text-gray-500">Member since {new Date().toLocaleDateString()}</p>
                 </div>
               </CardContent>
             </Card>
@@ -166,252 +388,57 @@ const Settings = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Crown className="h-5 w-5 text-yellow-600" />
-                  Subscription Status
+                  Subscription
                 </CardTitle>
-                <CardDescription>
-                  View your current subscription and usage
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Current Status */}
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-                    <div className="flex items-center gap-3">
-                      {subscription?.subscription?.status === 'active' ? (
-                        <CheckCircle className="h-6 w-6 text-[#FF6B6B]" />
-                      ) : isInTrial() ? (
-                        <Clock className="h-6 w-6 text-orange-600" />
-                      ) : (
-                        <Shield className="h-6 w-6 text-gray-600" />
-                      )}
-                      <div>
-                        <h3 className="font-semibold">
-                          {subscription?.subscription?.status === 'active' ? 'Premium Active' :
-                           isInTrial() ? `Free Trial - ${getTrialDaysLeft()} days left` :
-                           'Free Plan'}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {subscription?.subscription?.status === 'active' ? 
-                            `Renews ${subscription.subscription.current_period_end ? 
-                              new Date(subscription.subscription.current_period_end).toLocaleDateString() : 
-                              'Unknown'
-                            }` :
-                           isInTrial() ? 'Upgrade to continue using premium features' :
-                           'Limited features available'
-                          }
-                        </p>
-                      </div>
-                    </div>
-                    {!subscription?.subscription?.status === 'active' && (
-                      <Button 
-                        onClick={() => navigate('/payment')}
-                        className="bg-[#FF6B6B] hover:bg-[#FF5252]"
-                      >
-                        {isInTrial() ? 'Upgrade' : 'Get Premium'}
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Usage Dashboard */}
-                  <UsageDashboard />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Notifications */}
-            <Card className="bg-white shadow-sm border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5 text-orange-600" />
-                  Notifications
-                </CardTitle>
-                <CardDescription>
-                  Manage your notification preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-base font-medium">Email Notifications</Label>
-                      <p className="text-sm text-gray-600">Receive updates via email</p>
-                    </div>
-                    <Switch
-                      checked={emailNotifications}
-                      onCheckedChange={setEmailNotifications}
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-base font-medium">Push Notifications</Label>
-                      <p className="text-sm text-gray-600">Get real-time notifications</p>
-                    </div>
-                    <Switch
-                      checked={pushNotifications}
-                      onCheckedChange={setPushNotifications}
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-base font-medium">Meal Reminders</Label>
-                      <p className="text-sm text-gray-600">Daily meal plan reminders</p>
-                    </div>
-                    <Switch
-                      checked={mealReminders}
-                      onCheckedChange={setMealReminders}
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-base font-medium">Marketing Emails</Label>
-                      <p className="text-sm text-gray-600">Receive promotional content</p>
-                    </div>
-                    <Switch
-                      checked={marketingEmails}
-                      onCheckedChange={setMarketingEmails}
-                    />
-                  </div>
-                </div>
-
-                <Button onClick={handleSaveNotifications} className="w-full bg-[#FF6B6B] hover:bg-[#FF5252]">
-                  Save Notification Settings
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Privacy & Security */}
-            <Card className="bg-white shadow-sm border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-[#FF6B6B]" />
-                  Privacy & Security
-                </CardTitle>
-                <CardDescription>
-                  Control your privacy and security settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-base font-medium">Profile Visibility</Label>
-                      <p className="text-sm text-gray-600">Control who can see your profile</p>
-                    </div>
-                    <select 
-                      value={profileVisibility}
-                      onChange={(e) => setProfileVisibility(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                    >
-                      <option value="public">Public</option>
-                      <option value="private">Private</option>
-                      <option value="friends">Friends Only</option>
-                    </select>
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-base font-medium">Data Sharing</Label>
-                      <p className="text-sm text-gray-600">Allow data sharing for research</p>
-                    </div>
-                    <Switch
-                      checked={dataSharing}
-                      onCheckedChange={setDataSharing}
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-base font-medium">Analytics Tracking</Label>
-                      <p className="text-sm text-gray-600">Help improve the app with analytics</p>
-                    </div>
-                    <Switch
-                      checked={analyticsTracking}
-                      onCheckedChange={setAnalyticsTracking}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Button onClick={handleSavePrivacy} className="w-full bg-[#FF6B6B] hover:bg-[#FF5252]">
-                    Save Privacy Settings
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={handleExportData}
-                    className="w-full"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export My Data
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Appearance */}
-            <Card className="bg-white shadow-sm border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette className="h-5 w-5 text-[#FF6B6B]" />
-                  Appearance
-                </CardTitle>
-                <CardDescription>
-                  Customize the app's appearance
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-base font-medium">Theme</Label>
-                    <p className="text-sm text-gray-600">Choose your preferred theme</p>
+                {subscription?.subscription?.status === 'active' ? (
+                  <div className="text-center">
+                    <CheckCircle className="h-8 w-8 text-[#FF6B6B] mx-auto mb-2" />
+                    <p className="font-semibold text-green-800">Active Subscription</p>
+                    <p className="text-sm text-gray-600">
+                      {subscription.plan?.display_name}
+                    </p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant={theme === 'light' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setTheme('light')}
+                ) : isInTrial() ? (
+                  <div className="text-center">
+                    <Clock className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                    <p className="font-semibold text-orange-800">Free Trial</p>
+                    <p className="text-sm text-gray-600">
+                      {getTrialDaysLeft()} days remaining
+                    </p>
+                    <Button 
+                      onClick={() => navigate('/payment')}
+                      className="w-full mt-3 bg-[#FF6B6B] hover:bg-[#FF5252]"
                     >
-                      <Sun className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant={theme === 'dark' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setTheme('dark')}
-                    >
-                      <Moon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant={theme === 'system' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setTheme('system')}
-                    >
-                      <Monitor className="h-4 w-4" />
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Upgrade Now
                     </Button>
                   </div>
-                </div>
+                ) : (
+                  <div className="text-center">
+                    <Shield className="h-8 w-8 text-gray-600 mx-auto mb-2" />
+                    <p className="font-semibold text-gray-800">Free Plan</p>
+                    <p className="text-sm text-gray-600">
+                      Limited features
+                    </p>
+                    <Button 
+                      onClick={() => navigate('/payment')}
+                      className="w-full mt-3 bg-[#FF6B6B] hover:bg-[#FF5252]"
+                    >
+                      <Crown className="h-4 w-4 mr-2" />
+                      Get Premium
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
             {/* Quick Actions */}
             <Card className="bg-white shadow-sm border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-yellow-600" />
+                  <SettingsIcon className="h-5 w-5 text-gray-600" />
                   Quick Actions
                 </CardTitle>
               </CardHeader>
@@ -430,28 +457,9 @@ const Settings = () => {
                   onClick={() => navigate('/payment')}
                 >
                   <CreditCard className="h-4 w-4 mr-2" />
-                  Manage Billing
+                  Billing
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={handleExportData}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export Data
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Account Actions */}
-            <Card className="bg-white shadow-sm border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-red-600" />
-                  Account Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+                <Separator />
                 <Button
                   variant="outline"
                   className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -459,29 +467,6 @@ const Settings = () => {
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign Out
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Support */}
-            <Card className="bg-white shadow-sm border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5 text-[#FF6B6B]" />
-                  Support
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-gray-600">
-                  Need help? Contact our support team for assistance.
-                </p>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => window.open('mailto:support@meallensai.com', '_blank')}
-                >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Contact Support
                 </Button>
               </CardContent>
             </Card>

@@ -99,6 +99,10 @@ export default function ProfilePage() {
   const [allergies, setAllergies] = useState<string[]>([])
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([])
   const [medicalHistory, setMedicalHistory] = useState<string[]>([])
+  const [hasIllness, setHasIllness] = useState(false)
+  const [illnessName, setIllnessName] = useState("")
+  const [dateOfBirth, setDateOfBirth] = useState("")
+  const [profileImage, setProfileImage] = useState<string | null>(null)
   const [emergencyContact, setEmergencyContact] = useState({
     name: "",
     phone: "",
@@ -289,6 +293,31 @@ export default function ProfilePage() {
     })
   }
 
+  // Calculate age from date of birth
+  const calculateAge = (birthDate: string) => {
+    if (!birthDate) return 0
+    const today = new Date()
+    const birth = new Date(birthDate)
+    let age = today.getFullYear() - birth.getFullYear()
+    const monthDiff = today.getMonth() - birth.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--
+    }
+    return age
+  }
+
+  // Handle profile image upload
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setProfileImage(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   // Loading state
   if (loading) {
     return <LoadingScreen message="Loading profile..." />
@@ -322,17 +351,38 @@ export default function ProfilePage() {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
                   {/* Avatar */}
                   <div className="relative">
-                    <div className="w-20 h-20 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                      {getInitials()}
-                    </div>
+                    {profileImage ? (
+                      <div className="w-20 h-20 rounded-full overflow-hidden">
+                        <img 
+                          src={profileImage} 
+                          alt="Profile" 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        {getInitials()}
+                      </div>
+                    )}
                     {isEditing && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full p-0"
-                      >
-                        <Camera className="h-4 w-4" />
-                      </Button>
+                      <div className="absolute -bottom-1 -right-1">
+                        <input
+                          type="file"
+                          id="profile-image"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                        <label htmlFor="profile-image">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-8 h-8 rounded-full p-0 cursor-pointer bg-white hover:bg-gray-50"
+                          >
+                            <Camera className="h-4 w-4" />
+                          </Button>
+                        </label>
+                      </div>
                     )}
                   </div>
 
@@ -477,7 +527,35 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Gender and Age */}
+                {/* Date of Birth and Age */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                    <Input
+                      id="dateOfBirth"
+                      type="date"
+                      value={dateOfBirth}
+                      onChange={(e) => {
+                        setDateOfBirth(e.target.value)
+                        setAge(calculateAge(e.target.value))
+                      }}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="age">Age</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      value={age}
+                      onChange={(e) => setAge(parseInt(e.target.value) || 0)}
+                      disabled={!isEditing}
+                      placeholder="Enter your age"
+                    />
+                  </div>
+                </div>
+
+                {/* Gender and Weight */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="gender">Gender</Label>
@@ -494,16 +572,72 @@ export default function ProfilePage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="age">Age</Label>
+                    <Label htmlFor="weight">Weight (kg)</Label>
                     <Input
-                      id="age"
+                      id="weight"
                       type="number"
-                      value={age}
-                      onChange={(e) => setAge(parseInt(e.target.value) || 0)}
+                      value={weight}
+                      onChange={(e) => setWeight(parseFloat(e.target.value) || 0)}
                       disabled={!isEditing}
-                      placeholder="Enter your age"
+                      placeholder="Enter your weight"
                     />
                   </div>
+                </div>
+
+                {/* Height and Currency */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="height">Height (cm)</Label>
+                    <Input
+                      id="height"
+                      type="number"
+                      value={height}
+                      onChange={(e) => setHeight(parseFloat(e.target.value) || 0)}
+                      disabled={!isEditing}
+                      placeholder="Enter your height"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="currency">Currency</Label>
+                    <Select value={currency} onValueChange={setCurrency} disabled={!isEditing}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="USD">USD ($)</SelectItem>
+                        <SelectItem value="EUR">EUR (€)</SelectItem>
+                        <SelectItem value="GBP">GBP (£)</SelectItem>
+                        <SelectItem value="NGN">NGN (₦)</SelectItem>
+                        <SelectItem value="CAD">CAD (C$)</SelectItem>
+                        <SelectItem value="AUD">AUD (A$)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Illness Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="hasIllness"
+                      checked={hasIllness}
+                      onCheckedChange={setHasIllness}
+                      disabled={!isEditing}
+                    />
+                    <Label htmlFor="hasIllness">Do you have any illnesses?</Label>
+                  </div>
+                  {hasIllness && (
+                    <div className="space-y-2">
+                      <Label htmlFor="illnessName">Illness Name(s)</Label>
+                      <Input
+                        id="illnessName"
+                        value={illnessName}
+                        onChange={(e) => setIllnessName(e.target.value)}
+                        disabled={!isEditing}
+                        placeholder="Enter illness name(s)"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <Separator />

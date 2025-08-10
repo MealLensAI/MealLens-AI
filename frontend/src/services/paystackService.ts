@@ -71,6 +71,7 @@ class PaystackService {
         currency: config.currency,
         reference: config.reference,
         callback_url: config.callback_url,
+        plan_id: config.metadata?.plan_id,
         metadata: config.metadata
       });
 
@@ -78,6 +79,27 @@ class PaystackService {
     } catch (error) {
       console.error('Error initializing payment:', error);
       throw new Error('Failed to initialize payment');
+    }
+  }
+
+  /**
+   * Process payment in-app (without external redirects)
+   */
+  async processInAppPayment(paymentData: {
+    plan_id: string;
+    amount: number;
+    currency: string;
+    billing_cycle: string;
+    payment_method: string;
+    card_data: any;
+    customer: any;
+  }): Promise<any> {
+    try {
+      const response = await api.post('/payment/process-in-app', paymentData);
+      return response;
+    } catch (error) {
+      console.error('Error processing in-app payment:', error);
+      throw new Error('Failed to process payment');
     }
   }
 
@@ -195,8 +217,8 @@ class PaystackService {
   /**
    * Format currency amount
    */
-  formatAmount(amount: number, currency: string = 'NGN'): string {
-    const formatter = new Intl.NumberFormat('en-NG', {
+  formatAmount(amount: number, currency: string = 'USD'): string {
+    const formatter = new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 0,

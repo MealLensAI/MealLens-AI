@@ -21,6 +21,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import LoadingScreen from '@/components/LoadingScreen';
+import InAppPayment from '@/components/InAppPayment';
 
 const Payment: React.FC = () => {
   const { toast } = useToast();
@@ -34,62 +35,33 @@ const Payment: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showInAppPayment, setShowInAppPayment] = useState(false);
 
   // Get current plan
   const currentPlan = subscription?.plan;
 
   // Handle payment processing
   const handlePayment = async (plan: SubscriptionPlan) => {
-    if (!user?.email) {
-      toast({
-        title: "Error",
-        description: "User email not found",
-        variant: "destructive",
-      });
-      return;
-    }
+    setSelectedPlan(plan);
+    setShowInAppPayment(true);
+  };
 
-    setIsProcessing(true);
-    setShowError(false);
+  // Handle payment success
+  const handlePaymentSuccess = async () => {
+    setShowInAppPayment(false);
+    setShowSuccess(true);
+    await refreshSubscription();
+    
+    // Redirect to dashboard after a moment
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 3000);
+  };
 
-    try {
-      const amount = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
-      const reference = paystackService.generateReference();
-      
-      // Initialize payment
-      const paymentResponse = await paystackService.initializePayment({
-        publicKey: paystackService.getPublicKey(),
-        email: user.email,
-        amount: amount * 100, // Convert to kobo
-        currency: plan.currency || 'NGN',
-        reference,
-        callback_url: `${window.location.origin}/payment/success`,
-        metadata: {
-          plan_id: plan.id,
-          plan_name: plan.name,
-          billing_cycle: billingCycle,
-          user_id: user.uid
-        }
-      });
-
-      if (paymentResponse.status === 'success' && paymentResponse.data?.authorization_url) {
-        // Redirect to Paystack payment page
-        window.location.href = paymentResponse.data.authorization_url;
-      } else {
-        throw new Error(paymentResponse.message || 'Failed to initialize payment');
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      setErrorMessage(error instanceof Error ? error.message : 'Payment failed');
-      setShowError(true);
-      toast({
-        title: "Payment Failed",
-        description: "Unable to process payment. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
+  // Handle payment cancel
+  const handlePaymentCancel = () => {
+    setShowInAppPayment(false);
+    setSelectedPlan(null);
   };
 
   // Handle plan selection
@@ -410,6 +382,20 @@ const Payment: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* In-App Payment Modal */}
+      {showInAppPayment && selectedPlan && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <InAppPayment
+              plan={selectedPlan}
+              billingCycle={billingCycle}
+              onSuccess={handlePaymentSuccess}
+              onCancel={handlePaymentCancel}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

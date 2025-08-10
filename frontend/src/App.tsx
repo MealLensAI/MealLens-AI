@@ -19,11 +19,12 @@ import { AuthProvider } from "@/lib/AuthProvider"
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext"
 import Payment from "./pages/Payment"
 import ProfilePage from "./pages/ProfilePage"
-import SettingsPage from "./pages/SettingsPage"
+import Settings from "./pages/Settings"
 import WelcomePage from "./pages/WelcomePage"
 import OnboardingPage from "./pages/OnboardingPage"
 import LaunchCountdown from "./components/LaunchCountdown"
 import LoadingScreen from "./components/LoadingScreen"
+import AdminPanel from "./components/AdminPanel"
 
 // Launch countdown wrapper component
 const LaunchCountdownWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -174,8 +175,16 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <MainLayout>
-          <SettingsPage />
+          <Settings />
         </MainLayout>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute>
+        <AdminPanel />
       </ProtectedRoute>
     )
   },
@@ -185,8 +194,7 @@ const router = createBrowserRouter([
   }
 ], {
   future: {
-    v7_relativeSplatPath: true,
-    v7_startTransition: true
+    v7_relativeSplatPath: true
   }
 })
 

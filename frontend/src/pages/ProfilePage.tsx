@@ -27,7 +27,13 @@ import {
   CheckCircle,
   Camera,
   Settings,
-  CreditCard
+  CreditCard,
+  Globe,
+  MapPin,
+  Phone,
+  Heart,
+  Weight,
+  Ruler
 } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { Loader2 } from "lucide-react"
@@ -111,7 +117,7 @@ export default function ProfilePage() {
     relationship: ""
   })
 
-  // Countries list
+  // Countries list (shortened for space)
   const countries = [
     'United States', 'Canada', 'United Kingdom', 'Germany', 'France', 'Spain', 'Italy', 'Netherlands', 'Belgium', 'Switzerland',
     'Austria', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Poland', 'Czech Republic', 'Hungary', 'Romania', 'Bulgaria',
@@ -509,7 +515,7 @@ export default function ProfilePage() {
     <div className="h-screen bg-gradient-to-br from-slate-50 to-gray-100 overflow-hidden">
       <div className="h-full flex flex-col">
         {/* Header */}
-        <div className="flex items-center gap-4 p-6 bg-white border-b border-gray-200">
+        <div className="flex items-center gap-4 p-4 bg-white border-b border-gray-200">
           <Button
             variant="ghost"
             size="sm"
@@ -519,20 +525,55 @@ export default function ProfilePage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-            <p className="text-sm text-gray-600">Manage your account information and preferences</p>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-gray-900">Profile</h1>
+            <p className="text-sm text-gray-600">Manage your account information</p>
           </div>
+          {isEditing ? (
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSave}
+                disabled={saving}
+                size="sm"
+                className="bg-[#FF6B6B] hover:bg-[#FF5252]"
+              >
+                {saving ? (
+                  <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-3 w-3 mr-2" />
+                )}
+                Save
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleCancel}
+                disabled={saving}
+                size="sm"
+              >
+                <X className="h-3 w-3 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={() => setIsEditing(true)}
+              variant="outline"
+              size="sm"
+            >
+              <Edit3 className="h-3 w-3 mr-2" />
+              Edit
+            </Button>
+          )}
         </div>
 
         {/* Main Content */}
         <div className="flex-1 overflow-hidden">
-          <div className="h-full grid grid-cols-1 lg:grid-cols-4 gap-6 p-6">
-            {/* Profile Header Card */}
-            <div className="lg:col-span-4">
+          <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
+            {/* Profile Header */}
+            <div className="lg:col-span-3">
               <Card className="bg-white shadow-sm border-0">
                 <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="flex items-center gap-4">
                     {/* Avatar */}
                     <div className="relative">
                       {profileImage ? (
@@ -572,78 +613,36 @@ export default function ProfilePage() {
 
                     {/* User Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div>
-                          <h2 className="text-xl font-bold text-gray-900">
-                            {firstName} {lastName}
-                          </h2>
-                          <p className="text-gray-600 flex items-center gap-2 text-sm">
-                            <Mail className="h-3 w-3" />
-                            {email}
-                          </p>
-                          <p className="text-xs text-gray-500 flex items-center gap-2">
-                            <Calendar className="h-3 w-3" />
-                            Member since {getMemberSince()}
-                          </p>
-                        </div>
-
-                        {/* Subscription Status */}
-                        <div className="flex flex-col gap-2">
-                          {subscription?.subscription?.status === 'active' ? (
-                            <Badge className="bg-[#FF6B6B]/10 text-[#FF6B6B] border-[#FF6B6B]/20 text-xs">
-                              <Crown className="h-3 w-3 mr-1" />
-                              Premium Member
-                            </Badge>
-                          ) : isInTrial() ? (
-                            <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">
-                              <Clock className="h-3 w-3 mr-1" />
-                              Trial - {getTrialDaysLeft()} days left
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-gray-600 text-xs">
-                              <Shield className="h-3 w-3 mr-1" />
-                              Free Plan
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
+                      <h2 className="text-xl font-bold text-gray-900">
+                        {firstName} {lastName}
+                      </h2>
+                      <p className="text-gray-600 flex items-center gap-2 text-sm">
+                        <Mail className="h-3 w-3" />
+                        {email}
+                      </p>
+                      <p className="text-xs text-gray-500 flex items-center gap-2">
+                        <Calendar className="h-3 w-3" />
+                        Member since {getMemberSince()}
+                      </p>
                     </div>
 
-                    {/* Edit Button */}
-                    <div className="flex gap-2">
-                      {isEditing ? (
-                        <>
-                          <Button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="bg-[#FF6B6B] hover:bg-[#FF5252] text-sm"
-                          >
-                            {saving ? (
-                              <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                            ) : (
-                              <Save className="h-3 w-3 mr-2" />
-                            )}
-                            Save
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={handleCancel}
-                            disabled={saving}
-                            className="text-sm"
-                          >
-                            <X className="h-3 w-3 mr-2" />
-                            Cancel
-                          </Button>
-                        </>
+                    {/* Subscription Status */}
+                    <div className="flex flex-col gap-2">
+                      {subscription?.subscription?.status === 'active' ? (
+                        <Badge className="bg-[#FF6B6B]/10 text-[#FF6B6B] border-[#FF6B6B]/20 text-xs">
+                          <Crown className="h-3 w-3 mr-1" />
+                          Premium
+                        </Badge>
+                      ) : isInTrial() ? (
+                        <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Trial - {getTrialDaysLeft()}d
+                        </Badge>
                       ) : (
-                        <Button
-                          onClick={() => setIsEditing(true)}
-                          variant="outline"
-                          className="text-sm"
-                        >
-                          <Edit3 className="h-3 w-3 mr-2" />
-                          Edit Profile
-                        </Button>
+                        <Badge variant="outline" className="text-gray-600 text-xs">
+                          <Shield className="h-3 w-3 mr-1" />
+                          Free
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -652,16 +651,13 @@ export default function ProfilePage() {
             </div>
 
             {/* Personal Information */}
-            <div className="lg:col-span-3 space-y-4 overflow-y-auto">
+            <div className="lg:col-span-2 space-y-4 overflow-y-auto">
               <Card className="bg-white shadow-sm border-0">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <User className="h-5 w-5 text-[#FF6B6B]" />
                     Personal Information
                   </CardTitle>
-                  <CardDescription className="text-sm">
-                    Update your personal details and contact information
-                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Name Fields */}
@@ -839,7 +835,10 @@ export default function ProfilePage() {
 
                   {/* Address Information */}
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Address Information</h3>
+                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-[#FF6B6B]" />
+                      Address Information
+                    </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="country" className="text-sm font-medium">Country</Label>

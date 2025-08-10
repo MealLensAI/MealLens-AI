@@ -280,7 +280,7 @@ def initialize_payment():
         metadata={
             'user_id': user_id,
             'plan_id': plan_id,
-            'amount_ngn': amount
+            'amount_usd': amount
         }
     )
     
@@ -290,7 +290,7 @@ def initialize_payment():
             'id': result['data']['id'],
             'reference': reference,
             'amount': amount_kobo,
-            'currency': 'NGN',
+            'currency': 'USD',
             'status': 'pending',
             'description': f'Subscription payment for plan {plan_id}'
         }
@@ -514,4 +514,119 @@ def upgrade_subscription():
         return jsonify({
             'status': 'error',
             'message': str(e)
+        }), 500 
+
+@payment_bp.route('/process-in-app', methods=['POST'])
+def process_in_app_payment():
+    """Process payment entirely within the app without external redirects."""
+    user_id = authenticate_user()
+    if not user_id:
+        return jsonify({
+            'status': 'error',
+            'message': 'Authentication required'
+        }), 401
+    
+    payment_service = get_payment_service()
+    if not payment_service:
+        return jsonify({
+            'status': 'error',
+            'message': 'Payment service not configured'
+        }), 500
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({
+            'status': 'error',
+            'message': 'Request data required'
+        }), 400
+    
+    plan_id = data.get('plan_id')
+    amount = data.get('amount')
+    currency = data.get('currency', 'USD')
+    billing_cycle = data.get('billing_cycle')
+    payment_method = data.get('payment_method')
+    card_data = data.get('card_data', {})
+    customer = data.get('customer', {})
+    
+    if not all([plan_id, amount, billing_cycle]):
+        return jsonify({
+            'status': 'error',
+            'message': 'Plan ID, amount, and billing cycle are required'
+        }), 400
+    
+    try:
+        # Generate unique transaction ID
+        transaction_id = f"inapp_{user_id}_{uuid.uuid4().hex[:8]}"
+        reference = f"ML_{user_id}_{uuid.uuid4().hex[:8]}"
+        
+        # In a real implementation, you would integrate with a payment processor here
+        # For now, we'll simulate a successful payment
+        
+        # Simulate payment processing delay
+        import time
+        time.sleep(2)  # Simulate processing time
+        
+        # Simulate payment success (in real implementation, verify with payment processor)
+        payment_successful = True
+        
+        if payment_successful:
+            # Save transaction record
+            transaction_data = {
+                'id': transaction_id,
+                'reference': reference,
+                'amount': amount * 100,  # Convert to cents
+                'currency': currency,
+                'status': 'success',
+                'payment_method': payment_method,
+                'description': f'In-app subscription payment for plan {plan_id}',
+                'metadata': {
+                    'plan_id': plan_id,
+                    'billing_cycle': billing_cycle,
+                    'card_last4': card_data.get('last4'),
+                    'card_brand': card_data.get('brand'),
+                    'customer_email': customer.get('email'),
+                    'customer_name': customer.get('name')
+                }
+            }
+            
+            # Save to database
+            payment_service.save_payment_transaction(user_id, transaction_data)
+            
+            # Create or update user subscription
+            subscription_result = payment_service.create_user_subscription(
+                user_id=user_id,
+                plan_id=plan_id,
+                paystack_data={
+                    'transaction_id': transaction_id,
+                    'reference': reference,
+                    'billing_cycle': billing_cycle
+                }
+            )
+            
+            if subscription_result['success']:
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Payment processed successfully',
+                    'data': {
+                        'transaction_id': transaction_id,
+                        'reference': reference,
+                        'subscription': subscription_result['data']
+                    }
+                }), 200
+            else:
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Payment processed but failed to activate subscription'
+                }), 500
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Payment processing failed'
+            }), 400
+            
+    except Exception as e:
+        print(f"Error in process_in_app_payment: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Payment processing error: {str(e)}'
         }), 500 

@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/utils';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -27,20 +28,43 @@ import {
   CreditCard,
   LogOut,
   Save,
-  CheckCircle
+  CheckCircle,
+  Eye,
+  Volume2,
+  Smartphone,
+  Mail,
+  Palette,
+  Accessibility,
+  Zap,
+  Lock,
+  Database,
+  Download,
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 
 interface SettingsData {
   language: string;
-  textSize: string;
+  textSize: number; // Changed to number for slider
   boldText: boolean;
   notifications: {
     email: boolean;
     push: boolean;
     mealReminders: boolean;
     weeklyReports: boolean;
+    marketing: boolean;
   };
   theme: 'light' | 'dark' | 'auto';
+  accessibility: {
+    reduceMotion: boolean;
+    highContrast: boolean;
+    screenReader: boolean;
+  };
+  privacy: {
+    dataCollection: boolean;
+    analytics: boolean;
+    personalizedAds: boolean;
+  };
 }
 
 const Settings: React.FC = () => {
@@ -53,70 +77,91 @@ const Settings: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<SettingsData>({
     language: 'en',
-    textSize: 'medium',
+    textSize: 16, // Default font size
     boldText: false,
     notifications: {
       email: true,
       push: true,
       mealReminders: true,
       weeklyReports: false,
+      marketing: false,
     },
-    theme: 'light'
+    theme: 'light',
+    accessibility: {
+      reduceMotion: false,
+      highContrast: false,
+      screenReader: false,
+    },
+    privacy: {
+      dataCollection: true,
+      analytics: true,
+      personalizedAds: false,
+    }
   });
 
-  // Load settings from localStorage or API
+  // Load settings from localStorage
   useEffect(() => {
     const savedSettings = localStorage.getItem('meallens-settings');
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings);
         setSettings(prev => ({ ...prev, ...parsed }));
+        applySettings(parsed);
       } catch (error) {
         console.error('Error parsing saved settings:', error);
       }
     }
   }, []);
 
-  // Save settings to localStorage
-  const saveSettings = async () => {
-    setSaving(true);
-    try {
-      localStorage.setItem('meallens-settings', JSON.stringify(settings));
-      
-      // Apply theme
-      if (settings.theme === 'dark') {
+  // Apply settings to the app
+  const applySettings = (newSettings: Partial<SettingsData>) => {
+    // Apply theme
+    if (newSettings.theme) {
+      if (newSettings.theme === 'dark') {
         document.documentElement.classList.add('dark');
-      } else if (settings.theme === 'light') {
+      } else if (newSettings.theme === 'light') {
         document.documentElement.classList.remove('dark');
       } else {
-        // Auto theme - check system preference
+        // Auto theme
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
           document.documentElement.classList.add('dark');
         } else {
           document.documentElement.classList.remove('dark');
         }
       }
+    }
 
-      // Apply text size
-      const textSizeMap = {
-        small: 'text-sm',
-        medium: 'text-base',
-        large: 'text-lg',
-        xlarge: 'text-xl'
-      };
-      
-      // Remove existing text size classes
-      document.body.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
-      // Add new text size class
-      document.body.classList.add(textSizeMap[settings.textSize as keyof typeof textSizeMap]);
+    // Apply text size
+    if (newSettings.textSize) {
+      document.documentElement.style.fontSize = `${newSettings.textSize}px`;
+    }
 
-      // Apply bold text
-      if (settings.boldText) {
+    // Apply bold text
+    if (newSettings.boldText !== undefined) {
+      if (newSettings.boldText) {
         document.body.classList.add('font-bold');
       } else {
         document.body.classList.remove('font-bold');
       }
+    }
 
+    // Apply accessibility settings
+    if (newSettings.accessibility) {
+      if (newSettings.accessibility.reduceMotion) {
+        document.documentElement.style.setProperty('--animation-duration', '0s');
+      } else {
+        document.documentElement.style.removeProperty('--animation-duration');
+      }
+    }
+  };
+
+  // Save settings to localStorage
+  const saveSettings = async () => {
+    setSaving(true);
+    try {
+      localStorage.setItem('meallens-settings', JSON.stringify(settings));
+      applySettings(settings);
+      
       toast({
         title: "Settings Saved",
         description: "Your preferences have been updated successfully.",
@@ -150,21 +195,53 @@ const Settings: React.FC = () => {
   };
 
   const updateSettings = (key: keyof SettingsData, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    applySettings({ [key]: value });
   };
 
   const updateNotificationSettings = (key: keyof SettingsData['notifications'], value: boolean) => {
-    setSettings(prev => ({
-      ...prev,
-      notifications: { ...prev.notifications, [key]: value }
-    }));
+    const newNotifications = { ...settings.notifications, [key]: value };
+    const newSettings = { ...settings, notifications: newNotifications };
+    setSettings(newSettings);
+    applySettings({ notifications: newNotifications });
+  };
+
+  const updateAccessibilitySettings = (key: keyof SettingsData['accessibility'], value: boolean) => {
+    const newAccessibility = { ...settings.accessibility, [key]: value };
+    const newSettings = { ...settings, accessibility: newAccessibility };
+    setSettings(newSettings);
+    applySettings({ accessibility: newAccessibility });
+  };
+
+  const updatePrivacySettings = (key: keyof SettingsData['privacy'], value: boolean) => {
+    const newPrivacy = { ...settings.privacy, [key]: value };
+    const newSettings = { ...settings, privacy: newPrivacy };
+    setSettings(newSettings);
+    applySettings({ privacy: newPrivacy });
+  };
+
+  const handleTextSizeChange = (value: number[]) => {
+    const newSize = value[0];
+    updateSettings('textSize', newSize);
+  };
+
+  const handleThemeChange = (theme: 'light' | 'dark' | 'auto') => {
+    updateSettings('theme', theme);
+  };
+
+  const getTextSizeLabel = (size: number) => {
+    if (size <= 12) return 'Small';
+    if (size <= 16) return 'Medium';
+    if (size <= 20) return 'Large';
+    return 'Extra Large';
   };
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 to-gray-100 overflow-hidden">
       <div className="h-full flex flex-col">
         {/* Header */}
-        <div className="flex items-center gap-4 p-6 bg-white border-b border-gray-200">
+        <div className="flex items-center gap-4 p-4 bg-white border-b border-gray-200">
           <Button
             variant="ghost"
             size="sm"
@@ -174,22 +251,40 @@ const Settings: React.FC = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-gray-900">Settings</h1>
             <p className="text-sm text-gray-600">Customize your MealLensAI experience</p>
           </div>
+          <Button
+            onClick={saveSettings}
+            disabled={saving}
+            size="sm"
+            className="bg-[#FF6B6B] hover:bg-[#FF5252]"
+          >
+            {saving ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-3 w-3 mr-2" />
+                Save
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Main Content */}
         <div className="flex-1 overflow-hidden">
-          <div className="h-full grid grid-cols-1 lg:grid-cols-4 gap-6 p-6">
+          <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
             {/* Main Settings */}
-            <div className="lg:col-span-3 space-y-4 overflow-y-auto">
-              {/* Appearance Settings */}
+            <div className="lg:col-span-2 space-y-4 overflow-y-auto">
+              {/* Appearance & Accessibility */}
               <Card className="bg-white shadow-sm border-0">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Globe className="h-5 w-5 text-[#FF6B6B]" />
+                    <Palette className="h-5 w-5 text-[#FF6B6B]" />
                     Appearance & Accessibility
                   </CardTitle>
                   <CardDescription className="text-sm">
@@ -202,7 +297,7 @@ const Settings: React.FC = () => {
                     <div className="space-y-2">
                       <Label htmlFor="language" className="text-sm font-medium">Language</Label>
                       <Select value={settings.language} onValueChange={(value) => updateSettings('language', value)}>
-                        <SelectTrigger className="h-10">
+                        <SelectTrigger className="h-9">
                           <SelectValue placeholder="Select language" />
                         </SelectTrigger>
                         <SelectContent>
@@ -220,42 +315,11 @@ const Settings: React.FC = () => {
                       </Select>
                     </div>
 
-                    {/* Text Size */}
-                    <div className="space-y-2">
-                      <Label htmlFor="textSize" className="text-sm font-medium">Text Size</Label>
-                      <Select value={settings.textSize} onValueChange={(value) => updateSettings('textSize', value)}>
-                        <SelectTrigger className="h-10">
-                          <SelectValue placeholder="Select text size" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="small">Small</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="large">Large</SelectItem>
-                          <SelectItem value="xlarge">Extra Large</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Bold Text */}
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="boldText" className="text-sm font-medium">Bold Text</Label>
-                        <p className="text-xs text-gray-500">Make text easier to read</p>
-                      </div>
-                      <Switch
-                        id="boldText"
-                        checked={settings.boldText}
-                        onCheckedChange={(checked) => updateSettings('boldText', checked)}
-                      />
-                    </div>
-
                     {/* Theme */}
                     <div className="space-y-2">
                       <Label htmlFor="theme" className="text-sm font-medium">Theme</Label>
-                      <Select value={settings.theme} onValueChange={(value) => updateSettings('theme', value)}>
-                        <SelectTrigger className="h-10">
+                      <Select value={settings.theme} onValueChange={handleThemeChange}>
+                        <SelectTrigger className="h-9">
                           <SelectValue placeholder="Select theme" />
                         </SelectTrigger>
                         <SelectContent>
@@ -279,6 +343,54 @@ const Settings: React.FC = () => {
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                  </div>
+
+                  {/* Text Size Slider */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Text Size</Label>
+                      <span className="text-sm text-gray-600">{getTextSizeLabel(settings.textSize)}</span>
+                    </div>
+                    <Slider
+                      value={[settings.textSize]}
+                      onValueChange={handleTextSizeChange}
+                      max={24}
+                      min={10}
+                      step={1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>Small</span>
+                      <span>Large</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Bold Text */}
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="boldText" className="text-sm font-medium">Bold Text</Label>
+                        <p className="text-xs text-gray-500">Make text easier to read</p>
+                      </div>
+                      <Switch
+                        id="boldText"
+                        checked={settings.boldText}
+                        onCheckedChange={(checked) => updateSettings('boldText', checked)}
+                      />
+                    </div>
+
+                    {/* Reduce Motion */}
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="reduceMotion" className="text-sm font-medium">Reduce Motion</Label>
+                        <p className="text-xs text-gray-500">Minimize animations</p>
+                      </div>
+                      <Switch
+                        id="reduceMotion"
+                        checked={settings.accessibility.reduceMotion}
+                        onCheckedChange={(checked) => updateAccessibilitySettings('reduceMotion', checked)}
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -344,30 +456,73 @@ const Settings: React.FC = () => {
                         onCheckedChange={(checked) => updateNotificationSettings('weeklyReports', checked)}
                       />
                     </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="marketing" className="text-sm font-medium">Marketing</Label>
+                        <p className="text-xs text-gray-500">Receive promotional content</p>
+                      </div>
+                      <Switch
+                        id="marketing"
+                        checked={settings.notifications.marketing}
+                        onCheckedChange={(checked) => updateNotificationSettings('marketing', checked)}
+                      />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Save Button */}
-              <div className="flex justify-end pt-2">
-                <Button
-                  onClick={saveSettings}
-                  disabled={saving}
-                  className="bg-[#FF6B6B] hover:bg-[#FF5252] px-6"
-                >
-                  {saving ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Settings
-                    </>
-                  )}
-                </Button>
-              </div>
+              {/* Privacy & Data */}
+              <Card className="bg-white shadow-sm border-0">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Lock className="h-5 w-5 text-[#FF6B6B]" />
+                    Privacy & Data
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Control your data and privacy settings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="dataCollection" className="text-sm font-medium">Data Collection</Label>
+                        <p className="text-xs text-gray-500">Allow us to collect usage data</p>
+                      </div>
+                      <Switch
+                        id="dataCollection"
+                        checked={settings.privacy.dataCollection}
+                        onCheckedChange={(checked) => updatePrivacySettings('dataCollection', checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="analytics" className="text-sm font-medium">Analytics</Label>
+                        <p className="text-xs text-gray-500">Help improve the app</p>
+                      </div>
+                      <Switch
+                        id="analytics"
+                        checked={settings.privacy.analytics}
+                        onCheckedChange={(checked) => updatePrivacySettings('analytics', checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="personalizedAds" className="text-sm font-medium">Personalized Ads</Label>
+                        <p className="text-xs text-gray-500">Show relevant advertisements</p>
+                      </div>
+                      <Switch
+                        id="personalizedAds"
+                        checked={settings.privacy.personalizedAds}
+                        onCheckedChange={(checked) => updatePrivacySettings('personalizedAds', checked)}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Sidebar */}
@@ -466,6 +621,20 @@ const Settings: React.FC = () => {
                   >
                     <CreditCard className="h-3 w-3 mr-2" />
                     Billing
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-sm h-9"
+                    onClick={() => {
+                      // Export data functionality
+                      toast({
+                        title: "Data Export",
+                        description: "Your data export has been initiated.",
+                      });
+                    }}
+                  >
+                    <Download className="h-3 w-3 mr-2" />
+                    Export Data
                   </Button>
                   <Separator className="my-2" />
                   <Button

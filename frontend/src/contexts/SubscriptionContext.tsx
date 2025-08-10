@@ -17,6 +17,12 @@ interface SubscriptionContextType {
   canUseFeature: (featureName: string) => boolean;
   isFeatureLocked: (featureName: string) => boolean;
   
+  // Free usage tracking
+  freeUsageCount: number;
+  maxFreeUsage: number;
+  incrementFreeUsage: () => void;
+  resetFreeUsage: () => void;
+  
   // Actions
   refreshSubscription: () => Promise<void>;
   refreshPlans: () => Promise<void>;
@@ -52,6 +58,10 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   const [trialStatus, setTrialStatus] = useState<TrialStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingPlans, setLoadingPlans] = useState(false);
+  
+  // Free usage tracking
+  const [freeUsageCount, setFreeUsageCount] = useState(0);
+  const maxFreeUsage = 5; // 5 free uses as specified
 
   // Load subscription data
   const loadSubscription = async () => {
@@ -102,6 +112,28 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     }
   };
 
+  // Free usage management
+  const incrementFreeUsage = () => {
+    setFreeUsageCount(prev => {
+      const newCount = Math.min(prev + 1, maxFreeUsage);
+      localStorage.setItem('freeUsageCount', newCount.toString());
+      return newCount;
+    });
+  };
+
+  const resetFreeUsage = () => {
+    setFreeUsageCount(0);
+    localStorage.removeItem('freeUsageCount');
+  };
+
+  // Load free usage count from localStorage
+  useEffect(() => {
+    const savedCount = localStorage.getItem('freeUsageCount');
+    if (savedCount) {
+      setFreeUsageCount(parseInt(savedCount, 10));
+    }
+  }, []);
+
   // Check if user can use a feature
   const canUseFeature = (featureName: string): boolean => {
     // If user has active subscription, they can use all features
@@ -117,11 +149,11 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     // Check specific feature limits for free users
     switch (featureName) {
       case 'food_detection':
-        return false; // Requires subscription
+        return freeUsageCount < maxFreeUsage; // Allow if under free limit
       case 'ingredient_detection':
-        return false; // Requires subscription
+        return freeUsageCount < maxFreeUsage; // Allow if under free limit
       case 'meal_planning':
-        return false; // Requires subscription
+        return freeUsageCount < maxFreeUsage; // Allow if under free limit
       default:
         return true; // Other features are free
     }
@@ -184,6 +216,10 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     loadingPlans,
     canUseFeature,
     isFeatureLocked,
+    freeUsageCount,
+    maxFreeUsage,
+    incrementFreeUsage,
+    resetFreeUsage,
     refreshSubscription,
     refreshPlans,
     recordFeatureUsage,

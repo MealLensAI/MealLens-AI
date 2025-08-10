@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Upload, Loader2, Utensils } from "lucide-react"
+import { Upload, Loader2, Utensils, Camera, Image as ImageIcon } from "lucide-react"
 import { useAuth } from "@/lib/utils"
 import { useSubscription } from "@/contexts/SubscriptionContext"
 import { useToast } from "@/hooks/use-toast"
@@ -10,6 +10,7 @@ import LoadingScreen from "@/components/LoadingScreen"
 import FeatureLock from "@/components/FeatureLock"
 import { api } from "@/lib/api"
 import { handleAuthError } from "@/lib/utils"
+import { compressImage, validateImage, formatFileSize, generateThumbnail } from "@/utils/imageUtils"
 
 const DetectFoodPage = () => {
   const navigate = useNavigate()
@@ -24,7 +25,7 @@ const DetectFoodPage = () => {
   const [showResults, setShowResults] = useState(false)
   const { toast } = useToast()
   const { token, isAuthenticated, loading } = useAuth()
-  const { isFeatureLocked, recordFeatureUsage } = useSubscription()
+  const { isFeatureLocked, recordFeatureUsage, incrementFreeUsage, freeUsageCount, maxFreeUsage } = useSubscription()
 
   if (loading) {
     return <LoadingScreen
@@ -76,20 +77,55 @@ const DetectFoodPage = () => {
     )
   }
 
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // Validate image
+    const validation = validateImage(file);
+    if (!validation.valid) {
+      toast({
+        title: "Invalid Image",
+        description: validation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Show loading state
+      setIsLoading(true);
+
+      // Compress image
+      const compressed = await compressImage(file, {
+        maxWidth: 1024,
+        maxHeight: 1024,
+        quality: 0.8
+      });
+
+      setSelectedImage(compressed.file);
+      setImagePreview(compressed.dataUrl);
+
+      // Show compression info
+      toast({
+        title: "Image Compressed",
+        description: `Reduced from ${formatFileSize(compressed.originalSize)} to ${formatFileSize(compressed.size)} (${Math.round(compressed.compressionRatio * 100)}% smaller)`,
+      });
+
+    } catch (error) {
+      console.error('Error processing image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   }
 
-  // Function to compress image before sending
-  const compressImage = (file: File): Promise<string> => {
+  // Function to compress image before sending (legacy - now using imageUtils)
+  const compressImageLegacy = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
@@ -144,21 +180,17 @@ const DetectFoodPage = () => {
     setShowResults(false)
 
     try {
+      // Increment free usage count
+      incrementFreeUsage();
+      
       // Record feature usage
       await recordFeatureUsage('food_detection');
     } catch (error) {
       console.error('Error recording feature usage:', error);
     }
     
-    // Compress image before sending
-    let compressedImageData: string
-    try {
-      compressedImageData = await compressImage(selectedImage)
-      console.log("[DetectFood] Image compressed successfully")
-    } catch (error) {
-      console.error("[DetectFood] Image compression failed:", error)
-      compressedImageData = imagePreview || ""
-    }
+    // Use the already compressed image from imagePreview
+    const compressedImageData = imagePreview || ""
     
     const formData = new FormData()
     formData.append("image", selectedImage)
@@ -341,6 +373,40 @@ const DetectFoodPage = () => {
           >
             Food Detection
           </h1>
+
+          {/* Free Usage Indicator */}
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Camera className="h-5 w-5 text-blue-600" />
+                <span className="text-sm sm:text-base font-medium text-blue-900">
+                  Free Uses: {freeUsageCount}/{maxFreeUsage}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-24 sm:w-32 h-2 bg-blue-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      freeUsageCount >= maxFreeUsage 
+                        ? 'bg-red-500' 
+                        : freeUsageCount >= maxFreeUsage * 0.8 
+                        ? 'bg-orange-500' 
+                        : 'bg-blue-500'
+                    }`}
+                    style={{ width: `${Math.min((freeUsageCount / maxFreeUsage) * 100, 100)}%` }}
+                  ></div>
+                </div>
+                <span className="text-xs text-blue-600 font-medium">
+                  {Math.round((freeUsageCount / maxFreeUsage) * 100)}%
+                </span>
+              </div>
+            </div>
+            {freeUsageCount >= maxFreeUsage && (
+              <div className="mt-2 text-xs text-red-600 font-medium">
+                Free limit reached. Upgrade to continue using this feature.
+              </div>
+            )}
+          </div>
 
           {/* Image Input */}
           <div className="mb-4 sm:mb-6">

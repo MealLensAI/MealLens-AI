@@ -57,7 +57,7 @@ class PaystackService {
 
   constructor() {
     // Initialize with your Paystack public key
-    this.publicKey = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY || 'pk_test_...';
+    this.publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_...';
   }
 
   /**

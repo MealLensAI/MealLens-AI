@@ -264,3 +264,4 @@ coverage/
 !frontend/src/
 !frontend/src/**/*
 !frontend/styles/
+frontend/.env

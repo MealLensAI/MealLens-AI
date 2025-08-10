@@ -1,7 +1,7 @@
 import { useAuth } from './utils'
 
-// API base URL - uses relative path for proxy in development
-const API_BASE_URL = '/api'
+// API base URL - uses environment variable or falls back to proxy
+const API_BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api'
 
 // Custom error class for API errors
 export class APIError extends Error {

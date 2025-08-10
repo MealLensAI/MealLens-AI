@@ -20,9 +20,15 @@ import Payment from "./pages/Payment"
 import ProfilePage from "./pages/ProfilePage"
 import SettingsPage from "./pages/SettingsPage"
 import LandingPage from "./pages/LandingPage"
+import WelcomePage from "./pages/WelcomePage"
+import OnboardingPage from "./pages/OnboardingPage"
 
 // Create router with future flags to eliminate deprecation warnings
 const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <WelcomePage />
+  },
   {
     path: "/landing",
     element: <LandingPage />
@@ -36,7 +42,15 @@ const router = createBrowserRouter([
     element: <Signup />
   },
   {
-    path: "/",
+    path: "/onboarding",
+    element: (
+      <ProtectedRoute>
+        <OnboardingPage />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/dashboard",
     element: (
       <ProtectedRoute>
         <MainLayout>
@@ -127,7 +141,7 @@ const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: <Navigate to="/" replace />
+    element: <Navigate to="/dashboard" replace />
   }
 ], {
   future: {

@@ -322,7 +322,7 @@ export default function ProfilePage() {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
                   {/* Avatar */}
                   <div className="relative">
-                    <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                    <div className="w-20 h-20 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-full flex items-center justify-center text-white text-2xl font-bold">
                       {getInitials()}
                     </div>
                     {isEditing && (
@@ -356,7 +356,7 @@ export default function ProfilePage() {
                       {/* Subscription Status */}
                       <div className="flex flex-col gap-2">
                         {subscription?.subscription?.status === 'active' ? (
-                          <Badge className="bg-green-100 text-green-800 border-green-200">
+                          <Badge className="bg-[#FF6B6B]/10 text-[#FF6B6B] border-[#FF6B6B]/20">
                             <Crown className="h-3 w-3 mr-1" />
                             Premium Member
                           </Badge>
@@ -382,7 +382,7 @@ export default function ProfilePage() {
                         <Button
                           onClick={handleSave}
                           disabled={saving}
-                          className="bg-blue-600 hover:bg-blue-700"
+                          className="bg-[#FF6B6B] hover:bg-[#FF5252]"
                         >
                           {saving ? (
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -420,7 +420,7 @@ export default function ProfilePage() {
             <Card className="bg-white shadow-sm border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-blue-600" />
+                                          <User className="h-5 w-5 text-[#FF6B6B]" />
                   Personal Information
                 </CardTitle>
                 <CardDescription>
@@ -594,7 +594,7 @@ export default function ProfilePage() {
               <CardContent className="space-y-4">
                 {subscription?.subscription?.status === 'active' ? (
                   <div className="text-center">
-                    <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                                            <CheckCircle className="h-8 w-8 text-[#FF6B6B] mx-auto mb-2" />
                     <p className="font-semibold text-green-800">Active Subscription</p>
                     <p className="text-sm text-gray-600">
                       {subscription.plan?.display_name}
@@ -615,7 +615,7 @@ export default function ProfilePage() {
                     </p>
                     <Button 
                       onClick={() => navigate('/payment')}
-                      className="w-full mt-3 bg-blue-600 hover:bg-blue-700"
+                      className="w-full mt-3 bg-[#FF6B6B] hover:bg-[#FF5252]"
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
                       Upgrade Now
@@ -630,7 +630,7 @@ export default function ProfilePage() {
                     </p>
                     <Button 
                       onClick={() => navigate('/payment')}
-                      className="w-full mt-3 bg-blue-600 hover:bg-blue-700"
+                      className="w-full mt-3 bg-[#FF6B6B] hover:bg-[#FF5252]"
                     >
                       <Crown className="h-4 w-4 mr-2" />
                       Get Premium

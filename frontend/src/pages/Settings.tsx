@@ -96,7 +96,7 @@ const Settings = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                            <div className="w-10 h-10 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-xl flex items-center justify-center">
               <SettingsIcon className="h-5 w-5 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
@@ -113,7 +113,7 @@ const Settings = () => {
             <Card className="bg-white shadow-sm border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-blue-600" />
+                  <User className="h-5 w-5 text-[#FF6B6B]" />
                   Account
                 </CardTitle>
                 <CardDescription>
@@ -178,7 +178,7 @@ const Settings = () => {
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
                     <div className="flex items-center gap-3">
                       {subscription?.subscription?.status === 'active' ? (
-                        <CheckCircle className="h-6 w-6 text-green-600" />
+                        <CheckCircle className="h-6 w-6 text-[#FF6B6B]" />
                       ) : isInTrial() ? (
                         <Clock className="h-6 w-6 text-orange-600" />
                       ) : (
@@ -205,7 +205,7 @@ const Settings = () => {
                     {!subscription?.subscription?.status === 'active' && (
                       <Button 
                         onClick={() => navigate('/payment')}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-[#FF6B6B] hover:bg-[#FF5252]"
                       >
                         {isInTrial() ? 'Upgrade' : 'Get Premium'}
                       </Button>
@@ -282,7 +282,7 @@ const Settings = () => {
                   </div>
                 </div>
 
-                <Button onClick={handleSaveNotifications} className="w-full bg-blue-600 hover:bg-blue-700">
+                <Button onClick={handleSaveNotifications} className="w-full bg-[#FF6B6B] hover:bg-[#FF5252]">
                   Save Notification Settings
                 </Button>
               </CardContent>
@@ -292,7 +292,7 @@ const Settings = () => {
             <Card className="bg-white shadow-sm border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-green-600" />
+                  <Shield className="h-5 w-5 text-[#FF6B6B]" />
                   Privacy & Security
                 </CardTitle>
                 <CardDescription>
@@ -345,7 +345,7 @@ const Settings = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <Button onClick={handleSavePrivacy} className="w-full bg-green-600 hover:bg-green-700">
+                  <Button onClick={handleSavePrivacy} className="w-full bg-[#FF6B6B] hover:bg-[#FF5252]">
                     Save Privacy Settings
                   </Button>
                   <Button 
@@ -364,7 +364,7 @@ const Settings = () => {
             <Card className="bg-white shadow-sm border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Palette className="h-5 w-5 text-purple-600" />
+                  <Palette className="h-5 w-5 text-[#FF6B6B]" />
                   Appearance
                 </CardTitle>
                 <CardDescription>
@@ -467,7 +467,7 @@ const Settings = () => {
             <Card className="bg-white shadow-sm border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5 text-blue-600" />
+                  <Mail className="h-5 w-5 text-[#FF6B6B]" />
                   Support
                 </CardTitle>
               </CardHeader>

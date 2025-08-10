@@ -43,7 +43,7 @@ const FeatureLock: React.FC<FeatureLockProps> = ({
         title: 'Subscription Active',
         description: 'You have access to all features',
         icon: <Crown className="h-5 w-5 text-yellow-500" />,
-        color: 'text-green-600',
+        color: 'text-[#FF6B6B]',
         bgColor: 'bg-green-50',
         borderColor: 'border-green-200'
       };
@@ -113,7 +113,7 @@ const FeatureLock: React.FC<FeatureLockProps> = ({
           <div className="space-y-3">
             <Button 
               onClick={handleUpgrade}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                              className="w-full bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] hover:from-[#FF5252] hover:to-[#FF6B6B] text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
             >
               <Crown className="h-4 w-4 mr-2" />
               {inTrial ? 'Upgrade Now' : 'Subscribe to Unlock'}

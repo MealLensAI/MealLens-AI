@@ -121,7 +121,7 @@ const Payment: React.FC = () => {
           <CardContent className="p-8">
             <div className="flex justify-center mb-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+                <CheckCircle className="h-8 w-8 text-[#FF6B6B]" />
               </div>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
@@ -130,7 +130,7 @@ const Payment: React.FC = () => {
             </p>
             <Button 
               onClick={() => window.location.href = '/'}
-              className="w-full bg-green-600 hover:bg-green-700"
+                              className="w-full bg-[#FF6B6B] hover:bg-[#FF5252]"
             >
               Continue to App
             </Button>
@@ -180,7 +180,7 @@ const Payment: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center">
+                            <div className="w-16 h-16 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-2xl flex items-center justify-center">
               <Crown className="h-8 w-8 text-white" />
             </div>
           </div>
@@ -199,7 +199,7 @@ const Payment: React.FC = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
+                    <CheckCircle className="h-6 w-6 text-[#FF6B6B]" />
                     <div>
                       <h3 className="font-semibold text-green-800">
                         Current Plan: {currentPlan.display_name}
@@ -268,7 +268,7 @@ const Payment: React.FC = () => {
               >
                 {isPopular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1">
+                    <Badge className="bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] text-white px-3 py-1">
                       <Star className="h-3 w-3 mr-1" />
                       Most Popular
                     </Badge>
@@ -277,7 +277,7 @@ const Payment: React.FC = () => {
                 
                 {isCurrentPlan && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-green-600 text-white px-3 py-1">
+                    <Badge className="bg-[#FF6B6B] text-white px-3 py-1">
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Current Plan
                     </Badge>
@@ -305,7 +305,7 @@ const Payment: React.FC = () => {
                           enabled ? 'bg-green-100' : 'bg-gray-100'
                         }`}>
                           {enabled ? (
-                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <CheckCircle className="h-3 w-3 text-[#FF6B6B]" />
                           ) : (
                             <XCircle className="h-3 w-3 text-gray-400" />
                           )}
@@ -326,7 +326,7 @@ const Payment: React.FC = () => {
                     className={`w-full py-3 font-semibold ${
                       isCurrentPlan
                         ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl'
+                        : 'bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] hover:from-[#FF5252] hover:to-[#FF6B6B] text-white shadow-lg hover:shadow-xl'
                     }`}
                   >
                     {isProcessing ? (
@@ -363,7 +363,7 @@ const Payment: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <Zap className="h-6 w-6 text-blue-600" />
+                  <Zap className="h-6 w-6 text-[#FF6B6B]" />
                 </div>
                 <h3 className="font-semibold text-lg mb-2">AI Food Detection</h3>
                 <p className="text-gray-600 text-sm">
@@ -372,7 +372,7 @@ const Payment: React.FC = () => {
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <Crown className="h-6 w-6 text-purple-600" />
+                  <Crown className="h-6 w-6 text-[#FF6B6B]" />
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Smart Meal Planning</h3>
                 <p className="text-gray-600 text-sm">
@@ -381,7 +381,7 @@ const Payment: React.FC = () => {
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <Shield className="h-6 w-6 text-green-600" />
+                  <Shield className="h-6 w-6 text-[#FF6B6B]" />
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Health Tracking</h3>
                 <p className="text-gray-600 text-sm">

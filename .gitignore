@@ -182,7 +182,7 @@ dist
 
 # Gatsby
 .cache/
-public
+# public  # Commented out to allow frontend public assets
 
 # Vuepress
 .vuepress/dist

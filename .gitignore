@@ -99,14 +99,20 @@ login_response.json
 sessions/
 *.session
 
-# Uploads
-uploads/
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.bmp
-*.tiff
+# Uploads (backend only)
+backend/uploads/
+backend/*.jpg
+backend/*.jpeg
+backend/*.png
+backend/*.gif
+backend/*.bmp
+backend/*.tiff
+
+# Allow frontend assets
+!frontend/public/
+!frontend/public/assets/
+!frontend/public/assets/images/
+!frontend/public/assets/images/appImage/
 
 # Coverage reports
 htmlcov/
@@ -198,6 +204,9 @@ public
 dist-ssr/
 build/
 
+# Allow frontend build artifacts
+!frontend/dist/
+
 # Testing
 coverage/
 *.lcov
@@ -220,3 +229,20 @@ coverage/
 !package.json
 !package-lock.json
 !requirements.txt
+
+# Allow frontend configuration files
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/tsconfig*.json
+!frontend/vite.config.ts
+!frontend/tailwind.config.ts
+!frontend/postcss.config.js
+!frontend/eslint.config.js
+!frontend/.prettierrc
+!frontend/components.json
+!frontend/index.html
+
+# Allow frontend source files
+!frontend/src/
+!frontend/src/**/*
+!frontend/styles/

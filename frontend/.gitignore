@@ -63,6 +63,16 @@ tmp/
 *.bak
 *.old
 
+# Video files (too large for git)
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.mkv
+*.m4v
+
 # Cursor IDE
 .cursor/
 

@@ -108,6 +108,16 @@ backend/*.gif
 backend/*.bmp
 backend/*.tiff
 
+# Video files (too large for git)
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.mkv
+*.m4v
+
 # Allow frontend assets
 !frontend/public/
 !frontend/public/assets/

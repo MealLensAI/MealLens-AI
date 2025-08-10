@@ -3,14 +3,18 @@ import { Loader2, Sparkles } from 'lucide-react';
 
 interface LoadingScreenProps {
   message?: string;
+  subMessage?: string;
   showLogo?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  fullScreen?: boolean;
 }
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ 
   message = "Loading...", 
+  subMessage,
   showLogo = true,
-  size = 'md'
+  size = 'md',
+  fullScreen = true
 }) => {
   const sizeClasses = {
     sm: 'w-8 h-8',
@@ -25,7 +29,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-red-400 via-red-500 to-orange-500 flex items-center justify-center z-50">
+    <div className={`${fullScreen ? 'fixed inset-0' : 'absolute inset-0'} bg-gradient-to-br from-red-400 via-red-500 to-orange-500 flex items-center justify-center z-50`}>
       <div className="text-center">
         {/* Logo */}
         {showLogo && (
@@ -56,6 +60,11 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
             <p className={`text-white font-medium ${textSizes[size]} mb-2`}>
               {message}
             </p>
+            {subMessage && (
+              <p className="text-white/70 text-sm mb-2">
+                {subMessage}
+              </p>
+            )}
             <div className="flex items-center justify-center gap-1">
               <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
               <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>

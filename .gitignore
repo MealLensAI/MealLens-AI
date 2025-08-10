@@ -62,7 +62,8 @@ downloads/
 eggs/
 .eggs/
 
-lib/
+# Backend lib (Python)
+backend/lib/
 lib64/
 parts/
 sdist/
@@ -192,12 +193,30 @@ public
 # TernJS port file
 .tern-port
 
-# Build outputs
-dist/
+# Build outputs (but allow some for deployment)
+# dist/  # Commented out to allow Vercel deployment
 dist-ssr/
 build/
 
 # Testing
 coverage/
 *.lcov
-.nyc_output frontend/.env
+.nyc_output
+
+# Allow environment files for deployment
+!frontend/.env.example
+!backend/.env.example
+
+# Allow deployment configuration files
+!render.yaml
+!vercel.json
+!deploy*.sh
+!DEPLOYMENT_GUIDE.md
+
+# Allow database migration scripts
+!backend/scripts/*.sql
+
+# Allow package files
+!package.json
+!package-lock.json
+!requirements.txt

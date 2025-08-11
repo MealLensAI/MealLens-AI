@@ -27,6 +27,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:prod": "vite build --mode production",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
@@ -36,7 +37,8 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "type-check": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:netlify": "npm run build:prod && netlify deploy --prod --dir=dist"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.1",

@@ -1,8 +1,11 @@
 #!/bin/bash
 
-# MealLensAI Netlify Deployment Script
+# MealLens AI Frontend Deployment Script
+# This script helps deploy the frontend to Netlify
 
-echo "🚀 Starting MealLensAI deployment process..."
+set -e  # Exit on any error
+
+echo "🚀 Starting MealLens AI Frontend Deployment..."
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
@@ -23,25 +26,17 @@ echo "✅ Node.js version: $(node -v)"
 echo "📦 Installing dependencies..."
 npm install
 
-if [ $? -ne 0 ]; then
-    echo "❌ Failed to install dependencies"
-    exit 1
-fi
-
-# Run tests (optional)
+# Run tests
 echo "🧪 Running tests..."
 npm run test:run
-
-if [ $? -ne 0 ]; then
-    echo "⚠️  Tests failed, but continuing with deployment..."
-fi
 
 # Build the project
 echo "🔨 Building the project..."
 npm run build
 
-if [ $? -ne 0 ]; then
-    echo "❌ Build failed"
+# Check if build was successful
+if [ ! -d "dist" ]; then
+    echo "❌ Build failed. dist directory not found."
     exit 1
 fi
 

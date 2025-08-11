@@ -22,6 +22,7 @@
 - [🎨 UI/UX Design](#-uiux-design)
 - [🔄 Data Flow](#-data-flow)
 - [🚀 Getting Started](#-getting-started)
+- [🌐 Deployment](#-deployment)
 - [🛠️ Development](#️-development)
 
 ---
@@ -291,6 +292,45 @@ Storage Strategy:
 
 ---
 
+## 🌐 Deployment
+
+### 🚀 **Netlify Deployment**
+
+This project is configured for easy deployment to Netlify. See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
+
+#### **Quick Deploy Options:**
+
+1. **Automatic Deployment (Recommended)**
+   ```bash
+   ./deploy.sh
+   ```
+
+2. **Manual Deployment**
+   ```bash
+   npm run build:prod
+   # Then drag the 'dist' folder to Netlify
+   ```
+
+3. **Netlify CLI**
+   ```bash
+   npm install -g netlify-cli
+   netlify login
+   npm run deploy:netlify
+   ```
+
+#### **Environment Variables Required:**
+- `VITE_API_URL` - Your main backend API URL
+- `VITE_AI_API_URL` - Your AI processing backend URL
+- `VITE_FIREBASE_*` - Firebase configuration (if using Firebase)
+- `VITE_SUPABASE_*` - Supabase configuration (if using Supabase)
+
+#### **Configuration Files:**
+- `netlify.toml` - Netlify build and redirect configuration
+- `public/_redirects` - SPA routing redirects
+- `src/lib/config.ts` - Centralized API configuration
+
+---
+
 ## 🚀 Getting Started
 
 ### ⚡ **Quick Start (5 minutes)**
@@ -542,11 +582,11 @@ npm run build
 # Preview production build
 npm run preview
 
-# Deploy to Vercel
-vercel --prod
+# Deploy to Netlify (using script)
+./deploy.sh
 
-# Deploy to Netlify
-netlify deploy --prod
+# Deploy to Netlify (manual)
+npm run deploy:netlify
 ```
 
 ### 🔧 **Development Commands**

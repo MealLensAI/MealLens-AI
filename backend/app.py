@@ -57,20 +57,20 @@ def create_app():
     """
     app = Flask(__name__)
 
-    # Configure CORS to allow requests from the frontend
+    # Configure CORS to allow requests from any origin, without credentials (due to CORS limitations)
     CORS(
         app,
         resources={
             r"/api/*": {
-                "origins": ["http://localhost:5173","https://meallensai.com" "https://new-meallensai.vercel.app"],
+                "origins": "*",  # Allow all origins
                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
                 "allow_headers": ["Content-Type", "Authorization"],
-                "supports_credentials": True,
+                "supports_credentials": False,  # Can't use credentials with wildcard origin
                 "expose_headers": ["Content-Type", "Authorization"],
                 "max_age": 600  # Cache preflight request for 10 minutes
             }
         },
-        supports_credentials=True
+        supports_credentials=False
     )
 
     # Add CORS headers to all responses for preflight requests
@@ -81,7 +81,7 @@ def create_app():
             response.headers.add('Access-Control-Allow-Origin', '*')
             response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
             response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            # Do not add Access-Control-Allow-Credentials header since credentials are disabled
         return response
 
     # Initialize Supabase clients

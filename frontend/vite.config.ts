@@ -14,7 +14,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://meallens-ai.onrender.com',
+        target: 'http://127.0.0.1:5001',
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'),

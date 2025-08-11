@@ -59,7 +59,7 @@ def create_app():
       app,
       resources={
           r"/api/*": {
-              "origins": ["http://localhost:5173","https://new-meallensai.vercel.app"],
+              "origins": ["http://localhost:5173","https://meallensai.com","https://new-meallensai.vercel.app"],
               "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
               "allow_headers": ["Content-Type", "Authorization"],
               "supports_credentials": True,
@@ -75,7 +75,7 @@ def create_app():
   def after_request(response):
       # Only add CORS headers if they're not already set by Flask-CORS
       if 'Access-Control-Allow-Origin' not in response.headers:
-          response.headers.add('Access-Control-Allow-Origin', '*')
+          response.headers.add('Access-Control-Allow-Origin', 'https://meallensai.com','"https://new-meallensai.vercel.app"')
           response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
           response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
           response.headers.add('Access-Control-Allow-Credentials', 'true')

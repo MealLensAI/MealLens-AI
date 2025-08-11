@@ -71,7 +71,7 @@ const MealPlanner = () => {
 
   const { toast } = useToast();
   // Get sickness info from profile instead of separate hook
-  const [sicknessInfo, setSicknessInfo] = useState<{hasSickness: boolean, sicknessType: string} | null>(null);
+  const [sicknessInfo, setSicknessInfo] = useState<{ hasSickness: boolean, sicknessType: string } | null>(null);
 
   // Load sickness info from profile
   useEffect(() => {
@@ -201,27 +201,27 @@ const MealPlanner = () => {
 
     // Validate auto-generate requirements
     if (isAutoGenerateEnabled) {
-          if (sicknessInfo?.hasSickness) {
-      // Sick user - validate location and budget
-      if (!location.trim() || !budget.trim()) {
-        toast({
-          title: "Information Required",
-          description: "Please provide both location and budget for auto-generation",
-          variant: "destructive",
-        });
-        return;
+      if (sicknessInfo?.hasSickness) {
+        // Sick user - validate location and budget
+        if (!location.trim() || !budget.trim()) {
+          toast({
+            title: "Information Required",
+            description: "Please provide both location and budget for auto-generation",
+            variant: "destructive",
+          });
+          return;
+        }
+      } else {
+        // Healthy user - validate location and budget
+        if (!location.trim() || !budget.trim()) {
+          toast({
+            title: "Information Required",
+            description: "Please provide both location and budget for auto-generation",
+            variant: "destructive",
+          });
+          return;
+        }
       }
-    } else {
-      // Healthy user - validate location and budget
-      if (!location.trim() || !budget.trim()) {
-        toast({
-          title: "Information Required",
-          description: "Please provide both location and budget for auto-generation",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
     }
 
     setIsLoading(true);
@@ -322,7 +322,7 @@ const MealPlanner = () => {
       }
 
       // Use different endpoint based on sickness status
-      const endpoint = sicknessInfo ? 'http://127.0.0.1:5001/sick_smart_plan' : 'https://ai-utu2.onrender.com/smart_plan';
+      const endpoint = sicknessInfo ? 'https://meallens-ai.onrender.com/sick_smart_plan' : 'https://ai-utu2.onrender.com/smart_plan';
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -587,13 +587,13 @@ const MealPlanner = () => {
               </div>
 
               {isLoading ? (
-                <LoadingScreen 
-          message="Loading meal plans..." 
-          subMessage="Fetching your personalized meal recommendations"
-          showLogo={true}
-          size="md"
-          fullScreen={false}
-        />
+                <LoadingScreen
+                  message="Loading meal plans..."
+                  subMessage="Fetching your personalized meal recommendations"
+                  showLogo={true}
+                  size="md"
+                  fullScreen={false}
+                />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                   {getRecipesForSelectedDay().map((recipe, index) => (

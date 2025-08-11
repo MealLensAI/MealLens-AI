@@ -27,7 +27,7 @@ const Login = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      const from = location.state?.from?.pathname || "/"
+      const from = location.state?.from?.pathname || "/home"
       navigate(from, { replace: true })
     }
   }, [isAuthenticated, navigate, location])
@@ -73,7 +73,7 @@ const Login = () => {
           })
           
           // Redirect to intended page or home
-          const from = location.state?.from?.pathname || "/"
+          const from = location.state?.from?.pathname || "/home"
           navigate(from, { replace: true })
       } else {
         toast({

@@ -115,7 +115,7 @@ const Settings: React.FC = () => {
 
   // Apply settings to the app
   const applySettings = (newSettings: Partial<SettingsData>) => {
-    // Apply theme
+      // Apply theme
     if (newSettings.theme) {
       if (newSettings.theme === 'dark') {
         document.documentElement.classList.add('dark');
@@ -128,15 +128,15 @@ const Settings: React.FC = () => {
         } else {
           document.documentElement.classList.remove('dark');
         }
+        }
       }
-    }
 
-    // Apply text size
+      // Apply text size
     if (newSettings.textSize) {
       document.documentElement.style.fontSize = `${newSettings.textSize}px`;
     }
 
-    // Apply bold text
+      // Apply bold text
     if (newSettings.boldText !== undefined) {
       if (newSettings.boldText) {
         document.body.classList.add('font-bold');
@@ -161,7 +161,7 @@ const Settings: React.FC = () => {
     try {
       localStorage.setItem('meallens-settings', JSON.stringify(settings));
       applySettings(settings);
-      
+
       toast({
         title: "Settings Saved",
         description: "Your preferences have been updated successfully.",
@@ -520,7 +520,7 @@ const Settings: React.FC = () => {
                         onCheckedChange={(checked) => updatePrivacySettings('personalizedAds', checked)}
                       />
                     </div>
-                  </div>
+              </div>
                 </CardContent>
               </Card>
             </div>

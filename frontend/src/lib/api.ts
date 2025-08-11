@@ -296,7 +296,10 @@ class APIService {
   }
 
   async getDetectionHistory(): Promise<DetectionHistoryResponse> {
-    return this.get('/food_detection/detection_history')
+    console.log("🔍 [API] getDetectionHistory called")
+    const result = await this.get('/food_detection/detection_history')
+    console.log("🔍 [API] getDetectionHistory result:", result)
+    return result
   }
 
   // Session methods (Flask backend)

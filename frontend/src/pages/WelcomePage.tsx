@@ -420,7 +420,7 @@ const WelcomePage: React.FC = () => {
               Get started in just three simple steps and transform your cooking experience.
             </p>
           </div>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
             {/* Step 1 */}
             <div className="text-center">
@@ -437,7 +437,7 @@ const WelcomePage: React.FC = () => {
                 Take a picture of your ingredients or finished dish using your smartphone camera.
               </p>
             </div>
-
+            
             {/* Step 2 */}
             <div className="text-center">
               <div className="relative mb-6">
@@ -453,7 +453,7 @@ const WelcomePage: React.FC = () => {
                 Our AI instantly recognizes ingredients and provides detailed nutritional information.
               </p>
             </div>
-
+            
             {/* Step 3 */}
             <div className="text-center">
               <div className="relative mb-6">
@@ -483,7 +483,7 @@ const WelcomePage: React.FC = () => {
             </Badge>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
               Simple, Transparent Pricing
-            </h2>
+              </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
               Start with our free plan and upgrade when you're ready for more features.
             </p>
@@ -593,7 +593,7 @@ const WelcomePage: React.FC = () => {
                     <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
                     <span className="text-gray-700">24/7 support</span>
                   </div>
-                </div>
+            </div>
                 <Button 
                   variant="outline" 
                   className="w-full border-[#FF6B6B] text-[#FF6B6B] hover:bg-[#FF6B6B] hover:text-white"

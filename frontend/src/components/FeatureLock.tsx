@@ -40,7 +40,7 @@ const FeatureLock: React.FC<FeatureLockProps> = ({
     if (onUpgrade) {
       onUpgrade();
     } else {
-      navigate('/payment');
+    navigate('/payment');
     }
   };
 
@@ -143,9 +143,9 @@ const FeatureLock: React.FC<FeatureLockProps> = ({
 
           {/* Upgrade button */}
           {(!hasActiveSubscription || freeUsageCount >= maxFreeUsage) && (
-            <div className="space-y-3">
-              <Button 
-                onClick={handleUpgrade}
+          <div className="space-y-3">
+            <Button 
+              onClick={handleUpgrade}
                 className="w-full bg-[#FF6B6B] hover:bg-[#FF5252] text-white font-semibold"
               >
                 <Crown className="h-4 w-4 mr-2" />

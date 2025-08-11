@@ -39,9 +39,9 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
             </div>
             <h1 className="text-2xl font-bold text-white mb-2">MealLensAI</h1>
             <p className="text-white/80 text-sm">Your Smart Kitchen Assistant</p>
-          </div>
+        </div>
         )}
-
+        
         {/* Loading Spinner */}
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
@@ -72,7 +72,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
             </div>
           </div>
         </div>
-
+        
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>

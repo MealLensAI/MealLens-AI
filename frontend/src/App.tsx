@@ -18,6 +18,7 @@ import HistoryDetailPage from "./pages/HistoryDetailPage"
 import { AuthProvider } from "@/lib/AuthProvider"
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext"
 import Payment from "./pages/Payment"
+import PaymentSuccess from "./pages/PaymentSuccess"
 import ProfilePage from "./pages/ProfilePage"
 import Settings from "./pages/Settings"
 import WelcomePage from "./pages/WelcomePage"
@@ -159,6 +160,10 @@ const router = createBrowserRouter([
         <Payment />
       </ProtectedRoute>
     )
+  },
+  {
+    path: "/payment/success",
+    element: <PaymentSuccess />
   },
   {
     path: "/profile",

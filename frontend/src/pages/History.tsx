@@ -134,48 +134,66 @@ export function HistoryPage() {
       setIsLoading(true)
       setError(null)
       
+      console.log("🔍 [History] Starting fetchHistory...")
+      console.log("🔍 [History] authLoading:", authLoading)
+      console.log("🔍 [History] isAuthenticated:", isAuthenticated)
+      
       // Wait for auth to load
       if (authLoading) {
+        console.log("🔍 [History] Auth still loading, returning...")
         return
       }
       
       // Check authentication
       if (!isAuthenticated) {
+        console.log("🔍 [History] Not authenticated, setting error...")
         setError("Please log in to view your history.")
         setIsLoading(false)
         return
       }
       
       try {
+        console.log("🔍 [History] Making API call to getDetectionHistory...")
         const result = await api.getDetectionHistory()
+        console.log("🔍 [History] API response:", result)
         
         if (result.status === 'success') {
           // Handle different response structures
           let historyData: SharedRecipe[] = []
           if ((result as any).detection_history) {
             historyData = (result as any).detection_history
+            console.log("🔍 [History] Found detection_history in result")
           } else if ((result as any).data?.detection_history) {
             historyData = (result as any).data.detection_history
+            console.log("🔍 [History] Found detection_history in result.data")
           } else if (Array.isArray((result as any).data)) {
             historyData = (result as any).data
+            console.log("🔍 [History] Found array in result.data")
           } else if ((result as any).data) {
             historyData = [(result as any).data]
+            console.log("🔍 [History] Found single item in result.data")
           } else {
             historyData = []
+            console.log("🔍 [History] No data found, setting empty array")
           }
           
+          console.log("🔍 [History] Final historyData:", historyData)
           setHistory(historyData)
         } else {
+          console.log("🔍 [History] API returned error status:", result.message)
           setError(result.message || 'Failed to load history.')
         }
       } catch (err) {
-        console.error("Error fetching history:", err)
+        console.error("🔍 [History] Error fetching history:", err)
         if (err instanceof APIError) {
+          console.log("🔍 [History] APIError:", err.message, "Status:", err.status)
           setError(err.message)
         } else {
+          console.log("🔍 [History] Unknown error:", err)
           setError("Failed to load history. Please try again later.")
         }
       } finally {
+        console.log("🔍 [History] Setting loading to false")
         setIsLoading(false)
       }
     }
@@ -338,8 +356,8 @@ function HistoryCard({ item, onCardClick }: HistoryCardProps & { onCardClick: (i
   const additionalCount = detectedFoods.length > 1 ? detectedFoods.length - 1 : 0
   
   // Check if resources are available
-  const hasYouTube = resources?.YoutubeSearch?.length > 0 || item.youtube
-  const hasGoogle = resources?.GoogleSearch?.length > 0 || item.google
+  const hasYouTube = (Array.isArray(resources?.YoutubeSearch) && resources.YoutubeSearch.length > 0) || item.youtube
+  const hasGoogle = (Array.isArray(resources?.GoogleSearch) && resources.GoogleSearch.length > 0) || item.google
   const hasResources = hasYouTube || hasGoogle
 
   // Check if this is a food detection with an image
@@ -457,13 +475,13 @@ function HistoryCard({ item, onCardClick }: HistoryCardProps & { onCardClick: (i
             <div className="flex items-center gap-1">
               {hasYouTube && (
                 <span className="text-xs text-red-600 font-medium">
-                  {resources?.YoutubeSearch?.length || 1} video{resources?.YoutubeSearch?.length !== 1 ? 's' : ''}
+                  {Array.isArray(resources?.YoutubeSearch) ? resources.YoutubeSearch.length : 1} video{Array.isArray(resources?.YoutubeSearch) && resources.YoutubeSearch.length !== 1 ? 's' : ''}
                 </span>
               )}
               {hasGoogle && hasYouTube && <span className="text-xs text-gray-400">•</span>}
               {hasGoogle && (
                 <span className="text-xs text-blue-600 font-medium">
-                  {resources?.GoogleSearch?.length || 1} article{resources?.GoogleSearch?.length !== 1 ? 's' : ''}
+                  {Array.isArray(resources?.GoogleSearch) ? resources.GoogleSearch.length : 1} article{Array.isArray(resources?.GoogleSearch) && resources.GoogleSearch.length !== 1 ? 's' : ''}
                 </span>
               )}
             </div>
@@ -613,7 +631,7 @@ function DetailModal({ item, isOpen, onClose }: DetailModalProps) {
               <h4 className="font-semibold text-gray-900">Cooking Resources</h4>
               
               {/* YouTube Videos */}
-              {resources.YoutubeSearch && resources.YoutubeSearch.length > 0 && (
+              {resources.YoutubeSearch && Array.isArray(resources.YoutubeSearch) && resources.YoutubeSearch.length > 0 && (
                 <div>
                   <h5 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                     <Youtube className="h-5 w-5 text-red-600" />
@@ -663,7 +681,7 @@ function DetailModal({ item, isOpen, onClose }: DetailModalProps) {
               )}
 
               {/* Google Articles */}
-              {resources.GoogleSearch && resources.GoogleSearch.length > 0 && (
+              {resources.GoogleSearch && Array.isArray(resources.GoogleSearch) && resources.GoogleSearch.length > 0 && (
                 <div>
                   <h5 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                     <Globe className="h-5 w-5 text-blue-600" />

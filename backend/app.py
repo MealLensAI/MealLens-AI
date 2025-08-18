@@ -102,18 +102,19 @@ def create_app():
             if paystack_secret:
                 app.payment_service = PaymentService(app.supabase_service.supabase)
                 print("Payment service initialized successfully.")
-                # Add Paystack connection test/print
+                # Add Paystack connection test/print (non-blocking)
                 try:
-                    print("[Paystack] PAYSTACK_SECRET_KEY loaded. Attempting to connect...")
+                    print("[Paystack] PAYSTACK_SECRET_KEY loaded. Testing connection...")
                     import requests
                     headers = {"Authorization": f"Bearer {paystack_secret}"}
-                    resp = requests.get("https://api.paystack.co/plan", headers=headers, timeout=5)
+                    resp = requests.get("https://api.paystack.co/plan", headers=headers, timeout=3)
                     if resp.status_code == 200:
                         print("[Paystack] Connected to Paystack API successfully!")
                     else:
-                        print(f"[Paystack] Could not connect to Paystack API. Status: {resp.status_code}, Response: {resp.text}")
+                        print(f"[Paystack] Could not connect to Paystack API. Status: {resp.status_code}")
                 except Exception as e:
-                    print(f"[Paystack] Error connecting to Paystack API: {e}")
+                    print(f"[Paystack] Warning: Could not test Paystack connection: {e}")
+                    print("[Paystack] Service will continue without payment features.")
             else:
                 print("Payment service disabled - PAYSTACK_SECRET_KEY not provided")
                 app.payment_service = None
@@ -133,6 +134,11 @@ def create_app():
         print(f"Warning: Failed to initialize AuthService: {str(e)}")
         print("Authentication features will be disabled.")
         app.auth_service = None
+
+    # Ensure payment_service is set even if initialization failed
+    if not hasattr(app, 'payment_service') or app.payment_service is None:
+        app.payment_service = None
+        print("Payment service not available - payment features will be disabled")
 
     # Register blueprints with API prefix
     app.register_blueprint(food_detection_bp, url_prefix='/api/food_detection')

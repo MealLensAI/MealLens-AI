@@ -1,7 +1,7 @@
 import { useAuth } from './utils'
 
 // API base URL - uses environment variable or falls back to proxy
-const API_BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : (import.meta.env.DEV ? '/api' : 'https://meallens-ai.onrender.com/api')
+const API_BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : (import.meta.env.DEV ? '/api' : 'https://meallens-ai-cmps.onrender.com/api')
 
 // Debug logging
 console.log('[API] Environment:', import.meta.env.MODE)

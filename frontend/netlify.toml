@@ -8,7 +8,7 @@
   # Node.js version
   [build.environment]
     NODE_VERSION = "18"
-    VITE_API_URL = "https://meallens-ai.onrender.com"
+    VITE_API_URL = "https://meallens-ai-cmps.onrender.com"
 
 # Redirects for SPA routing
 [[redirects]]

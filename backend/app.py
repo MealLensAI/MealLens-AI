@@ -62,7 +62,7 @@ def create_app():
         app,
         resources={
             r"/api/*": {
-                "origins": ["http://localhost:5173", "https://meallens-ai.vercel.app", "https://meallensai.com", "https://meallens-ai.netlify.app"],
+                "origins": ["http://localhost:5173", "https://meallens-ai.vercel.app", "https://meallensai.com", "https://meallens-ai.netlify.app", "https://meallens-ai-cmps.onrender.com"],
                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
                 "allow_headers": ["Content-Type", "Authorization"],
                 "supports_credentials": True,

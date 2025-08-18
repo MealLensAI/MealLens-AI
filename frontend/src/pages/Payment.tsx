@@ -68,7 +68,7 @@ const Payment: React.FC = () => {
       };
 
       const response = await paystackService.initializePayment(paymentConfig);
-      
+
       if (response.status === 'success' && response.data?.authorization_url) {
         // Redirect to Paystack payment page
         window.location.href = response.data.authorization_url;
@@ -167,7 +167,7 @@ const Payment: React.FC = () => {
               <CardContent className="p-4">
                 <div className="flex items-center">
                   <Star className="h-5 w-5 text-orange-600 mr-3" />
-                  <div>
+                    <div>
                     <p className="font-medium text-orange-900">
                       You currently have an active {currentPlan.display_name} plan
                     </p>
@@ -184,8 +184,8 @@ const Payment: React.FC = () => {
         {/* Plans Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-12">
           {plans.map((plan) => (
-            <Card 
-              key={plan.id}
+              <Card 
+                key={plan.id}
               className={`relative transition-all duration-300 hover:shadow-xl cursor-pointer ${
                 selectedPlan?.id === plan.id ? 'ring-2 ring-[#FF6B6B] shadow-lg' : ''
               }`}
@@ -195,26 +195,26 @@ const Payment: React.FC = () => {
               {plan.name === 'pro' && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <Badge className="bg-[#FF6B6B] text-white px-4 py-1">
-                    Most Popular
-                  </Badge>
-                </div>
-              )}
-              
-              <CardHeader className="text-center pb-4">
+                      Most Popular
+                    </Badge>
+                  </div>
+                )}
+
+                <CardHeader className="text-center pb-4">
                 <CardTitle className="text-2xl font-bold text-gray-900">{plan.display_name}</CardTitle>
                 <div className="flex items-baseline justify-center">
                   <span className="text-4xl font-bold text-[#FF6B6B]">
                     ${plan.price_monthly}
-                  </span>
+                    </span>
                   <span className="text-gray-600 ml-1">/month</span>
-                </div>
+                  </div>
                 <CardDescription className="text-gray-600">
                   Billed monthly • Cancel anytime
                 </CardDescription>
-              </CardHeader>
-              
+                </CardHeader>
+
               <CardContent className="space-y-4">
-                <div className="space-y-3">
+                  <div className="space-y-3">
                   {Array.isArray(plan.features) ? (
                     plan.features.map((feature: string, index: number) => (
                       <div key={index} className="flex items-center">
@@ -293,7 +293,7 @@ const Payment: React.FC = () => {
                   </div>
 
                   {/* Payment Button */}
-                  <Button 
+                  <Button
                     onClick={() => handlePayment(selectedPlan)}
                     className="w-full bg-[#FF6B6B] hover:bg-[#FF5252] text-white py-4 text-lg font-semibold"
                     disabled={isProcessing}
@@ -314,10 +314,10 @@ const Payment: React.FC = () => {
                   <div className="flex items-center justify-center text-sm text-gray-500">
                     <Shield className="h-4 w-4 mr-2" />
                     Your payment is secure and encrypted
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
           </div>
         )}
       </div>

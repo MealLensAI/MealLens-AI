@@ -613,36 +613,36 @@ export default function ProfilePage() {
 
                     {/* User Info */}
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-xl font-bold text-gray-900">
-                        {firstName} {lastName}
-                      </h2>
-                      <p className="text-gray-600 flex items-center gap-2 text-sm">
-                        <Mail className="h-3 w-3" />
-                        {email}
-                      </p>
-                      <p className="text-xs text-gray-500 flex items-center gap-2">
-                        <Calendar className="h-3 w-3" />
-                        Member since {getMemberSince()}
-                      </p>
-                    </div>
+                          <h2 className="text-xl font-bold text-gray-900">
+                            {firstName} {lastName}
+                          </h2>
+                          <p className="text-gray-600 flex items-center gap-2 text-sm">
+                            <Mail className="h-3 w-3" />
+                            {email}
+                          </p>
+                          <p className="text-xs text-gray-500 flex items-center gap-2">
+                            <Calendar className="h-3 w-3" />
+                            Member since {getMemberSince()}
+                          </p>
+                        </div>
 
-                    {/* Subscription Status */}
-                    <div className="flex flex-col gap-2">
-                      {subscription?.subscription?.status === 'active' ? (
-                        <Badge className="bg-[#FF6B6B]/10 text-[#FF6B6B] border-[#FF6B6B]/20 text-xs">
-                          <Crown className="h-3 w-3 mr-1" />
+                        {/* Subscription Status */}
+                        <div className="flex flex-col gap-2">
+                          {subscription?.subscription?.status === 'active' ? (
+                            <Badge className="bg-[#FF6B6B]/10 text-[#FF6B6B] border-[#FF6B6B]/20 text-xs">
+                              <Crown className="h-3 w-3 mr-1" />
                           Premium
-                        </Badge>
-                      ) : isInTrial() ? (
-                        <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">
-                          <Clock className="h-3 w-3 mr-1" />
+                            </Badge>
+                          ) : isInTrial() ? (
+                            <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">
+                              <Clock className="h-3 w-3 mr-1" />
                           Trial - {getTrialDaysLeft()}d
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-gray-600 text-xs">
-                          <Shield className="h-3 w-3 mr-1" />
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-gray-600 text-xs">
+                              <Shield className="h-3 w-3 mr-1" />
                           Free
-                        </Badge>
+                            </Badge>
                       )}
                     </div>
                   </div>

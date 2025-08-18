@@ -8,6 +8,7 @@
   # Node.js version
   [build.environment]
     NODE_VERSION = "18"
+    VITE_API_URL = "https://meallens-ai.onrender.com"
 
 # Redirects for SPA routing
 [[redirects]]
@@ -15,10 +16,7 @@
   to = "/index.html"
   status = 200
 
-<<<<<<< HEAD
 # Headers for security and performance
-=======
->>>>>>> 60ea55f64249994db0967d666c3afee0ba4a8372
 [[headers]]
   for = "/*"
   [headers.values]

@@ -62,7 +62,7 @@ def create_app():
         app,
         resources={
             r"/api/*": {
-                "origins": ["http://localhost:5173","https://new-meallensai.vercel.app","https://meallensai.com/"],
+                "origins": ["http://localhost:5173", "https://meallens-ai.vercel.app", "https://meallensai.com", "https://meallens-ai.netlify.app"],
                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
                 "allow_headers": ["Content-Type", "Authorization"],
                 "supports_credentials": True,
@@ -82,25 +82,6 @@ def create_app():
             response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
             response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
             response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response
-                "allow_headers": ["Content-Type", "Authorization"],
-                "supports_credentials": False,  # Can't use credentials with wildcard origin
-                "expose_headers": ["Content-Type", "Authorization"],
-                "max_age": 600  # Cache preflight request for 10 minutes
-            }
-        },
-        supports_credentials=False
-    )
-
-    # Add CORS headers to all responses for preflight requests
-    @app.after_request
-    def after_request(response):
-        # Only add CORS headers if they're not already set by Flask-CORS
-        if 'Access-Control-Allow-Origin' not in response.headers:
-            response.headers.add('Access-Control-Allow-Origin', '*')
-            response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-            response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            # Do not add Access-Control-Allow-Credentials header since credentials are disabled
         return response
 
     # Initialize Supabase clients

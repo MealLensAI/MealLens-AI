@@ -95,9 +95,6 @@ def create_app():
     app.supabase_service = SupabaseService(supabase_url, supabase_service_role_key)
 
     # Initialize PaymentService if enabled
-    # --- SIMULATION MODE: Paystack integration is disabled for now ---
-    # The following block is commented out for backend testing. Uncomment to enable real Paystack integration.
-    '''
     if PAYMENT_ENABLED:
         try:
             # Only initialize if Paystack keys are provided
@@ -126,16 +123,6 @@ def create_app():
             app.payment_service = None
     else:
         print("Payment service disabled - payment features will be unavailable")
-    '''
-    # --- END SIMULATION MODE ---
-    # For simulation, use the simulated payment service
-    print("[SIMULATION] Using SimulatedPaymentService. No real payments will be processed.")
-    try:
-        from services.payment_service import SimulatedPaymentService
-        app.payment_service = SimulatedPaymentService(app.supabase_service.supabase)
-        print("Simulated payment service initialized successfully.")
-    except Exception as e:
-        print(f"Warning: Failed to initialize SimulatedPaymentService: {str(e)}")
         app.payment_service = None
 
     # Initialize AuthService with Supabase client only

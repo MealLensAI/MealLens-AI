@@ -36,7 +36,7 @@ const LaunchCountdownWrapper: React.FC<{ children: React.ReactNode }> = ({ child
     // Check if launch time has passed
     const checkLaunchStatus = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://meallens-ai.onrender.com'}/api/server-time`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://meallens-ai-cmps.onrender.com'}/api/server-time`);
         const data = await response.json();
         const serverTime = new Date(data.serverTime);
         const launchDate = new Date('2024-12-25T00:00:00Z'); // Same as in LaunchCountdown

@@ -28,7 +28,7 @@ const LaunchCountdown: React.FC<LaunchCountdownProps> = ({ onLaunchComplete }) =
   // Get server time to prevent clock manipulation
   const getServerTime = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://meallens-ai.onrender.com'}/api/server-time`);
+              const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://meallens-ai-cmps.onrender.com'}/api/server-time`);
       const data = await response.json();
       return new Date(data.serverTime);
     } catch (error) {

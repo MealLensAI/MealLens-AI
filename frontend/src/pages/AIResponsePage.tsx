@@ -357,25 +357,50 @@ const AIResponsePage: FC = () => {
   }
 
   return (
-    <div 
-      className="min-h-screen py-4 sm:py-6 lg:py-8"
-      style={{
-        fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
-        background: "url('https://images.unsplash.com/photo-1495195134817-aeb325a55b65?auto=format&fit=crop&w=2000&q=80') center/cover no-repeat fixed",
-        color: "#2D3436",
-        lineHeight: "1.6"
-      }}
-    >
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div 
-          className="bg-[rgba(255,255,255,0.95)] rounded-[1.5rem] sm:rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.1)] overflow-hidden p-4 sm:p-6 lg:p-8 xl:p-12 relative max-w-[800px] mx-auto"
-        >
-          {/* Title */}
-          <h1 
-            className="text-xl sm:text-2xl lg:text-3xl xl:text-[2.5rem] font-extrabold text-center mb-4 sm:mb-6 lg:mb-8 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] bg-clip-text text-transparent tracking-[-1px]"
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto p-6">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="text-gray-600 hover:text-gray-900"
           >
-            Ingredient Detection
-          </h1>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">AI Kitchen Assistant</h1>
+            <p className="text-gray-600">Get personalized recipe suggestions and cooking instructions from your ingredients</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Input */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ChefHat className="h-5 w-5 text-[#FF6B6B]" />
+                  Input Method
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Input Type Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    How would you like to start?
+                  </label>
+                  <select
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B6B] focus:border-[#FF6B6B]"
+                    value={inputType}
+                    onChange={(e) => setInputType(e.target.value as "image" | "ingredient_list")}
+                  >
+                    <option value="image">Snap or Upload Ingredient Image</option>
+                    <option value="ingredient_list">List Your Ingredients</option>
+                  </select>
+                </div>
 
           {/* Input Form */}
           <div className="mb-4 sm:mb-6">
@@ -392,150 +417,162 @@ const AIResponsePage: FC = () => {
                 </select>
               </div>
 
-          {/* Image Input */}
-          {inputType === "image" && (
-            <div className="mb-4 sm:mb-6">
-              <label className="block font-semibold text-base sm:text-lg text-[#2D3436] mb-2 sm:mb-3">
-                Share Your Food Image
-              </label>
-              
-              <div className="space-y-3">
-                {/* Camera Capture Buttons */}
-                <div className="flex gap-2">
-                  <input
-                    type="file"
-                    id="cameraInputAI"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={handleImageSelect}
-                  />
-                  <input
-                    type="file"
-                    id="fileInputAI"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageSelect}
-                  />
-                  
-                  <Button
-                    onClick={() => document.getElementById('cameraInputAI')?.click()}
-                    className="flex-1 bg-[#FF6B6B] hover:bg-[#FF5252] text-white font-medium py-3 px-4 rounded-lg transition-colors"
-                  >
-                    <Camera className="h-4 w-4 mr-2" />
-                    Take Photo
-                  </Button>
-                  
-                  <Button
-                    onClick={() => document.getElementById('fileInputAI')?.click()}
-                    variant="outline"
-                    className="flex-1 border-[#FF6B6B] text-[#FF6B6B] hover:bg-[#FF6B6B] hover:text-white font-medium py-3 px-4 rounded-lg transition-colors"
-                  >
-                    <ImageIcon className="h-4 w-4 mr-2" />
-                    Choose File
-                  </Button>
-                </div>
-                
-                {/* Image Preview */}
-                {imagePreview && (
-                  <div className="relative">
-                    <img
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="w-full max-w-xs sm:max-w-sm lg:max-w-md h-48 sm:h-56 lg:h-64 object-cover rounded-lg sm:rounded-xl mx-auto"
-                    />
-                    <Button
-                      onClick={() => {
-                        setSelectedImage(null);
-                        setImagePreview(null);
-                      }}
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full"
-                    >
-                      ×
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Ingredient Input */}
-          {inputType === "ingredient_list" && (
-            <div className="mb-4 sm:mb-6">
-              <label className="block font-semibold text-base sm:text-lg text-[#2D3436] mb-2 sm:mb-3">
-                    What ingredients do you have?
-                  </label>
-              <input
-                type="text"
-                value={ingredientList}
-                onChange={(e) => setIngredientList(e.target.value)}
-                    placeholder="e.g., chicken, tomatoes, basil, olive oil"
-                className="w-full bg-white border-2 border-[rgba(0,0,0,0.1)] rounded-xl sm:rounded-2xl p-3 sm:p-4 text-base sm:text-lg transition-all duration-300 shadow-[0_4px_6px_rgba(0,0,0,0.05)] focus:border-[#FF6B6B] focus:shadow-[0_0_0_4px_rgba(255,107,107,0.2)]"
-                  />
-                </div>
-              )}
-
-          {/* Discover Button */}
-          <button
-                onClick={handleDiscoverRecipes}
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white border-none rounded-xl sm:rounded-2xl py-3 sm:py-4 px-6 sm:px-8 text-lg sm:text-xl font-semibold transition-all duration-300 uppercase tracking-wider shadow-[0_4px_15px_rgba(255,107,107,0.3)] hover:translate-y-[-2px] hover:shadow-[0_6px_20px_rgba(255,107,107,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Discover Recipes
-          </button>
-
-          {/* Loading Spinner */}
-          {isLoading && (
-            <div className="flex justify-center mt-6 sm:mt-8">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-[rgba(255,107,107,0.3)] border-t-[#FF6B6B] rounded-full animate-spin"></div>
-            </div>
-          )}
-
-          {/* Results */}
-          {showResults && (
-            <div className="mt-4 sm:mt-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                {/* AI Detected Ingredients */}
-                <div 
-                  className="bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)] hover:translate-y-[-5px] hover:shadow-[0_15px_35px_rgba(0,0,0,0.15)]"
-                >
-                  <div className="p-4 mt-2.5">
-                    <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
-                      AI Detected Ingredient
-                    </h5>
-                    <ol className="pl-4 text-left">
-                    {detectedIngredients.map((item, i) => (
-                        <li key={i} className="mb-3 text-left">{item.trim()}</li>
-                    ))}
-                  </ol>
-                  </div>
-                </div>
-
-                {/* AI Recipe Suggestions */}
-                <div 
-                  className="bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)] hover:translate-y-[-5px] hover:shadow-[0_15px_35px_rgba(0,0,0,0.15)]"
-                >
-                  <div className="p-4 mt-2.5">
-                    <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
-                      AI Recipe Suggestions
-                    </h5>
-                  <div className="flex flex-wrap gap-2">
-                    {suggestions.map((suggestion, i) => (
-                        <button
-                        key={i}
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        disabled={isLoading}
-                          className="bg-white text-[#FF6B6B] border-2 border-[#FF6B6B] rounded-2xl px-3 py-3 m-2 transition-all duration-300 font-semibold text-base hover:bg-gradient-to-r hover:from-[#FF6B6B] hover:to-[#FF8E53] hover:text-white hover:border-transparent hover:translate-y-[-2px] hover:shadow-[0_4px_12px_rgba(255,107,107,0.2)]"
-                      >
-                        {suggestion}
-                        </button>
-                    ))}
+                {/* Image Input */}
+                {inputType === "image" && (
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Share Your Food Image
+                    </label>
+                    
+                    <div className="space-y-3">
+                      {/* Camera Capture Buttons */}
+                      <div className="flex gap-3">
+                        <input
+                          type="file"
+                          id="cameraInputAI"
+                          accept="image/*"
+                          capture="environment"
+                          className="hidden"
+                          onChange={handleImageSelect}
+                        />
+                        <input
+                          type="file"
+                          id="fileInputAI"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageSelect}
+                        />
+                        
+                        <Button
+                          onClick={() => document.getElementById('cameraInputAI')?.click()}
+                          className="flex-1 bg-[#FF6B6B] hover:bg-[#FF5252] text-white"
+                        >
+                          <Camera className="h-4 w-4 mr-2" />
+                          Take Photo
+                        </Button>
+                        
+                        <Button
+                          onClick={() => document.getElementById('fileInputAI')?.click()}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          <ImageIcon className="h-4 w-4 mr-2" />
+                          Choose File
+                        </Button>
+                      </div>
+                      
+                      {/* Image Preview */}
+                      {imagePreview && (
+                        <div className="relative">
+                          <img
+                            src={imagePreview} 
+                            alt="Preview" 
+                            className="w-full h-64 object-cover rounded-lg"
+                          />
+                          <Button
+                            onClick={() => {
+                              setSelectedImage(null);
+                              setImagePreview(null);
+                            }}
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full"
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-            </div>
+                )}
+
+                {/* Ingredient Input */}
+                {inputType === "ingredient_list" && (
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      What ingredients do you have?
+                    </label>
+                    <input
+                      type="text"
+                      value={ingredientList}
+                      onChange={(e) => setIngredientList(e.target.value)}
+                      placeholder="e.g., chicken, tomatoes, basil, olive oil"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B6B] focus:border-[#FF6B6B]"
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Submit Button */}
+            <Button
+              onClick={handleDiscoverRecipes}
+              disabled={isLoading}
+              className="w-full bg-[#FF6B6B] hover:bg-[#FF5252] text-white h-12 text-lg font-medium"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Discovering Recipes...
+                </>
+              ) : (
+                "Discover Recipes"
+              )}
+            </Button>
+          </div>
+
+          {/* Right Column - Results */}
+          <div className="space-y-6">
+            {showResults && (
+              <>
+                {/* Detected Ingredients */}
+                {detectedIngredients.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Utensils className="h-5 w-5 text-[#FF6B6B]" />
+                        Detected Ingredients
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {detectedIngredients.map((item, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-[#FF6B6B] rounded-full"></div>
+                            <span className="text-gray-700">{item.trim()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Recipe Suggestions */}
+                {suggestions.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <ChefHat className="h-5 w-5 text-[#FF6B6B]" />
+                        Recipe Suggestions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {suggestions.map((suggestion, i) => (
+                          <Button
+                            key={i}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            disabled={isLoading}
+                            variant="outline"
+                            className="border-[#FF6B6B] text-[#FF6B6B] hover:bg-[#FF6B6B] hover:text-white"
+                          >
+                            {suggestion}
+                          </Button>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
               {/* Instructions Section */}
               {instructions && (

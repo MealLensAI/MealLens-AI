@@ -410,20 +410,64 @@ const DetectFoodPage = () => {
 
           {/* Image Input */}
           <div className="mb-4 sm:mb-6">
+            <div className="space-y-3">
+              {/* Camera Capture Button for Mobile */}
+              <div className="flex gap-2">
+                <input
+                  type="file"
+                  id="cameraInput"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleImageSelect}
+                />
                 <input
                   type="file"
                   id="fileInput"
                   accept="image/*"
-              className="w-full p-3 sm:p-4 border-2 border-[rgba(0,0,0,0.1)] rounded-xl sm:rounded-2xl text-sm sm:text-[1.1rem] transition-all duration-300 shadow-[0_4px_6px_rgba(0,0,0,0.05)] focus:border-[#FF6B6B] focus:shadow-[0_0_0_4px_rgba(255,107,107,0.2)]"
-              onChange={handleImageSelect}
-            />
-            <div className="flex justify-center mt-3 sm:mt-4">
-              <img 
-                id="imagePreview" 
-                src={imagePreview || ""} 
-                alt="Image Preview" 
-                className={`${imagePreview ? "block" : "hidden"} w-full max-w-xs sm:max-w-sm lg:max-w-md h-48 sm:h-56 lg:h-64 object-cover rounded-lg sm:rounded-xl`}
-              />
+                  className="hidden"
+                  onChange={handleImageSelect}
+                />
+                
+                <Button
+                  onClick={() => document.getElementById('cameraInput')?.click()}
+                  className="flex-1 bg-[#FF6B6B] hover:bg-[#FF5252] text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Take Photo
+                </Button>
+                
+                <Button
+                  onClick={() => document.getElementById('fileInput')?.click()}
+                  variant="outline"
+                  className="flex-1 border-[#FF6B6B] text-[#FF6B6B] hover:bg-[#FF6B6B] hover:text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                >
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Choose File
+                </Button>
+              </div>
+              
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="relative">
+                  <img 
+                    src={imagePreview} 
+                    alt="Image Preview" 
+                    className="w-full max-w-xs sm:max-w-sm lg:max-w-md h-48 sm:h-56 lg:h-64 object-cover rounded-lg sm:rounded-xl mx-auto"
+                  />
+                  <Button
+                    onClick={() => {
+                      setSelectedImage(null);
+                      setImagePreview(null);
+                    }}
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full"
+                  >
+                    ×
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 

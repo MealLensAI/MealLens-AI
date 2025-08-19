@@ -9,10 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
-import { Eye, EyeOff, Mail, Lock, User, Utensils, Loader2, CheckCircle, XCircle } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, User, Utensils, Loader2, CheckCircle, XCircle, AlertCircle } from "lucide-react"
 import { useAuth } from "@/lib/utils"
 import { api, APIError } from "@/lib/api"
 import Logo from "@/components/Logo"
+
+interface ValidationErrors {
+  firstName?: string
+  lastName?: string
+  email?: string
+  password?: string
+  confirmPassword?: string
+}
 
 const Signup = () => {
   const navigate = useNavigate()
@@ -26,9 +34,11 @@ const Signup = () => {
     password: "",
     confirmPassword: "",
   })
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isValidating, setIsValidating] = useState(false)
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -41,78 +51,105 @@ const Signup = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+    
+    // Clear validation error for this field
+    if (validationErrors[name as keyof ValidationErrors]) {
+      setValidationErrors(prev => ({ ...prev, [name]: undefined }))
+    }
   }
 
-  const validateForm = () => {
-    if (!formData.firstName.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "First name is required.",
-        variant: "destructive",
-      })
-      return false
+  const validateField = (name: string, value: string): string | undefined => {
+    switch (name) {
+      case 'firstName':
+        if (!value.trim()) return 'First name is required'
+        if (value.trim().length < 2) return 'First name must be at least 2 characters'
+        if (!/^[a-zA-Z\s]*$/.test(value.trim())) return 'First name can only contain letters'
+        return undefined
+      
+      case 'lastName':
+        if (!value.trim()) return 'Last name is required'
+        if (value.trim().length < 2) return 'Last name must be at least 2 characters'
+        if (!/^[a-zA-Z\s]*$/.test(value.trim())) return 'Last name can only contain letters'
+        return undefined
+      
+      case 'email':
+        if (!value.trim()) return 'Email is required'
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(value.trim())) return 'Please enter a valid email address'
+        return undefined
+      
+      case 'password':
+        if (!value) return 'Password is required'
+        if (value.length < 8) return 'Password must be at least 8 characters'
+        if (!/(?=.*[a-z])/.test(value)) return 'Password must contain at least one lowercase letter'
+        if (!/(?=.*[A-Z])/.test(value)) return 'Password must contain at least one uppercase letter'
+        if (!/(?=.*\d)/.test(value)) return 'Password must contain at least one number'
+        return undefined
+      
+      case 'confirmPassword':
+        if (!value) return 'Please confirm your password'
+        if (value !== formData.password) return 'Passwords do not match'
+        return undefined
+      
+      default:
+        return undefined
     }
-    if (!formData.lastName.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Last name is required.",
-        variant: "destructive",
-      })
-      return false
-    }
-    if (!formData.email.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Email is required.",
-        variant: "destructive",
-      })
-      return false
-    }
-    if (!formData.email.includes('@')) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a valid email address.",
-        variant: "destructive",
-      })
-      return false
-    }
-    if (formData.password.length < 6) {
-      toast({
-        title: "Validation Error",
-        description: "Password must be at least 6 characters long.",
-        variant: "destructive",
-      })
-      return false
-    }
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Validation Error",
-        description: "Passwords do not match.",
-        variant: "destructive",
-      })
-      return false
-    }
-    return true
+  }
+
+  const validateForm = (): boolean => {
+    const errors: ValidationErrors = {}
+    
+    // Validate all fields
+    Object.keys(formData).forEach(key => {
+      const error = validateField(key, formData[key as keyof typeof formData])
+      if (error) {
+        errors[key as keyof ValidationErrors] = error
+      }
+    })
+    
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateForm()) return
+    
+    if (!validateForm()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors in the form.",
+        variant: "destructive",
+      })
+      return
+    }
 
     setIsLoading(true)
+    setIsValidating(true)
+    
     try {
       // Use centralized API service for registration
       const registerResult = await api.register({
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password,
-        first_name: formData.firstName,
-        last_name: formData.lastName
+        first_name: formData.firstName.trim(),
+        last_name: formData.lastName.trim()
       })
       
       if (registerResult.status !== 'success') {
+        // Handle specific error types
+        if (registerResult.error_type === 'duplicate_email') {
+          toast({
+            title: "Email Already Exists",
+            description: "An account with this email already exists. Please try logging in instead.",
+            variant: "destructive",
+          })
+          navigate("/login")
+          return
+        }
+        
         toast({
-          title: "Signup Failed",
-          description: registerResult.message || "Failed to create account.",
+          title: "Registration Failed",
+          description: registerResult.message || "Failed to create account. Please try again.",
           variant: "destructive",
         })
         return
@@ -120,7 +157,7 @@ const Signup = () => {
 
       // Auto-login after successful registration
       const loginResult = await api.login({ 
-        email: formData.email, 
+        email: formData.email.trim(), 
         password: formData.password 
       })
       
@@ -135,8 +172,8 @@ const Signup = () => {
           // Store user data for auth context
           const userData = {
             uid: loginResult.user_id || loginResult.user_data?.id,
-            email: loginResult.user_data?.email || formData.email,
-            displayName: `${formData.firstName} ${formData.lastName}`,
+            email: loginResult.user_data?.email || formData.email.trim(),
+            displayName: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
             photoURL: null
           }
           localStorage.setItem('user_data', JSON.stringify(userData))
@@ -145,25 +182,23 @@ const Signup = () => {
           await refreshAuth()
           
           toast({
-            title: "Account Created!",
-            description: "Welcome to MealLensAI! Your account has been successfully created.",
+            title: "Welcome to MealLensAI!",
+            description: "Your account has been successfully created. Let's get started!",
           })
           
-          // Redirect to intended page or home
-          const from = location.state?.from?.pathname || "/home"
-          navigate(from, { replace: true })
+          // Redirect to onboarding for new users
+          navigate("/onboarding", { replace: true })
         } else {
           toast({
-            title: "Signup Failed",
-            description: "Failed to retrieve authentication token.",
-            variant: "destructive",
+            title: "Registration Complete",
+            description: "Account created successfully! Please log in to continue.",
           })
+          navigate("/login")
         }
       } else {
         toast({
-          title: "Auto-login Failed",
-          description: loginResult.message || "Account created but login failed. Please try logging in manually.",
-          variant: "destructive",
+          title: "Registration Complete",
+          description: "Account created successfully! Please log in to continue.",
         })
         navigate("/login")
       }
@@ -171,224 +206,267 @@ const Signup = () => {
       console.error('Signup error:', error)
       if (error instanceof APIError) {
         toast({
-          title: "Signup Failed",
+          title: "Registration Failed",
           description: error.message,
           variant: "destructive",
         })
       } else {
         toast({
-          title: "Signup Failed",
+          title: "Registration Failed",
           description: "An unexpected error occurred. Please try again.",
           variant: "destructive",
         })
       }
     } finally {
       setIsLoading(false)
+      setIsValidating(false)
     }
   }
 
-  const getPasswordStrength = (password: string) => {
-    if (password.length === 0) return { strength: 0, label: "", color: "" }
-    if (password.length < 6) return { strength: 25, label: "Weak", color: "bg-red-500" }
-    if (password.length < 8) return { strength: 50, label: "Fair", color: "bg-yellow-500" }
-    if (password.length < 12) return { strength: 75, label: "Good", color: "bg-blue-500" }
-    return { strength: 100, label: "Strong", color: "bg-green-500" }
+  const getFieldError = (fieldName: keyof ValidationErrors) => {
+    return validationErrors[fieldName]
   }
 
-  const passwordStrength = getPasswordStrength(formData.password)
+  const isFieldValid = (fieldName: keyof ValidationErrors) => {
+    return !validationErrors[fieldName] && formData[fieldName as keyof typeof formData].length > 0
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 flex items-center justify-center p-4">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[url('/placeholder.svg?height=100&width=100')] opacity-5"></div>
-
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo Section */}
-        <div className="text-center mb-8">
-          <Logo size="xl" className="justify-center mb-4" />
-          <p className="text-gray-600 text-lg">Join the Smart Food Revolution</p>
-        </div>
-
-        {/* Signup Card */}
-        <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl font-bold text-center text-gray-900">Create Your Account</CardTitle>
-            <p className="text-center text-gray-600">Start your journey with AI-powered food detection</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <Card className="bg-white shadow-xl border-0">
+          <CardHeader className="text-center pb-6">
+            <div className="flex justify-center mb-4">
+              <Logo size="lg" showText={true} />
+            </div>
+            <CardTitle className="text-2xl font-bold text-gray-900">
+              Create Your Account
+            </CardTitle>
+            <p className="text-gray-600 text-sm">
+              Join MealLensAI and start your culinary journey
+            </p>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Email Signup Form */}
+          
+          <CardContent className="space-y-4">
             <form onSubmit={handleEmailSignup} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              {/* Name Fields */}
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
                     First Name
                   </Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       id="firstName"
                       name="firstName"
                       type="text"
-                      placeholder="First name"
                       value={formData.firstName}
                       onChange={handleInputChange}
-                      className="pl-10 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-                      required
+                      className={`h-10 ${
+                        getFieldError('firstName') 
+                          ? 'border-red-500 focus:border-red-500' 
+                          : isFieldValid('firstName')
+                          ? 'border-green-500 focus:border-green-500'
+                          : ''
+                      }`}
+                      placeholder="John"
+                      disabled={isLoading}
                     />
+                    {isFieldValid('firstName') && (
+                      <CheckCircle className="absolute right-3 top-2.5 h-5 w-5 text-green-500" />
+                    )}
+                    {getFieldError('firstName') && (
+                      <XCircle className="absolute right-3 top-2.5 h-5 w-5 text-red-500" />
+                    )}
                   </div>
+                  {getFieldError('firstName') && (
+                    <p className="text-xs text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {getFieldError('firstName')}
+                    </p>
+                  )}
                 </div>
-
+                
                 <div className="space-y-2">
                   <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
                     Last Name
                   </Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       id="lastName"
                       name="lastName"
                       type="text"
-                      placeholder="Last name"
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      className="pl-10 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-                      required
+                      className={`h-10 ${
+                        getFieldError('lastName') 
+                          ? 'border-red-500 focus:border-red-500' 
+                          : isFieldValid('lastName')
+                          ? 'border-green-500 focus:border-green-500'
+                          : ''
+                      }`}
+                      placeholder="Doe"
+                      disabled={isLoading}
                     />
+                    {isFieldValid('lastName') && (
+                      <CheckCircle className="absolute right-3 top-2.5 h-5 w-5 text-green-500" />
+                    )}
+                    {getFieldError('lastName') && (
+                      <XCircle className="absolute right-3 top-2.5 h-5 w-5 text-red-500" />
+                    )}
                   </div>
+                  {getFieldError('lastName') && (
+                    <p className="text-xs text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {getFieldError('lastName')}
+                    </p>
+                  )}
                 </div>
               </div>
 
+              {/* Email Field */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                   Email Address
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="pl-10 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-                    required
+                    className={`h-10 pl-10 ${
+                      getFieldError('email') 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : isFieldValid('email')
+                        ? 'border-green-500 focus:border-green-500'
+                        : ''
+                    }`}
+                    placeholder="john@example.com"
+                    disabled={isLoading}
                   />
+                  {isFieldValid('email') && (
+                    <CheckCircle className="absolute right-3 top-2.5 h-5 w-5 text-green-500" />
+                  )}
+                  {getFieldError('email') && (
+                    <XCircle className="absolute right-3 top-2.5 h-5 w-5 text-red-500" />
+                  )}
                 </div>
+                {getFieldError('email') && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {getFieldError('email')}
+                  </p>
+                )}
               </div>
 
+              {/* Password Field */}
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-sm font-medium text-gray-700">
                   Password
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   <Input
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Create a password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="pl-10 pr-10 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-                    required
+                    className={`h-10 pl-10 pr-10 ${
+                      getFieldError('password') 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : isFieldValid('password')
+                        ? 'border-green-500 focus:border-green-500'
+                        : ''
+                    }`}
+                    placeholder="Create a strong password"
+                    disabled={isLoading}
                   />
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                    disabled={isLoading}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
-                    )}
-                  </Button>
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                  {isFieldValid('password') && (
+                    <CheckCircle className="absolute right-12 top-2.5 h-5 w-5 text-green-500" />
+                  )}
+                  {getFieldError('password') && (
+                    <XCircle className="absolute right-12 top-2.5 h-5 w-5 text-red-500" />
+                  )}
                 </div>
-                
-                {/* Password Strength Indicator */}
-                {formData.password && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-600">Password strength:</span>
-                      <span className={`font-medium ${
-                        passwordStrength.strength <= 25 ? 'text-red-600' :
-                        passwordStrength.strength <= 50 ? 'text-yellow-600' :
-                        passwordStrength.strength <= 75 ? 'text-blue-600' : 'text-green-600'
-                      }`}>
-                        {passwordStrength.label}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all duration-300 ${passwordStrength.color}`}
-                        style={{ width: `${passwordStrength.strength}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                {getFieldError('password') && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {getFieldError('password')}
+                  </p>
                 )}
+                <p className="text-xs text-gray-500">
+                  Must be at least 8 characters with uppercase, lowercase, and number
+                </p>
               </div>
 
+              {/* Confirm Password Field */}
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
                   Confirm Password
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm your password"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className="pl-10 pr-10 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-                    required
+                    className={`h-10 pl-10 pr-10 ${
+                      getFieldError('confirmPassword') 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : isFieldValid('confirmPassword')
+                        ? 'border-green-500 focus:border-green-500'
+                        : ''
+                    }`}
+                    placeholder="Confirm your password"
+                    disabled={isLoading}
                   />
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                    disabled={isLoading}
                   >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
-                    )}
-                  </Button>
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                  {isFieldValid('confirmPassword') && (
+                    <CheckCircle className="absolute right-12 top-2.5 h-5 w-5 text-green-500" />
+                  )}
+                  {getFieldError('confirmPassword') && (
+                    <XCircle className="absolute right-12 top-2.5 h-5 w-5 text-red-500" />
+                  )}
                 </div>
-                
-                {/* Password Match Indicator */}
-                {formData.confirmPassword && (
-                  <div className="flex items-center space-x-2 text-sm">
-                    {formData.password === formData.confirmPassword ? (
-                      <>
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-green-600">Passwords match</span>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="h-4 w-4 text-red-500" />
-                        <span className="text-red-600">Passwords do not match</span>
-                      </>
-                    )}
-                  </div>
+                {getFieldError('confirmPassword') && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {getFieldError('confirmPassword')}
+                  </p>
                 )}
               </div>
 
+              {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={isLoading}
-                className="w-full h-12 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="w-full h-11 bg-[#FF6B6B] hover:bg-[#FF5252] text-white font-semibold"
+                disabled={isLoading || isValidating}
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="h-5 w-5 mr-3 animate-spin" />
-                    Creating account...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Account...
                   </>
                 ) : (
                   "Create Account"
@@ -396,16 +474,32 @@ const Signup = () => {
               </Button>
             </form>
 
-            {/* Sign In Link */}
+            <Separator className="my-6" />
+
+            {/* Login Link */}
             <div className="text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{" "}
                 <Link
                   to="/login"
-                  className="font-semibold text-orange-600 hover:text-orange-700 transition-colors duration-200"
+                  className="font-semibold text-[#FF6B6B] hover:text-[#FF5252] transition-colors"
                 >
                   Sign in here
                 </Link>
+              </p>
+            </div>
+
+            {/* Terms and Privacy */}
+            <div className="text-center">
+              <p className="text-xs text-gray-500">
+                By creating an account, you agree to our{" "}
+                <a href="#" className="text-[#FF6B6B] hover:underline">
+                  Terms of Service
+                </a>{" "}
+                and{" "}
+                <a href="#" className="text-[#FF6B6B] hover:underline">
+                  Privacy Policy
+                </a>
               </p>
             </div>
           </CardContent>

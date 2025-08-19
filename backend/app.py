@@ -11,6 +11,7 @@ from flask_cors import CORS, cross_origin  # Import CORS
 # Import services
 from services.auth_service import AuthService
 from services.supabase_service import SupabaseService
+from database import initialize_database_pool, cleanup_database_pool
 
 # Payment service import
 try:
@@ -90,6 +91,14 @@ def create_app():
 
     if not supabase_url or not supabase_service_role_key:
         raise ValueError("Missing required Supabase credentials in .env file")
+
+    # Initialize database connection pool
+    try:
+        app.db_pool = initialize_database_pool()
+        print("Database connection pool initialized successfully")
+    except Exception as e:
+        print(f"Failed to initialize database pool: {e}")
+        raise
 
     # Create Supabase client with service role key for admin operations
     app.supabase_service = SupabaseService(supabase_url, supabase_service_role_key)

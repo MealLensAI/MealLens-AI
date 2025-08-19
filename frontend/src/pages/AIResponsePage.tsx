@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { Users, ChefHat, Bookmark, Timer, Utensils, Loader2, Upload, ArrowLeft } from "lucide-react"
+import { Users, ChefHat, Bookmark, Timer, Utensils, Loader2, Upload, ArrowLeft, Camera, Image as ImageIcon } from "lucide-react"
 import "@/styles/ai-response.css"
 import { useAuth } from "@/lib/utils"
 import { useSubscription } from "@/contexts/SubscriptionContext"
@@ -397,23 +397,68 @@ const AIResponsePage: FC = () => {
             <div className="mb-4 sm:mb-6">
               <label className="block font-semibold text-base sm:text-lg text-[#2D3436] mb-2 sm:mb-3">
                 Share Your Food Image
-                  </label>
+              </label>
+              
+              <div className="space-y-3">
+                {/* Camera Capture Buttons */}
+                <div className="flex gap-2">
                   <input
                     type="file"
+                    id="cameraInputAI"
                     accept="image/*"
-                onChange={handleImageSelect}
-                className="w-full bg-white border-2 border-[rgba(0,0,0,0.1)] rounded-xl sm:rounded-2xl p-3 sm:p-4 text-base sm:text-lg transition-all duration-300 shadow-[0_4px_6px_rgba(0,0,0,0.05)] focus:border-[#FF6B6B] focus:shadow-[0_0_0_4px_rgba(255,107,107,0.2)]"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleImageSelect}
                   />
-                  {imagePreview && (
-                <div className="flex justify-center mt-3 sm:mt-4">
-                      <img
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="w-full max-w-xs sm:max-w-sm lg:max-w-md h-48 sm:h-56 lg:h-64 object-cover rounded-lg sm:rounded-xl"
-                      />
-                    </div>
-                  )}
+                  <input
+                    type="file"
+                    id="fileInputAI"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                  />
+                  
+                  <Button
+                    onClick={() => document.getElementById('cameraInputAI')?.click()}
+                    className="flex-1 bg-[#FF6B6B] hover:bg-[#FF5252] text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Take Photo
+                  </Button>
+                  
+                  <Button
+                    onClick={() => document.getElementById('fileInputAI')?.click()}
+                    variant="outline"
+                    className="flex-1 border-[#FF6B6B] text-[#FF6B6B] hover:bg-[#FF6B6B] hover:text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                  >
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    Choose File
+                  </Button>
                 </div>
+                
+                {/* Image Preview */}
+                {imagePreview && (
+                  <div className="relative">
+                    <img
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-full max-w-xs sm:max-w-sm lg:max-w-md h-48 sm:h-56 lg:h-64 object-cover rounded-lg sm:rounded-xl mx-auto"
+                    />
+                    <Button
+                      onClick={() => {
+                        setSelectedImage(null);
+                        setImagePreview(null);
+                      }}
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
           {/* Ingredient Input */}

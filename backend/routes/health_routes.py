@@ -80,10 +80,10 @@ def simple_health_check():
         db_health = check_database_health()
         
         if db_health['status'] == 'healthy':
-    return jsonify({
+            return jsonify({
                 'status': 'ok',
                 'timestamp': datetime.utcnow().isoformat()
-    }), 200
+            }), 200
         else:
             return jsonify({
                 'status': 'error',
@@ -108,7 +108,7 @@ def database_health_check():
         
     except Exception as e:
         current_app.logger.error(f"Database health check failed: {str(e)}")
-    return jsonify({
+        return jsonify({
             'status': 'unhealthy',
             'error': str(e),
             'timestamp': datetime.utcnow().isoformat()

@@ -106,27 +106,35 @@ def create_app():
     # Initialize PaymentService if enabled
     if PAYMENT_ENABLED:
         try:
-            # Only initialize if Paystack keys are provided
-            paystack_secret = os.environ.get("PAYSTACK_SECRET_KEY")
-            if paystack_secret:
-                app.payment_service = PaymentService(app.supabase_service.supabase)
-                print("Payment service initialized successfully.")
-                # Add Paystack connection test/print (non-blocking)
-                try:
-                    print("[Paystack] PAYSTACK_SECRET_KEY loaded. Testing connection...")
-                    import requests
-                    headers = {"Authorization": f"Bearer {paystack_secret}"}
-                    resp = requests.get("https://api.paystack.co/plan", headers=headers, timeout=3)
-                    if resp.status_code == 200:
-                        print("[Paystack] Connected to Paystack API successfully!")
-                    else:
-                        print(f"[Paystack] Could not connect to Paystack API. Status: {resp.status_code}")
-                except Exception as e:
-                    print(f"[Paystack] Warning: Could not test Paystack connection: {e}")
-                    print("[Paystack] Service will continue without payment features.")
+            # TEMPORARY TESTING MODE: Always use simulated payment service
+            TESTING_MODE = True  # Set to False to use real payment service
+            
+            if TESTING_MODE:
+                print("[TESTING MODE] Using SimulatedPaymentService for testing")
+                from services.payment_service import SimulatedPaymentService
+                app.payment_service = SimulatedPaymentService(app.supabase_service.supabase)
             else:
-                print("Payment service disabled - PAYSTACK_SECRET_KEY not provided")
-                app.payment_service = None
+                # Only initialize if Paystack keys are provided
+                paystack_secret = os.environ.get("PAYSTACK_SECRET_KEY")
+                if paystack_secret:
+                    app.payment_service = PaymentService(app.supabase_service.supabase)
+                    print("Payment service initialized successfully.")
+                    # Add Paystack connection test/print (non-blocking)
+                    try:
+                        print("[Paystack] PAYSTACK_SECRET_KEY loaded. Testing connection...")
+                        import requests
+                        headers = {"Authorization": f"Bearer {paystack_secret}"}
+                        resp = requests.get("https://api.paystack.co/plan", headers=headers, timeout=3)
+                        if resp.status_code == 200:
+                            print("[Paystack] Connected to Paystack API successfully!")
+                        else:
+                            print(f"[Paystack] Could not connect to Paystack API. Status: {resp.status_code}")
+                    except Exception as e:
+                        print(f"[Paystack] Warning: Could not test Paystack connection: {e}")
+                        print("[Paystack] Service will continue without payment features.")
+                else:
+                    print("Payment service disabled - PAYSTACK_SECRET_KEY not provided")
+                    app.payment_service = None
         except Exception as e:
             print(f"Warning: Failed to initialize PaymentService: {str(e)}")
             print("Payment features will be disabled.")

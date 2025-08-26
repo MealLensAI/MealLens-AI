@@ -38,7 +38,7 @@ def get_payment_service() -> Optional[PaymentService]:
     """Get payment service instance. Use SimulatedPaymentService if real one is not available."""
     # First check if we have a payment service on the app
     if hasattr(current_app, 'payment_service') and current_app.payment_service is not None:
-    return current_app.payment_service
+        return current_app.payment_service
     
     # If no payment service on app, check if we have Paystack keys and create one
     paystack_secret = os.environ.get("PAYSTACK_SECRET_KEY")
@@ -322,86 +322,86 @@ def record_feature_usage(feature_name):
 def initialize_payment():
     """Initialize a Paystack payment."""
     try:
-    user_id = authenticate_user()
-    if not user_id:
-        return jsonify({
-            'status': 'error',
-            'message': 'Authentication required'
-        }), 401
-    
-    payment_service = get_payment_service()
-    if not payment_service:
-        return jsonify({
-            'status': 'error',
-            'message': 'Payment service not configured'
-        }), 500
-    
-    data = request.get_json()
-    if not data:
-        return jsonify({
-            'status': 'error',
-            'message': 'Request data required'
-        }), 400
-    
-    email = data.get('email')
+        user_id = authenticate_user()
+        if not user_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'Authentication required'
+            }), 401
+        
+        payment_service = get_payment_service()
+        if not payment_service:
+            return jsonify({
+                'status': 'error',
+                'message': 'Payment service not configured'
+            }), 500
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'status': 'error',
+                'message': 'Request data required'
+            }), 400
+        
+        email = data.get('email')
         amount = data.get('amount')  # Amount in cents
-    plan_id = data.get('plan_id')
-    callback_url = data.get('callback_url')
+        plan_id = data.get('plan_id')
+        callback_url = data.get('callback_url')
         
         print(f"[DEBUG] Payment initialization request: email={email}, amount={amount}, plan_id={plan_id}")
+        
+        if not all([email, amount, plan_id]):
+            return jsonify({
+                'status': 'error',
+                'message': 'Email, amount, and plan_id are required'
+            }), 400
     
-    if not all([email, amount, plan_id]):
-        return jsonify({
-            'status': 'error',
-            'message': 'Email, amount, and plan_id are required'
-        }), 400
+        # Generate unique reference
+        reference = f"ML_{user_id}_{uuid.uuid4().hex[:8]}"
     
-    # Generate unique reference
-    reference = f"ML_{user_id}_{uuid.uuid4().hex[:8]}"
-    
-    # Convert amount to kobo (Paystack uses smallest currency unit)
+        # Convert amount to kobo (Paystack uses smallest currency unit)
         # Frontend sends amount in cents, but Paystack expects kobo (NGN) or smallest USD unit
         amount_kobo = int(amount)  # Keep as cents since it's already in smallest USD unit
         
         print(f"[DEBUG] Converting amount: {amount} cents -> {amount_kobo} kobo")
     
-    # Initialize transaction
-    result = payment_service.initialize_transaction(
-        email=email,
-        amount=amount_kobo,
-        reference=reference,
-        callback_url=callback_url,
-        metadata={
-            'user_id': user_id,
-            'plan_id': plan_id,
+        # Initialize transaction
+        result = payment_service.initialize_transaction(
+            email=email,
+            amount=amount_kobo,
+            reference=reference,
+            callback_url=callback_url,
+            metadata={
+                'user_id': user_id,
+                'plan_id': plan_id,
                 'amount_usd': amount / 100  # Convert back to USD for reference
-        }
-    )
+            }
+        )
         
         print(f"[DEBUG] Paystack response: {result}")
     
-    if result.get('status'):
-        # Save transaction record
-        transaction_data = {
-            'id': result['data']['id'],
-            'reference': reference,
-            'amount': amount_kobo,
-            'currency': 'USD',
-            'status': 'pending',
-            'description': f'Subscription payment for plan {plan_id}'
-        }
-        
-        payment_service.save_payment_transaction(user_id, transaction_data)
-        
-        return jsonify({
-            'status': 'success',
-            'data': {
-                'authorization_url': result['data']['authorization_url'],
+        if result.get('status'):
+            # Save transaction record
+            transaction_data = {
+                'id': result['data']['id'],
                 'reference': reference,
-                'access_code': result['data']['access_code']
+                'amount': amount_kobo,
+                'currency': 'USD',
+                'status': 'pending',
+                'description': f'Subscription payment for plan {plan_id}'
             }
-        }), 200
-    else:
+            
+            payment_service.save_payment_transaction(user_id, transaction_data)
+            
+            return jsonify({
+                'status': 'success',
+                'data': {
+                    'authorization_url': result['data']['authorization_url'],
+                    'reference': reference,
+                    'access_code': result['data']['access_code']
+                }
+            }), 200
+        else:
             error_msg = result.get('message', 'Failed to initialize payment')
             print(f"[ERROR] Paystack initialization failed: {error_msg}")
             return jsonify({

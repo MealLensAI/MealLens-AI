@@ -249,7 +249,7 @@ const InAppPayment: React.FC<InAppPaymentProps> = ({
         </Button>
         <Button
           type="submit"
-          className="flex-1 bg-[#FF6B6B] hover:bg-[#FF5252]"
+          className="flex-1 bg-orange-500 hover:bg-orange-600"
           disabled={isProcessing}
         >
           {isProcessing ? (
@@ -270,7 +270,7 @@ const InAppPayment: React.FC<InAppPaymentProps> = ({
 
   const renderProcessing = () => (
     <div className="text-center space-y-4">
-      <Loader2 className="h-12 w-12 animate-spin mx-auto text-[#FF6B6B]" />
+      <Loader2 className="h-12 w-12 animate-spin mx-auto text-orange-500" />
       <h3 className="text-lg font-semibold">Processing Payment</h3>
       <p className="text-gray-600">Please wait while we process your payment securely...</p>
     </div>
@@ -305,7 +305,7 @@ const InAppPayment: React.FC<InAppPaymentProps> = ({
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
         <div className="flex justify-center mb-4">
-          <div className="w-12 h-12 bg-[#FF6B6B] rounded-full flex items-center justify-center">
+          <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
             <CreditCard className="h-6 w-6 text-white" />
           </div>
         </div>
@@ -313,7 +313,7 @@ const InAppPayment: React.FC<InAppPaymentProps> = ({
         <p className="text-sm text-gray-600">
           {plan.display_name} - {billingCycle === 'monthly' ? 'Monthly' : 'Yearly'} Plan
         </p>
-        <p className="text-2xl font-bold text-[#FF6B6B]">${amount}</p>
+        <p className="text-2xl font-bold text-orange-500">${amount}</p>
       </CardHeader>
       <CardContent>
         {step === 'form' && renderForm()}

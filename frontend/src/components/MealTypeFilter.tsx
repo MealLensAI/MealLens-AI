@@ -1,41 +1,43 @@
 
 import React from 'react';
-import { Coffee, Utensils, Moon, Cookie } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 interface MealTypeFilterProps {
   selectedType: string;
   onTypeSelect: (type: string) => void;
 }
 
-const mealTypes = [
-  { id: 'all', label: 'All Recipes', icon: Utensils },
-  { id: 'breakfast', label: 'Breakfast', icon: Coffee },
-  { id: 'lunch', label: 'Lunch', icon: Utensils },
-  { id: 'dinner', label: 'Dinner', icon: Moon },
-  { id: 'snack', label: 'Dessert', icon: Cookie }
-];
-
 const MealTypeFilter: React.FC<MealTypeFilterProps> = ({ selectedType, onTypeSelect }) => {
+  const mealTypes = [
+    { value: 'all', label: 'All Meals', icon: '🍽️' },
+    { value: 'breakfast', label: 'Breakfast', icon: '🥞' },
+    { value: 'lunch', label: 'Lunch', icon: '🍽️' },
+    { value: 'dinner', label: 'Dinner', icon: '🍛' },
+    { value: 'snack', label: 'Snacks', icon: '🍪' },
+  ];
+
   return (
-    <div className="flex flex-wrap gap-3 sm:gap-6 border-b border-[#e2e8f0] mb-4 sm:mb-6 overflow-x-auto">
-      {mealTypes.map((type) => {
-        const Icon = type.icon;
-        return (
-          <button
-            key={type.id}
-            onClick={() => onTypeSelect(type.id)}
-            className={`flex items-center gap-1 sm:gap-2 pb-2 sm:pb-3 px-1 text-xs sm:text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
-              selectedType === type.id
-                ? 'text-[#FF6B6B] border-[#FF6B6B]'
-                : 'text-[#1e293b] border-transparent hover:text-[#FF6B6B]'
-            }`}
+    <div className="w-full">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {mealTypes.map((type) => (
+          <Button
+            key={type.value}
+            variant={selectedType === type.value ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => onTypeSelect(type.value)}
+            className={`flex-shrink-0 whitespace-nowrap font-medium transition-all duration-200 ${
+              selectedType === type.value
+                ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500 shadow-md'
+                : 'border-gray-300 text-gray-700 hover:border-orange-500 hover:text-orange-500 hover:bg-orange-50'
+            } text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2`}
           >
-            <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="mr-1 sm:mr-2 text-sm sm:text-base">{type.icon}</span>
             <span className="hidden sm:inline">{type.label}</span>
             <span className="sm:hidden">{type.label.split(' ')[0]}</span>
-          </button>
-        );
-      })}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 };

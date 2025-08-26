@@ -170,7 +170,7 @@ The payment system is fully implemented and ready to use:
 - **Free**: ₦0/month (5 detections, 3 meal plans, 10 recipes)
 - **Basic**: ₦1,000/month (50 detections, 20 meal plans, 100 recipes)
 - **Premium**: ₦2,500/month (200 detections, 100 meal plans, 500 recipes)
-- **Enterprise**: ₦5,000/month (Unlimited + API access)
+
 
 ### **To Enable Payments:**
 1. Get Paystack API keys from [Paystack Dashboard](https://dashboard.paystack.com)

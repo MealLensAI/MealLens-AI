@@ -165,7 +165,7 @@ const InAppViewer: React.FC<InAppViewerProps> = ({
                   <Button
                     size="sm"
                     onClick={() => handleUrlChange(currentUrl)}
-                    className="bg-[#FF6B6B] hover:bg-[#FF5252] text-white"
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
                   >
                     Go
                   </Button>
@@ -229,7 +229,7 @@ const InAppViewer: React.FC<InAppViewerProps> = ({
                 <Button
                   size="sm"
                   onClick={handleSearch}
-                  className="bg-[#FF6B6B] hover:bg-[#FF5252] text-white"
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
                 >
                   Search
                 </Button>
@@ -259,7 +259,7 @@ const InAppViewer: React.FC<InAppViewerProps> = ({
               {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
                   <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#FF6B6B]"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500"></div>
                     <span className="text-gray-600">Loading...</span>
                   </div>
                 </div>

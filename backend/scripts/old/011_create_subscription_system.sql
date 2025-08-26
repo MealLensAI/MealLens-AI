@@ -4,7 +4,7 @@
 -- 1. Create subscription plans table
 CREATE TABLE IF NOT EXISTS public.subscription_plans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL UNIQUE, -- 'free', 'basic', 'premium', 'enterprise'
+    name TEXT NOT NULL UNIQUE, -- 'free', 'basic', 'premium'
     display_name TEXT NOT NULL, -- 'Free Plan', 'Basic Plan', 'Premium Plan'
     price_monthly DECIMAL(10,2) DEFAULT 0.00,
     price_yearly DECIMAL(10,2) DEFAULT 0.00,
@@ -115,17 +115,15 @@ CREATE POLICY "Only service role can access webhooks"
 -- 12. Insert default subscription plans
 INSERT INTO public.subscription_plans (name, display_name, price_monthly, price_yearly, features, limits) VALUES
 ('free', 'Free Plan', 0.00, 0.00, 
- '{"food_detection": true, "meal_planning": true, "recipe_generation": true, "basic_support": true}',
- '{"food_detection_per_month": 5, "meal_planning_per_month": 3, "recipe_generation_per_month": 10}'),
-('basic', 'Basic Plan', 1000.00, 10000.00,
- '{"food_detection": true, "meal_planning": true, "recipe_generation": true, "priority_support": true, "export_recipes": true}',
- '{"food_detection_per_month": 50, "meal_planning_per_month": 20, "recipe_generation_per_month": 100}'),
-('premium', 'Premium Plan', 2500.00, 25000.00,
- '{"food_detection": true, "meal_planning": true, "recipe_generation": true, "priority_support": true, "export_recipes": true, "custom_meal_plans": true, "nutrition_analysis": true}',
- '{"food_detection_per_month": 200, "meal_planning_per_month": 100, "recipe_generation_per_month": 500}'),
-('enterprise', 'Enterprise Plan', 5000.00, 50000.00,
- '{"food_detection": true, "meal_planning": true, "recipe_generation": true, "priority_support": true, "export_recipes": true, "custom_meal_plans": true, "nutrition_analysis": true, "api_access": true, "white_label": true}',
- '{"food_detection_per_month": -1, "meal_planning_per_month": -1, "recipe_generation_per_month": -1}')
+ '{"food_detection": true, "recipe_generation": true, "basic_support": true}',
+ '{"food_detection_per_week": 3, "meal_planning_per_week": 0, "recipe_generation_per_week": 5}'),
+('basic', 'Basic Plan', 5.00, 50.00,
+ '{"food_detection": true, "meal_planning": true, "recipe_generation": true, "priority_support": true}',
+ '{"food_detection_per_week": -1, "meal_planning_per_week": 1, "recipe_generation_per_week": 20}'),
+('premium', 'Premium Plan', 12.00, 120.00,
+ '{"food_detection": true, "meal_planning": true, "recipe_generation": true, "priority_support": true}',
+ '{"food_detection_per_week": -1, "meal_planning_per_week": -1, "recipe_generation_per_week": -1}'),
+
 ON CONFLICT (name) DO UPDATE SET
     display_name = EXCLUDED.display_name,
     price_monthly = EXCLUDED.price_monthly,
@@ -180,8 +178,39 @@ DECLARE
     current_usage INTEGER;
     limit_value INTEGER;
     result JSONB;
+    first_usage_date TIMESTAMP WITH TIME ZONE;
+    trial_end_date TIMESTAMP WITH TIME ZONE;
 BEGIN
-    -- Get user's subscription
+    -- Check if user has any usage recorded (to determine if trial started)
+    SELECT MIN(created_at) INTO first_usage_date
+    FROM public.usage_tracking
+    WHERE user_id = p_user_id;
+    
+    -- If no usage recorded yet, user is new and can use features
+    IF first_usage_date IS NULL THEN
+        RETURN jsonb_build_object(
+            'can_use', true,
+            'current_usage', 0,
+            'limit', -1,
+            'remaining', -1,
+            'message', 'New user - trial not started'
+        );
+    END IF;
+    
+    -- Check if user is in trial period (3 days from first usage)
+    trial_end_date := first_usage_date + INTERVAL '3 days';
+    
+    IF NOW() < trial_end_date THEN
+        RETURN jsonb_build_object(
+            'can_use', true,
+            'current_usage', 0,
+            'limit', -1,
+            'remaining', -1,
+            'message', 'In trial period'
+        );
+    END IF;
+    
+    -- Trial expired, check subscription and limits
     user_sub := public.get_user_subscription(p_user_id);
     
     -- If no subscription, use free plan

@@ -104,7 +104,7 @@ const PaymentSuccess: React.FC = () => {
             <div className="space-y-3">
               <Button 
                 onClick={() => navigate('/payment')}
-                className="w-full bg-[#FF6B6B] hover:bg-[#FF5252]"
+                className="w-full bg-orange-500 hover:bg-orange-600"
               >
                 Try Again
               </Button>
@@ -168,7 +168,7 @@ const PaymentSuccess: React.FC = () => {
             
             <Button 
               onClick={() => navigate('/home')}
-              className="w-full bg-[#FF6B6B] hover:bg-[#FF5252]"
+              className="w-full bg-orange-500 hover:bg-orange-600"
             >
               <ArrowRight className="h-4 w-4 mr-2" />
               Go to Dashboard Now

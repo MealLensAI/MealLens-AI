@@ -2,7 +2,8 @@
 
 import type React from "react"
 import { Navigate, useLocation } from "react-router-dom"
-import { Loader2, Utensils } from "lucide-react"
+import { Utensils } from "lucide-react"
+import LoadingScreen from "@/components/LoadingScreen"
 import { useAuth } from "@/lib/utils"
 
 interface ProtectedRouteProps {
@@ -14,25 +15,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation()
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center">
-        <div className="text-center space-y-6">
-          <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl shadow-lg">
-            <Utensils className="h-8 w-8 text-white" />
-          </div>
-          <div className="space-y-2">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-600 mx-auto" />
-            <p className="text-gray-600 text-lg font-medium">Loading MealLensAI...</p>
-            <p className="text-gray-500 text-sm">Please wait while we prepare your experience</p>
-          </div>
-        </div>
-      </div>
-    )
+    return <LoadingScreen size="md" />
   }
 
   if (!isAuthenticated) {
     // Redirect to login with the current location as the intended destination
     return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  // After authentication, gate users to onboarding until completed
+  const onboardingComplete = localStorage.getItem('onboarding_complete') === 'true'
+  const isOnOnboardingRoute = location.pathname === '/onboarding'
+
+  if (!onboardingComplete && !isOnOnboardingRoute) {
+    return <Navigate to="/onboarding" replace />
   }
 
   return <>{children}</>

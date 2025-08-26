@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useSicknessSettings } from './useSicknessSettings';
+import { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
 
 interface VideoResource {
   title: string;
@@ -17,12 +17,33 @@ interface WebResource {
 }
 
 export const useTutorialContent = () => {
-  const { getSicknessInfo } = useSicknessSettings();
+  const [sicknessInfo, setSicknessInfo] = useState<{ hasSickness: boolean, sicknessType: string } | null>(null);
   const [instructions, setInstructions] = useState('');
   const [youtubeVideos, setYoutubeVideos] = useState<VideoResource[]>([]);
   const [webResources, setWebResources] = useState<WebResource[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingResources, setLoadingResources] = useState(false);
+
+  // Load sickness info from profile
+  useEffect(() => {
+    const loadSicknessInfo = async () => {
+      try {
+        const response = await api.getUserProfile();
+        if (response.status === 'success' && response.profile) {
+          if (response.profile.has_sickness) {
+            setSicknessInfo({
+              hasSickness: response.profile.has_sickness,
+              sicknessType: response.profile.sickness_type || ''
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading sickness info:', error);
+      }
+    };
+
+    loadSicknessInfo();
+  }, []);
 
   // Helper to extract YouTube video ID from a URL
   const getYouTubeVideoId = (url: string) => {
@@ -39,7 +60,6 @@ export const useTutorialContent = () => {
     setWebResources([]);
 
     try {
-      const sicknessInfo = getSicknessInfo();
       console.log('[useTutorialContent] Generating content for:', { recipeName, ingredients, sicknessInfo });
 
       // 1. Get cooking instructions first

@@ -22,10 +22,12 @@ import PaymentSuccess from "./pages/PaymentSuccess"
 import ProfilePage from "./pages/ProfilePage"
 import Settings from "./pages/Settings"
 import WelcomePage from "./pages/WelcomePage"
+import HomePage from "./pages/HomePage"
 import OnboardingPage from "./pages/OnboardingPage"
 import LaunchCountdown from "./components/LaunchCountdown"
 import LoadingScreen from "./components/LoadingScreen"
 import AdminPanel from "./components/AdminPanel"
+import ErrorBoundary from "./components/ErrorBoundary"
 
 // Launch countdown wrapper component
 const LaunchCountdownWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -33,31 +35,28 @@ const LaunchCountdownWrapper: React.FC<{ children: React.ReactNode }> = ({ child
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if launch time has passed
     const checkLaunchStatus = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://meallens-ai-cmps.onrender.com'}/api/server-time`);
+        const base = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '' : 'https://meallens-ai-cmps.onrender.com');
+        const response = await fetch(`${base}/api/server-time`);
         const data = await response.json();
         const serverTime = new Date(data.serverTime);
-        const launchDate = new Date('2024-12-25T00:00:00Z'); // Same as in LaunchCountdown
-        
+        const launchDate = new Date('2024-12-25T00:00:00Z');
         if (serverTime >= launchDate) {
           setIsLaunched(true);
         }
       } catch (error) {
         console.error('Failed to check launch status:', error);
-        // If we can't get server time, allow access
         setIsLaunched(true);
       } finally {
         setIsLoading(false);
       }
     };
-
     checkLaunchStatus();
   }, []);
 
   if (isLoading) {
-    return <LoadingScreen message="Checking launch status..." />;
+    return <LoadingScreen size="md" />;
   }
 
   if (!isLaunched) {
@@ -78,7 +77,7 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <MainLayout>
-          <MealPlanner />
+          <HomePage />
         </MainLayout>
       </ProtectedRoute>
     )
@@ -114,7 +113,11 @@ const router = createBrowserRouter([
     )
   },
   {
-    path: "/detected",
+    path: "/ai-response",
+    element: <Navigate to="/ai-kitchen" replace />
+  },
+  {
+    path: "/detect-food",
     element: (
       <ProtectedRoute>
         <MainLayout>
@@ -124,7 +127,7 @@ const router = createBrowserRouter([
     )
   },
   {
-    path: "/planner",
+    path: "/meal-planner",
     element: (
       <ProtectedRoute>
         <MainLayout>
@@ -157,7 +160,7 @@ const router = createBrowserRouter([
     path: "/payment",
     element: (
       <ProtectedRoute>
-        <Payment />
+          <Payment />
       </ProtectedRoute>
     )
   },
@@ -199,27 +202,28 @@ const router = createBrowserRouter([
   }
 ], {
   future: {
-    v7_relativeSplatPath: true
+    v7_relativeSplatPath: true,
+    v7_startTransition: true
   }
 })
 
 const RouterWrapper = () => {
   return (
     <LaunchCountdownWrapper>
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <SubscriptionProvider>
+          <ErrorBoundary>
+            <RouterProvider router={router} />
+            <Toaster />
+          </ErrorBoundary>
+        </SubscriptionProvider>
+      </AuthProvider>
     </LaunchCountdownWrapper>
   )
 }
 
 function App() {
-  return (
-    <AuthProvider>
-      <SubscriptionProvider>
-        <RouterWrapper />
-        <Toaster />
-      </SubscriptionProvider>
-    </AuthProvider>
-  )
+  return <RouterWrapper />
 }
 
 export default App

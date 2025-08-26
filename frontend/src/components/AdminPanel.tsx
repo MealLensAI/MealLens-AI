@@ -204,7 +204,7 @@ const AdminPanel: React.FC = () => {
                 <Button
                   onClick={handleSaveSettings}
                   size="sm"
-                  className="bg-[#FF6B6B] hover:bg-[#FF5252]"
+                  className="bg-orange-500 hover:bg-orange-600"
                 >
                   <Save className="h-3 w-3 mr-2" />
                   Save
@@ -318,7 +318,7 @@ const AdminPanel: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <div className="w-24 bg-gray-200 rounded-full h-2">
                               <div 
-                                className="bg-[#FF6B6B] h-2 rounded-full" 
+                                className="bg-orange-500 h-2 rounded-full" 
                                 style={{ width: `${(count / Math.max(...Object.values(usageStats.featureUsage))) * 100}%` }}
                               ></div>
                             </div>
@@ -349,7 +349,7 @@ const AdminPanel: React.FC = () => {
                             <div className="flex items-center gap-2">
                               <div className="w-24 bg-gray-200 rounded-full h-2">
                                 <div 
-                                  className="bg-[#FF6B6B] h-2 rounded-full" 
+                                  className="bg-orange-500 h-2 rounded-full" 
                                   style={{ width: `${percentage}%` }}
                                 ></div>
                               </div>

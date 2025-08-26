@@ -12,6 +12,7 @@ interface User {
   email: string
   displayName?: string
   photoURL?: string
+  created_at?: string
 }
 
 interface AuthContextType {
@@ -87,7 +88,8 @@ export function useProvideAuth(): AuthContextType {
                 uid: profile.id,
                 email: profile.email,
                 displayName: profile.display_name,
-                photoURL: undefined
+                photoURL: undefined,
+                created_at: profile.created_at || undefined
               }
               setUser(updatedUser)
               // Update stored user data
@@ -119,7 +121,8 @@ export function useProvideAuth(): AuthContextType {
                       uid: profile.id,
                       email: profile.email,
                       displayName: profile.display_name,
-                      photoURL: undefined
+                      photoURL: undefined,
+                      created_at: profile.created_at || undefined
                     }
                     setUser(updatedUser)
                     localStorage.setItem(USER_KEY, JSON.stringify(updatedUser))

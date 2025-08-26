@@ -79,8 +79,8 @@ const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({ selectedDay, onDaySelect,
                 onClick={() => handleDayClick(day)}
                 className={`flex items-center py-2 px-3 rounded-lg cursor-pointer transition-colors ${
                   expandedDay === day
-                    ? 'bg-[#FF6B6B] text-white'
-                    : 'text-[#2D3436] hover:bg-[#f8f9fa]'
+                    ? 'bg-orange-500 text-white'
+                    : 'text-[#2D3436] hover:bg-gray-100'
                 }`}
               >
                 {isExpanded ? (

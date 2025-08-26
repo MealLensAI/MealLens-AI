@@ -7,33 +7,30 @@ MealLens now includes a comprehensive payment system powered by Paystack, offeri
 ## Subscription Plans
 
 ### Free Plan
-- **Price**: ₦0/month
-- **Features**: Basic food detection, meal planning, recipe generation
+- **Price**: $0/month
+- **Features**: Basic food detection, recipe generation
 - **Limits**: 
-  - 5 food detections per month
-  - 3 meal plans per month
-  - 10 recipe generations per month
+  - 3 food detections per week
+  - 0 meal plans per week
+  - 5 recipe generations per week
 
 ### Basic Plan
-- **Price**: ₦1,000/month (₦10,000/year)
-- **Features**: All free features + priority support, recipe export
+- **Price**: $5/month ($50/year)
+- **Features**: All free features + meal planning, priority support
 - **Limits**:
-  - 50 food detections per month
-  - 20 meal plans per month
-  - 100 recipe generations per month
+  - Unlimited food detections per week
+  - 1 meal plan per week
+  - 20 recipe generations per week
 
 ### Premium Plan
-- **Price**: ₦2,500/month (₦25,000/year)
-- **Features**: All basic features + custom meal plans, nutrition analysis
+- **Price**: $12/month ($120/year)
+- **Features**: All basic features + unlimited usage
 - **Limits**:
-  - 200 food detections per month
-  - 100 meal plans per month
-  - 500 recipe generations per month
+  - Unlimited food detections per week
+  - Unlimited meal plans per week
+  - Unlimited recipe generations per week
 
-### Enterprise Plan
-- **Price**: ₦5,000/month (₦50,000/year)
-- **Features**: All premium features + API access, white-label options
-- **Limits**: Unlimited usage
+
 
 ## API Endpoints
 

@@ -1,3 +1,7 @@
+# =============================================================================
+# FOOD DETECTION ROUTES
+# =============================================================================
+
 from flask import Blueprint, request, jsonify, current_app
 import os
 import uuid # For generating unique IDs
@@ -8,6 +12,9 @@ from marshmallow import Schema, fields, ValidationError
 from utils.file_utils import allowed_file
 from utils.image_utils import compress_image, validate_image_data
 from werkzeug.utils import secure_filename
+
+# TEMPORARY TESTING MODE: Disable all usage limits
+TESTING_MODE = True  # Set to False to re-enable usage limits
 
 food_detection_bp = Blueprint('food_detection', __name__)
 
@@ -66,14 +73,18 @@ def process_food_input():
   if not user_id:
       return jsonify({'status': 'error', 'message': 'Authentication required.'}), 401
 
-  # Check usage limit for ingredient detection
-  can_use, usage_info = check_usage_limit(user_id, 'ingredient_detection')
-  if not can_use:
-      return jsonify({
-          'status': 'error', 
-          'message': usage_info.get('message', 'Usage limit exceeded for this month'),
-          'usage_info': usage_info
-      }), 403
+  # Check usage limit for ingredient detection (disabled during testing)
+  if not TESTING_MODE:
+      can_use, usage_info = check_usage_limit(user_id, 'ingredient_detection')
+      if not can_use:
+          return jsonify({
+              'status': 'error', 
+              'message': usage_info.get('message', 'Usage limit exceeded for this month'),
+              'usage_info': usage_info
+          }), 403
+  else:
+      print(f"[DEBUG] TESTING MODE: Skipping usage limit check for user {user_id}")
+      usage_info = {'message': 'Testing mode - no limits enforced'}
 
   input_type = request.form.get('image_or_ingredient_list')
   detected_ingredients_str = request.form.get('detected_ingredients')
@@ -232,14 +243,18 @@ def food_detect():
   if not user_id:
       return jsonify({'status': 'error', 'message': 'Authentication required.'}), 401
 
-  # Check usage limit for food detection
-  can_use, usage_info = check_usage_limit(user_id, 'food_detection')
-  if not can_use:
-      return jsonify({
-          'status': 'error', 
-          'message': usage_info.get('message', 'Usage limit exceeded for this month'),
-          'usage_info': usage_info
-      }), 403
+  # Check usage limit for food detection (disabled during testing)
+  if not TESTING_MODE:
+      can_use, usage_info = check_usage_limit(user_id, 'food_detection')
+      if not can_use:
+          return jsonify({
+              'status': 'error', 
+              'message': usage_info.get('message', 'Usage limit exceeded for this month'),
+              'usage_info': usage_info
+          }), 403
+  else:
+      print(f"[DEBUG] TESTING MODE: Skipping usage limit check for user {user_id}")
+      usage_info = {'message': 'Testing mode - no limits enforced'}
 
   if 'image' not in request.files:
       return jsonify({'status': 'error', 'message': 'No image uploaded.'}), 400

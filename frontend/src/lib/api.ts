@@ -70,7 +70,7 @@ class APIService {
       body,
       headers = {},
       skipAuth = false,
-      timeout = 30000  // Increased from 10000 to 30000 (30 seconds)
+      timeout = 60000  // Increased to 60 seconds for cold starts
     } = options
 
     // Add auth header if not skipped
@@ -112,6 +112,7 @@ class APIService {
       console.log("[API] Request method:", method);
       console.log("[API] Request headers:", headers);
       console.log("[API] Request body:", body);
+      console.log("[API] Config body:", config.body);
       
       const response = await fetch(fullUrl, config)
       
@@ -231,7 +232,7 @@ class APIService {
     return this.post('/login', credentials, { skipAuth: true })
   }
 
-  async register(userData: { email: string; password: string; name?: string }): Promise<APIResponse> {
+  async register(userData: { email: string; password: string; first_name: string; last_name: string }): Promise<APIResponse> {
     return this.post('/register', userData, { skipAuth: true })
   }
 
@@ -248,14 +249,7 @@ class APIService {
     return this.put('/profile', profileData)
   }
 
-  // Settings methods (Flask backend)
-  async getSicknessSettings(): Promise<APIResponse> {
-    return this.get('/settings/sickness')
-  }
-
-  async saveSicknessSettings(settings: { hasSickness: boolean; sicknessType: string }): Promise<APIResponse> {
-    return this.post('/settings/sickness', settings)
-  }
+  // Settings methods (Flask backend) - Sickness settings moved to profile
 
   async getAllSettings(): Promise<APIResponse> {
     return this.get('/settings')
@@ -293,6 +287,18 @@ class APIService {
     console.log("[API] Making POST request to /food_detection/detection_history");
     const result = await this.post('/food_detection/detection_history', detectionData);
     console.log("[API] saveDetectionHistory response:", result);
+    
+    // After saving detection history, ensure usage is recorded in backend
+    try {
+      const featureName = detectionData.recipe_type === 'food_detection' ? 'food_detection' : 'ingredient_detection';
+      await this.post(`/payment/record-usage/${featureName}`, {
+        feature: featureName,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.warn('Failed to record usage after saving detection history:', error);
+    }
+    
     return result;
   }
 
@@ -300,12 +306,14 @@ class APIService {
     return this.post('/food_detection/update_resources', updateData)
   }
 
-  async getDetectionHistory(): Promise<DetectionHistoryResponse> {
+  async getDetectionHistory(page: number = 1, limit: number = 10): Promise<DetectionHistoryResponse> {
     console.log("🔍 [API] getDetectionHistory called")
-    const result = await this.get('/food_detection/detection_history')
+    const result = await this.get(`/food_detection/detection_history?page=${page}&limit=${limit}`)
     console.log("🔍 [API] getDetectionHistory result:", result)
     return result
   }
+
+
 
   // Session methods (Flask backend)
   async saveSession(sessionData: any): Promise<APIResponse> {

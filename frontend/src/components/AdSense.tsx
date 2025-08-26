@@ -49,53 +49,8 @@ const AdSense: React.FC<AdSenseProps> = ({
   const isDevelopment = process.env.NODE_ENV === 'development';
   const adsDisabled = localStorage.getItem('meallens-ads-disabled') === 'true';
 
-  // Mock ad data - in production, this would come from AdSense API
-  const mockAds: AdData[] = [
-    {
-      id: '1',
-      title: 'Premium Meal Planning',
-      description: 'Get personalized meal plans and nutrition advice from certified dietitians.',
-      image: '/api/placeholder/300/200',
-      cta: 'Try Free Trial',
-      url: '/payment',
-      type: 'service',
-      rating: 4.8,
-      price: '$9.99/month'
-    },
-    {
-      id: '2',
-      title: 'Smart Kitchen Gadgets',
-      description: 'Upgrade your kitchen with AI-powered cooking assistants and smart appliances.',
-      image: '/api/placeholder/300/200',
-      cta: 'Shop Now',
-      url: 'https://example.com/kitchen-gadgets',
-      type: 'product',
-      rating: 4.6,
-      price: 'From $49.99',
-      discount: '20% OFF'
-    },
-    {
-      id: '3',
-      title: 'Healthy Recipe Collection',
-      description: 'Access 1000+ healthy recipes curated by professional chefs and nutritionists.',
-      image: '/api/placeholder/300/200',
-      cta: 'Explore Recipes',
-      url: '/recipes',
-      type: 'service',
-      rating: 4.9
-    },
-    {
-      id: '4',
-      title: 'MealLensAI Pro',
-      description: 'Unlock unlimited food detection, advanced AI features, and priority support.',
-      image: '/api/placeholder/300/200',
-      cta: 'Upgrade Now',
-      url: '/payment',
-      type: 'service',
-      rating: 4.7,
-      price: '$19.99/month'
-    }
-  ];
+  // Production ad data - fetched from backend or AdSense API
+  const [ads, setAds] = useState<AdData[]>([]);
 
   useEffect(() => {
     if (isDevelopment || adsDisabled) {
@@ -103,21 +58,33 @@ const AdSense: React.FC<AdSenseProps> = ({
       return;
     }
 
-    // Simulate ad loading
-    const loadAd = () => {
+    // Load ads from backend or AdSense API
+    const loadAd = async () => {
       setIsLoading(true);
-      setTimeout(() => {
-        const randomAd = mockAds[Math.floor(Math.random() * mockAds.length)];
-        setCurrentAd(randomAd);
+      try {
+        // In production, this would fetch from AdSense API or backend
+        // For now, disable ads in development
+        if (isDevelopment) {
+          setIsVisible(false);
+          return;
+        }
+        
+        // TODO: Implement proper ad loading from backend/AdSense
+        // const response = await fetch('/api/ads');
+        // const adData = await response.json();
+        // setAds(adData);
+        
+        // For now, disable ads
+        setIsVisible(false);
+      } catch (error) {
+        console.error('Error loading ads:', error);
+        setIsVisible(false);
+      } finally {
         setIsLoading(false);
-      }, 500);
+      }
     };
 
     loadAd();
-
-    // Rotate ads every 30 seconds
-    const interval = setInterval(loadAd, 30000);
-    return () => clearInterval(interval);
   }, [isDevelopment, adsDisabled]);
 
   const handleAdClick = (url: string) => {
@@ -229,7 +196,7 @@ const AdSense: React.FC<AdSenseProps> = ({
             </div>
             <Button
               onClick={() => handleAdClick(currentAd?.url || '#')}
-              className="w-full mt-3 bg-[#FF6B6B] hover:bg-[#FF5252] text-white text-sm h-8"
+              className="w-full mt-3 bg-orange-500 hover:bg-orange-600 text-white text-sm h-8"
             >
               {currentAd?.cta}
             </Button>
@@ -263,7 +230,7 @@ const AdSense: React.FC<AdSenseProps> = ({
           variant="outline"
           size="sm"
           onClick={() => handleAdClick(currentAd?.url || '#')}
-          className="text-[#FF6B6B] border-[#FF6B6B] hover:bg-[#FF6B6B] hover:text-white"
+          className="text-orange-500 border-orange-500 hover:bg-orange-500 hover:text-white"
         >
           {currentAd?.cta}
         </Button>

@@ -88,7 +88,7 @@ const MealPlanManager: React.FC<MealPlanManagerProps> = ({ onNewPlan, onEditPlan
         <h2 className="text-xl font-bold text-[#2D3436]">Meal Plans</h2>
         <button
           onClick={onNewPlan}
-          className="flex items-center gap-2 bg-[#FF6B6B] text-white px-4 py-2 rounded-lg hover:bg-[#FF8E53] transition-colors"
+          className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
         >
           <Plus className="w-4 h-4" />
           New Plan
@@ -139,7 +139,7 @@ const MealPlanManager: React.FC<MealPlanManagerProps> = ({ onNewPlan, onEditPlan
               type="date"
               value={selectedDate.toISOString().split('T')[0]}
               onChange={(e) => setSelectedDate(new Date(e.target.value))}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:border-[#FF6B6B] focus:outline-none"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
             />
           </div>
         )}
@@ -162,8 +162,8 @@ const MealPlanManager: React.FC<MealPlanManagerProps> = ({ onNewPlan, onEditPlan
                 key={plan.id}
                 className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
                   currentPlan?.id === plan.id
-                    ? 'border-[#FF6B6B] bg-[#FF6B6B]/5'
-                    : 'border-gray-200 hover:border-[#FF6B6B]/50 hover:bg-gray-50'
+                    ? 'border-orange-500 bg-orange-50'
+                    : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'
                 }`}
                 onClick={() => {
                   selectMealPlan(plan.id);
@@ -187,7 +187,7 @@ const MealPlanManager: React.FC<MealPlanManagerProps> = ({ onNewPlan, onEditPlan
                         e.stopPropagation();
                         onEditPlan(plan);
                       }}
-                      className="p-2 text-gray-600 hover:text-[#FF6B6B] transition-colors"
+                      className="p-2 text-gray-600 hover:text-orange-500 transition-colors"
                       title="Edit Plan"
                     >
                       <Edit className="w-4 h-4" />
@@ -198,7 +198,7 @@ const MealPlanManager: React.FC<MealPlanManagerProps> = ({ onNewPlan, onEditPlan
                         e.stopPropagation();
                         handleDuplicatePlan(plan);
                       }}
-                      className="p-2 text-gray-600 hover:text-[#FF6B6B] transition-colors"
+                      className="p-2 text-gray-600 hover:text-orange-500 transition-colors"
                       title="Duplicate Plan"
                     >
                       <Copy className="w-4 h-4" />

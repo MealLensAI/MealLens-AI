@@ -93,6 +93,24 @@ class PaymentService:
     def can_use_feature(self, user_id: str, feature_name: str) -> Dict:
         """Check if user can use a specific feature."""
         try:
+            # First check if user has any usage recorded (to determine if trial started)
+            usage_result = self.supabase.table('usage_tracking').select('created_at').eq('user_id', user_id).order('created_at', desc=False).limit(1).execute()
+            
+            if not usage_result.data:
+                # No usage recorded yet - user is new, allow first usage
+                return {'can_use': True, 'current_usage': 0, 'limit': -1, 'remaining': -1, 'message': 'New user - trial not started'}
+            
+            # User has usage recorded, check trial period
+            first_usage_date = usage_result.data[0]['created_at']
+            trial_start = first_usage_date
+            trial_end = trial_start + timedelta(days=3)  # 3-day trial
+            now = datetime.now()
+            
+            # If still in trial period, allow usage
+            if now < trial_end:
+                return {'can_use': True, 'current_usage': 0, 'limit': -1, 'remaining': -1, 'message': 'In trial period'}
+            
+            # Trial expired, check subscription and limits
             result = self.supabase.rpc('can_use_feature', {
                 'p_user_id': user_id,
                 'p_feature_name': feature_name
@@ -345,71 +363,94 @@ class SimulatedPaymentService:
         return {'success': True, 'data': plan_data}
 
     def get_subscription_plans(self):
-        # Return a simulated list of plans with weekly, monthly, and annual options
+        # Return USD-based subscription plans with currency conversion support
         return {'success': True, 'data': [
             {
-                'id': 'weekly-plan',
-                'name': 'weekly',
-                'display_name': 'Weekly Plan',
-                'price_weekly': 500,
-                'price_monthly': 2000,
-                'price_yearly': 20000,
-                'currency': 'NGN',
-                'features': {
-                    'food_detection': True,
-                    'ingredient_detection': True,
-                    'meal_planning': True,
-                    'unlimited_detections': False,
-                    'priority_support': False
-                },
+                'id': 'free-plan',
+                'name': 'free',
+                'display_name': 'Free',
+                'price_monthly': 0.00,
+                'price_yearly': 0.00,
+                'currency': 'USD',
+                'features': [
+                    '5 food detections per month',
+                    '3 meal plans per month',
+                    '10 recipe generations per month',
+                    'Basic AI assistance'
+                ],
                 'limits': {
-                    'food_detection': 10,
-                    'ingredient_detection': 10,
-                    'meal_planning': 5
+                    'food_detection': 5,
+                    'meal_planning': 3,
+                    'recipe_generation': 10
                 },
                 'is_active': True
             },
             {
-                'id': 'monthly-plan',
-                'name': 'monthly',
-                'display_name': 'Monthly Plan',
-                'price_weekly': 400,
-                'price_monthly': 1500,
-                'price_yearly': 15000,
-                'currency': 'NGN',
-                'features': {
-                    'food_detection': True,
-                    'ingredient_detection': True,
-                    'meal_planning': True,
-                    'unlimited_detections': False,
-                    'priority_support': False
-                },
+                'id': 'basic-plan',
+                'name': 'basic',
+                'display_name': 'Basic',
+                'price_monthly': 0.50,
+                'price_yearly': 5.00,
+                'currency': 'USD',
+                'features': [
+                    '50 food detections per month',
+                    '20 meal plans per month',
+                    '100 recipe generations per month',
+                    'Priority customer support',
+                    'Recipe export functionality'
+                ],
                 'limits': {
                     'food_detection': 50,
-                    'ingredient_detection': 50,
-                    'meal_planning': 20
+                    'meal_planning': 20,
+                    'recipe_generation': 100
                 },
                 'is_active': True
             },
             {
-                'id': 'annual-plan',
-                'name': 'annual',
-                'display_name': 'Annual Plan',
-                'price_weekly': 300,
-                'price_monthly': 1200,
-                'price_yearly': 12000,
-                'currency': 'NGN',
-                'features': {
-                    'food_detection': True,
-                    'ingredient_detection': True,
-                    'meal_planning': True,
-                    'unlimited_detections': True,
-                    'priority_support': True
+                'id': 'standard-plan',
+                'name': 'standard',
+                'display_name': 'Standard',
+                'price_monthly': 5.00,
+                'price_yearly': 50.00,
+                'currency': 'USD',
+                'features': [
+                    '200 food detections per month',
+                    '100 meal plans per month',
+                    '500 recipe generations per month',
+                    'Custom meal plans',
+                    'Nutrition analysis',
+                    'Priority customer support',
+                    'Recipe export functionality'
+                ],
+                'limits': {
+                    'food_detection': 200,
+                    'meal_planning': 100,
+                    'recipe_generation': 500
                 },
+                'is_active': True
+            },
+            {
+                'id': 'premium-plan',
+                'name': 'premium',
+                'display_name': 'Premium',
+                'price_monthly': 10.00,
+                'price_yearly': 100.00,
+                'currency': 'USD',
+                'features': [
+                    'Unlimited food detections',
+                    'Unlimited meal plans',
+                    'Unlimited recipe generations',
+                    'Advanced nutrition analysis',
+                    'Custom meal plans',
+                    'API access',
+                    'White-label options',
+                    'Priority customer support',
+                    'Recipe export functionality'
+                ],
                 'limits': {
                     'food_detection': -1,  # Unlimited
-                    'ingredient_detection': -1,  # Unlimited
-                    'meal_planning': -1  # Unlimited
+                    'meal_planning': -1,   # Unlimited
+                    'recipe_generation': -1  # Unlimited
                 },
                 'is_active': True
             }

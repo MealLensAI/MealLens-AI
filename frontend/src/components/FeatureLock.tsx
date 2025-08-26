@@ -146,7 +146,7 @@ const FeatureLock: React.FC<FeatureLockProps> = ({
           <div className="space-y-3">
             <Button 
               onClick={handleUpgrade}
-                className="w-full bg-[#FF6B6B] hover:bg-[#FF5252] text-white font-semibold"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold"
               >
                 <Crown className="h-4 w-4 mr-2" />
                 {hasActiveSubscription ? 'Manage Subscription' : 'Upgrade Now'}

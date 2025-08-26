@@ -1,49 +1,188 @@
-// API Configuration
-export const API_CONFIG = {
-  // Main backend API (for user management, meal plans, etc.)
-  MAIN_API_URL: import.meta.env.VITE_API_URL || 'https://meallens-ai.onrender.com',
+// Centralized configuration for MealLens AI
+export const APP_CONFIG = {
+  // App Information
+  name: 'MealLens AI',
+  description: 'Your AI-powered food detection and meal planning assistant',
+  version: '1.0.0',
   
-  // AI processing backend (for food detection, meal planning, etc.)
-  AI_API_URL: import.meta.env.VITE_AI_API_URL || 'https://ai-utu2.onrender.com',
-  
-  // Local development fallback
-  LOCAL_API_URL: 'http://127.0.0.1:5001',
-}
+  // Brand Colors
+  colors: {
+    primary: '#FF6B35', // Orange
+    secondary: '#1A1A1A', // Black
+    white: '#FFFFFF',
+    gray: {
+      50: '#F9FAFB',
+      100: '#F3F4F6',
+      200: '#E5E7EB',
+      300: '#D1D5DB',
+      400: '#9CA3AF',
+      500: '#6B7280',
+      600: '#4B5563',
+      700: '#374151',
+      800: '#1F2937',
+      900: '#111827'
+    }
+  },
 
-// API Endpoints
-export const API_ENDPOINTS = {
-  // Main API endpoints
-  LOGIN: '/api/auth/login',
-  REGISTER: '/api/auth/register',
-  PROFILE: '/api/profile',
-  MEAL_PLANS: '/api/meal_plans',
-  DETECTION_HISTORY: '/api/detection_history',
-  SESSIONS: '/api/sessions',
-  PAYMENTS: '/api/payments',
-  
-  // AI API endpoints
-  SMART_PLAN: `${API_CONFIG.AI_API_URL}/smart_plan`,
-  AUTO_GENERATE_PLAN: `${API_CONFIG.AI_API_URL}/auto_generate_plan`,
-  AUTO_SICK_SMART_PLAN: `${API_CONFIG.AI_API_URL}/auto_sick_smart_plan`,
-  PROCESS: `${API_CONFIG.AI_API_URL}/process`,
-  INSTRUCTIONS: `${API_CONFIG.AI_API_URL}/instructions`,
-  RESOURCES: `${API_CONFIG.AI_API_URL}/resources`,
-  FOOD_DETECT: `${API_CONFIG.AI_API_URL}/food_detect`,
-  FOOD_DETECT_RESOURCES: `${API_CONFIG.AI_API_URL}/food_detect_resources`,
-  MEAL_PLAN_INSTRUCTIONS: `${API_CONFIG.AI_API_URL}/meal_plan_instructions`,
-  
-  // Sickness-specific endpoints
-  SICK_SMART_PLAN: `${API_CONFIG.MAIN_API_URL}/sick_smart_plan`,
-  SICK_MEAL_PLAN_INSTRUCTIONS: `${API_CONFIG.MAIN_API_URL}/sick_meal_plan_instructions`,
-}
+  // Subscription Plans - Centralized pricing
+  subscriptionPlans: [
+    {
+      id: 'weekly',
+      name: 'weekly',
+      display_name: 'Weekly',
+      price_weekly: 2.50,
+      price_two_weeks: 5.00,
+      price_monthly: 10.00,
+      currency: 'USD',
+      features: [
+        'Unlimited Food Detection',
+        'Unlimited AI Kitchen Assistant',
+        'Unlimited Meal Planning',
+        'Full History Access',
+        'Priority Support'
+      ],
+      limits: {
+        detections_per_day: -1, // Unlimited
+        meal_plans_per_month: -1, // Unlimited
+        ai_kitchen_requests: -1 // Unlimited
+      },
+      is_active: true,
+      duration_days: 7,
+      billing_cycle: 'weekly'
+    },
+    {
+      id: 'two_weeks',
+      name: 'two_weeks',
+      display_name: 'Two Weeks',
+      price_weekly: 2.50,
+      price_two_weeks: 5.00,
+      price_monthly: 10.00,
+      currency: 'USD',
+      features: [
+        'Unlimited Food Detection',
+        'Unlimited AI Kitchen Assistant',
+        'Unlimited Meal Planning',
+        'Full History Access',
+        'Priority Support'
+      ],
+      limits: {
+        detections_per_day: -1, // Unlimited
+        meal_plans_per_month: -1, // Unlimited
+        ai_kitchen_requests: -1 // Unlimited
+      },
+      is_active: true,
+      duration_days: 14,
+      billing_cycle: 'two_weeks'
+    },
+    {
+      id: 'monthly',
+      name: 'monthly',
+      display_name: 'Monthly',
+      price_weekly: 2.50,
+      price_two_weeks: 5.00,
+      price_monthly: 10.00,
+      currency: 'USD',
+      features: [
+        'Unlimited Food Detection',
+        'Unlimited AI Kitchen Assistant',
+        'Unlimited Meal Planning',
+        'Full History Access',
+        'Priority Support'
+      ],
+      limits: {
+        detections_per_day: -1, // Unlimited
+        meal_plans_per_month: -1, // Unlimited
+        ai_kitchen_requests: -1 // Unlimited
+      },
+      is_active: true,
+      duration_days: 30,
+      billing_cycle: 'monthly'
+    }
+  ],
 
-// Environment detection
-export const isDevelopment = import.meta.env.DEV
-export const isProduction = import.meta.env.PROD
+  // Features
+  features: {
+    food_detection: {
+      name: 'Food Detection',
+      description: 'Identify food items from photos instantly',
+      icon: 'Camera',
+      trial_limit: 5
+    },
+    ingredient_detection: {
+      name: 'AI Kitchen Assistant',
+      description: 'Get recipe suggestions and cooking instructions',
+      icon: 'ChefHat',
+      trial_limit: 5
+    },
+    meal_planning: {
+      name: 'Meal Planning',
+      description: 'Create personalized meal plans',
+      icon: 'Calendar',
+      trial_limit: 3
+    },
+    history: {
+      name: 'History',
+      description: 'Track your food discoveries and recipes',
+      icon: 'History',
+      trial_limit: -1 // Unlimited during trial
+    }
+  },
 
-// Feature flags
-export const FEATURE_FLAGS = {
-  ENABLE_SICKNESS_FEATURES: true,
-  ENABLE_PAYMENTS: true,
-  ENABLE_ANALYTICS: isProduction,
-}
+  // Trial Configuration
+  trial: {
+    duration_days: 7, // Updated from 3 to 7 days
+    features_unlocked: true
+  },
+
+  // API Configuration
+  api: {
+    base_url: import.meta.env.VITE_API_URL || 'https://meallens-ai-cmps.onrender.com',
+    timeout: 30000
+  },
+
+  // Paystack Configuration
+  paystack: {
+    public_key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_...',
+    currency: 'USD'
+  }
+};
+
+// Helper functions
+export const getPlanPrice = (planId: string, billingCycle: string): number => {
+  const plan = APP_CONFIG.subscriptionPlans.find(p => p.id === planId);
+  if (!plan) return 0;
+  
+  switch (billingCycle) {
+    case 'weekly':
+      return plan.price_weekly;
+    case 'two_weeks':
+      return plan.price_two_weeks;
+    case 'monthly':
+      return plan.price_monthly;
+    default:
+      return plan.price_weekly;
+  }
+};
+
+export const getPlanDisplayName = (planId: string): string => {
+  const plan = APP_CONFIG.subscriptionPlans.find(p => p.id === planId);
+  return plan?.display_name || planId;
+};
+
+export const getPlanDurationText = (billingCycle: string): string => {
+  switch (billingCycle) {
+    case 'weekly':
+      return 'per week';
+    case 'two_weeks':
+      return 'per 2 weeks';
+    case 'monthly':
+      return 'per month';
+    default:
+      return 'per week';
+  }
+};
+
+export const getPlanFeatures = (planId: string): string[] => {
+  const plan = APP_CONFIG.subscriptionPlans.find(p => p.id === planId);
+  return plan?.features || [];
+};

@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { Users, ChefHat, Bookmark, Timer, Utensils, Loader2, Upload, ArrowLeft, Camera, Image as ImageIcon } from "lucide-react"
+import { Users, ChefHat, Bookmark, Timer, Utensils, Loader2, Upload, ArrowLeft, Camera, Image as ImageIcon, X, Search, Lightbulb, ExternalLink, Play } from "lucide-react"
 import "@/styles/ai-response.css"
 import { useAuth } from "@/lib/utils"
 import { useSubscription } from "@/contexts/SubscriptionContext"
@@ -14,6 +14,8 @@ import LoadingScreen from "@/components/LoadingScreen"
 import FeatureLock from "@/components/FeatureLock"
 import { handleAuthError } from "@/lib/utils"
 import { api } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
+import { Badge } from "@/components/ui/badge"
 
 interface Recipe {
   name: string
@@ -54,18 +56,27 @@ const AIResponsePage: FC = () => {
   const [analysisId, setAnalysisId] = useState<string>("")
   const [loadingResources, setLoadingResources] = useState(false)
   const [showResults, setShowResults] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { token, isAuthenticated, loading } = useAuth()
-  const { isFeatureLocked, recordFeatureUsage } = useSubscription()
+  
+  // Safely use subscription context with fallback
+  let subscriptionContext;
+  try {
+    subscriptionContext = useSubscription();
+  } catch (error) {
+    console.warn('Subscription context not available, using fallback functions');
+    subscriptionContext = null;
+  }
+  
+  const isFeatureLocked = subscriptionContext?.isFeatureLocked || ((featureName: string) => false);
+  const recordFeatureUsage = subscriptionContext?.recordFeatureUsage || (async (featureName: string) => {});
+  
   const [selectedSuggestion, setSelectedSuggestion] = useState<string>("");
+  const { toast } = useToast()
 
   if (loading) {
-    return <LoadingScreen 
-      message="Generating AI insights..." 
-      subMessage="Creating personalized recommendations and resources"
-      showLogo={true}
-      size="lg"
-    />
+    return <LoadingScreen size="md" />
   }
   if (!isAuthenticated) {
     return (
@@ -146,11 +157,29 @@ const AIResponsePage: FC = () => {
     })
   }
 
-  const handleDiscoverRecipes = async () => {
+  const handleSubmit = async () => {
+    if (inputType === "image" && !selectedImage) {
+      toast({
+        title: "Error",
+        description: "Please select an image first.",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    if (inputType === "ingredient_list" && !ingredientList.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter your ingredients.",
+        variant: "destructive",
+      })
+      return
+    }
+    
     setIsLoading(true)
+    setInstructions("")
     setDetectedIngredients([])
     setSuggestions([])
-    setInstructions("")
     setResources(null)
     setShowResults(false)
 
@@ -161,18 +190,6 @@ const AIResponsePage: FC = () => {
       console.error('Error recording feature usage:', error);
     }
     
-    // Compress image if provided
-    let compressedImageData: string | null = null
-    if (inputType === "image" && selectedImage) {
-      try {
-        compressedImageData = await compressImage(selectedImage)
-        console.log("[AIResponse] Image compressed successfully")
-      } catch (error) {
-        console.error("[AIResponse] Image compression failed:", error)
-        compressedImageData = imagePreview
-      }
-    }
-    
     const formData = new FormData()
     if (inputType === "image" && selectedImage) {
       formData.append("image_or_ingredient_list", "image")
@@ -180,37 +197,43 @@ const AIResponsePage: FC = () => {
     } else if (inputType === "ingredient_list" && ingredientList.trim()) {
       formData.append("image_or_ingredient_list", "ingredient_list")
       formData.append("ingredient_list", ingredientList)
-    } else {
-      alert("Please provide an image or ingredient list")
-      setIsLoading(false)
-      return
     }
 
     try {
-    const response = await fetch("https://ai-utu2.onrender.com/process", {
-      method: "POST",
-      body: formData,
-    })
+      // Step 1: Process ingredients
+      console.log("[AIResponse] Starting ingredient processing...")
+      const response = await fetch("https://ai-utu2.onrender.com/process", {
+        method: "POST",
+        body: formData,
+      })
 
       if (!response.ok) {
-        throw new Error("Failed to process ingredients")
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-    const data = await response.json()
-      console.log("Process response:", data)
+      const data = await response.json()
+      console.log("[AIResponse] Process response:", data)
 
       if (data.error) {
-        alert(data.error)
+        toast({
+          title: "Error",
+          description: data.error || "Failed to process ingredients.",
+          variant: "destructive",
+        })
         return
       }
 
-    setAnalysisId(data.analysis_id)
-    setDetectedIngredients(data.response || [])
-    setSuggestions(data.food_suggestions || [])
+      setAnalysisId(data.analysis_id)
+      setDetectedIngredients(data.response || [])
+      setSuggestions(data.food_suggestions || [])
       setShowResults(true)
     } catch (error) {
       console.error("Error processing ingredients:", error)
-      alert("Failed to process ingredients. Please try again.")
+      toast({
+        title: "Error",
+        description: "Failed to process ingredients. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
@@ -235,6 +258,15 @@ const AIResponsePage: FC = () => {
     }
     
     console.log('Starting to fetch instructions for:', suggestion)
+    console.log('Current analysisId:', analysisId)
+    
+    // Validate that we have the required data
+    if (!analysisId) {
+      console.error('No analysisId available for instructions request')
+      setInstructions('Error: Missing analysis data. Please try processing your ingredients again.');
+      setIsLoading(false);
+      return;
+    }
     
     try {
       // 1. Get cooking instructions first
@@ -243,6 +275,10 @@ const AIResponsePage: FC = () => {
     formData.append("food_choice_index", suggestion)
       
       console.log('Fetching instructions with analysisId:', analysisId, 'and suggestion:', suggestion)
+      console.log('FormData contents:', {
+        food_analysis_id: analysisId,
+        food_choice_index: suggestion
+      })
       
     const instrRes = await fetch("https://ai-utu2.onrender.com/instructions", {
       method: "POST",
@@ -250,7 +286,9 @@ const AIResponsePage: FC = () => {
     })
       
       if (!instrRes.ok) {
-        throw new Error(`HTTP error! status: ${instrRes.status}`)
+        const errorText = await instrRes.text()
+        console.error('Instructions API error response:', errorText)
+        throw new Error(`HTTP error! status: ${instrRes.status} - ${errorText}`)
       }
       
     const instrData = await instrRes.json()
@@ -357,405 +395,448 @@ const AIResponsePage: FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto p-6">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">AI Kitchen Assistant</h1>
-            <p className="text-gray-600">Get personalized recipe suggestions and cooking instructions from your ingredients</p>
-          </div>
-        </div>
-
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
           {/* Left Column - Input */}
           <div className="space-y-6">
+            {/* Header */}
+            <div className="text-center lg:text-left">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                AI Kitchen Assistant
+          </h1>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Get personalized recipe suggestions based on your available ingredients
+              </p>
+            </div>
+
+            {/* Input Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ChefHat className="h-5 w-5 text-[#FF6B6B]" />
-                  Input Method
-                </CardTitle>
+                <CardTitle className="text-lg sm:text-xl">Input Method</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
+                
                 {/* Input Type Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    How would you like to start?
-                  </label>
-                  <select
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B6B] focus:border-[#FF6B6B]"
-                    value={inputType}
-                    onChange={(e) => setInputType(e.target.value as "image" | "ingredient_list")}
-                  >
-                    <option value="image">Snap or Upload Ingredient Image</option>
-                    <option value="ingredient_list">List Your Ingredients</option>
-                  </select>
-                </div>
-
-          {/* Input Form */}
-          <div className="mb-4 sm:mb-6">
-            <label className="block font-semibold text-base sm:text-lg text-[#2D3436] mb-2 sm:mb-3">
                   How would you like to start?
                 </label>
                 <select
-              className="w-full bg-white border-2 border-[rgba(0,0,0,0.1)] rounded-xl sm:rounded-2xl p-3 sm:p-4 text-base sm:text-lg transition-all duration-300 shadow-[0_4px_6px_rgba(0,0,0,0.05)] focus:border-[#FF6B6B] focus:shadow-[0_0_0_4px_rgba(255,107,107,0.2)]"
                   value={inputType}
                   onChange={(e) => setInputType(e.target.value as "image" | "ingredient_list")}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500"
                 >
-                  <option value="image">Snap or Upload Ingredient Image</option>
+                    <option value="image">Upload Ingredient Image</option>
                   <option value="ingredient_list">List Your Ingredients</option>
                 </select>
               </div>
 
-                {/* Image Input */}
-                {inputType === "image" && (
-                  <div className="space-y-4">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Share Your Food Image
-                    </label>
-                    
-                    <div className="space-y-3">
-                      {/* Camera Capture Buttons */}
-                      <div className="flex gap-3">
-                        <input
-                          type="file"
-                          id="cameraInputAI"
-                          accept="image/*"
-                          capture="environment"
-                          className="hidden"
-                          onChange={handleImageSelect}
-                        />
-                        <input
-                          type="file"
-                          id="fileInputAI"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageSelect}
-                        />
-                        
-                        <Button
-                          onClick={() => document.getElementById('cameraInputAI')?.click()}
-                          className="flex-1 bg-[#FF6B6B] hover:bg-[#FF5252] text-white"
-                        >
-                          <Camera className="h-4 w-4 mr-2" />
-                          Take Photo
-                        </Button>
-                        
-                        <Button
-                          onClick={() => document.getElementById('fileInputAI')?.click()}
-                          variant="outline"
-                          className="flex-1"
-                        >
-                          <ImageIcon className="h-4 w-4 mr-2" />
-                          Choose File
-                        </Button>
-                      </div>
-                      
-                      {/* Image Preview */}
-                      {imagePreview && (
-                        <div className="relative">
-                          <img
+          {/* Image Input */}
+          {inputType === "image" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Upload Image
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                      ref={fileInputRef}
+                    />
+                    <div 
+                        onClick={() => setShowUploadModal(true)}
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition-colors"
+                    >
+                      {imagePreview ? (
+                        <div className="space-y-4">
+                          <img 
                             src={imagePreview} 
                             alt="Preview" 
-                            className="w-full h-64 object-cover rounded-lg"
+                            className="max-w-full h-auto max-h-48 mx-auto rounded-lg shadow-lg"
                           />
-                          <Button
-                            onClick={() => {
-                              setSelectedImage(null);
-                              setImagePreview(null);
-                            }}
-                            variant="destructive"
-                            size="sm"
-                            className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full"
-                          >
-                            ×
-                          </Button>
+                            <p className="text-sm text-gray-500">Click to change image</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                            <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto">
+                              <Upload className="h-8 w-8 text-white" />
+                          </div>
+                          <div>
+                              <p className="text-base font-medium text-gray-900">
+                                Upload Ingredient Image
+                            </p>
+                              <p className="text-sm text-gray-500">
+                              Click to browse or drag and drop
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
-                )}
+                </div>
+          )}
 
-                {/* Ingredient Input */}
-                {inputType === "ingredient_list" && (
-                  <div className="space-y-4">
-                    <label className="block text-sm font-medium text-gray-700">
-                      What ingredients do you have?
-                    </label>
-                    <input
-                      type="text"
-                      value={ingredientList}
-                      onChange={(e) => setIngredientList(e.target.value)}
-                      placeholder="e.g., chicken, tomatoes, basil, olive oil"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B6B] focus:border-[#FF6B6B]"
-                    />
-                  </div>
-                )}
+                {/* Text Input */}
+          {inputType === "ingredient_list" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      List Your Ingredients
+              </label>
+              <Textarea
+                value={ingredientList}
+                onChange={(e) => setIngredientList(e.target.value)}
+                placeholder="e.g., chicken breast, rice, tomatoes, onions, garlic, olive oil..."
+                      className="min-h-[120px] resize-none"
+              />
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <Button
+            onClick={handleSubmit}
+            disabled={isLoading || (inputType === "image" && !selectedImage) || (inputType === "ingredient_list" && !ingredientList.trim())}
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-base sm:text-lg font-semibold"
+          >
+            {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                      Discover Recipes
+                    </>
+            )}
+          </Button>
               </CardContent>
             </Card>
 
-            {/* Submit Button */}
-            <Button
-              onClick={handleDiscoverRecipes}
-              disabled={isLoading}
-              className="w-full bg-[#FF6B6B] hover:bg-[#FF5252] text-white h-12 text-lg font-medium"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Discovering Recipes...
-                </>
-              ) : (
-                "Discover Recipes"
-              )}
-            </Button>
+            {/* How it works */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg sm:text-xl">How it works</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm sm:text-base">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
+                    <p className="text-gray-700">Upload a photo of your ingredients or list them manually</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
+                    <p className="text-gray-700">Our AI analyzes your ingredients and suggests delicious recipes</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
+                    <p className="text-gray-700">Get step-by-step cooking instructions and video tutorials</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Right Column - Results */}
           <div className="space-y-6">
-            {showResults && (
-              <>
-                {/* Detected Ingredients */}
-                {detectedIngredients.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Utensils className="h-5 w-5 text-[#FF6B6B]" />
-                        Detected Ingredients
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {detectedIngredients.map((item, i) => (
-                          <div key={i} className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-[#FF6B6B] rounded-full"></div>
-                            <span className="text-gray-700">{item.trim()}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Recipe Suggestions */}
-                {suggestions.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <ChefHat className="h-5 w-5 text-[#FF6B6B]" />
-                        Recipe Suggestions
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {suggestions.map((suggestion, i) => (
-                          <Button
-                            key={i}
-                            onClick={() => handleSuggestionClick(suggestion)}
-                            disabled={isLoading}
-                            variant="outline"
-                            className="border-[#FF6B6B] text-[#FF6B6B] hover:bg-[#FF6B6B] hover:text-white"
-                          >
-                            {suggestion}
-                          </Button>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-              {/* Instructions Section */}
-              {instructions && (
-                <div 
-                  className="mt-8 bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
-                >
-                  <div className="p-4 mt-2.5">
-                    <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
-                      Cooking Instructions
-                    </h5>
-                    <div 
-                      className="leading-[1.4] m-0 text-left"
-                      style={{ lineHeight: '1.4', margin: 0, textAlign: 'left' }}
-                      dangerouslySetInnerHTML={{ __html: instructions }}
-                    />
-            </div>
-          </div>
-        )}
-
-              {/* Resources Section */}
-              {loadingResources && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                  {/* YouTube Resources Loading */}
-                  <div 
-                    className="bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
-                  >
-                    <div className="p-4 mt-2.5">
-                      <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
-                        Youtube Resources
-                      </h5>
-                      <h6 className="font-bold mb-3 text-left">Video Tutorials</h6>
-                      <div className="w-full h-1 bg-[#f0f0f0] rounded-sm my-4 overflow-hidden relative">
-                        <div 
-                          className="absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] rounded-sm"
-                          style={{
-                            animation: 'loading-slide 1.5s ease-in-out infinite'
-                          }}
-                        ></div>
-                      </div>
-                      <div className="text-center">Loading video tutorials...</div>
+          {showResults && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg sm:text-xl">Recipe Suggestions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+              {/* Detected Ingredients */}
+              {detectedIngredients.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Detected Ingredients:</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {detectedIngredients.map((ingredient, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs sm:text-sm">
+                          {ingredient}
+                            </Badge>
+                      ))}
                     </div>
-                  </div>
-
-                  {/* Google Resources Loading */}
-                  <div 
-                    className="bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
-                  >
-                    <div className="p-4 mt-2.5">
-                      <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
-                        Google Resources
-                      </h5>
-                      <h6 className="font-bold mb-3 text-left">Recommended Articles</h6>
-                      <div className="w-full h-1 bg-[#f0f0f0] rounded-sm my-4 overflow-hidden relative">
-                        <div 
-                          className="absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] rounded-sm"
-                          style={{
-                            animation: 'loading-slide 1.5s ease-in-out infinite'
-                          }}
-                        ></div>
                       </div>
-                      <div className="text-center">Loading articles...</div>
-                    </div>
-                  </div>
-                </div>
-            )}
+              )}
 
-              {/* Resources Content */}
-              {resources && !loadingResources && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                  {/* YouTube Resources */}
-                  <div 
-                    className="bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
-                  >
-                    <div className="p-4 mt-2.5">
-                      <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
-                        Youtube Resources
-                      </h5>
-                      <h6 className="font-bold mb-3 text-left">Video Tutorials</h6>
-                    {resources.YoutubeSearch && resources.YoutubeSearch.length > 0 ? (
-                        <div className="space-y-6">
-                          {resources.YoutubeSearch.map((item: any, idx: number) => {
-                            const videoId = getYouTubeVideoId(item.link);
-                        return videoId ? (
-                              <div key={idx} className="group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                                <div className="relative w-full aspect-video bg-black">
-                            <iframe
-                                    src={`https://www.youtube.com/embed/${videoId}`}
-                              title={item.title}
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              allowFullScreen
-                                    className="w-full h-full rounded-t-2xl"
-                            />
+              {/* Recipe Suggestions */}
+              {suggestions.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">Available Recipes:</h3>
+                        <div className="space-y-3">
+                      {suggestions.map((suggestion, index) => (
+                            <div 
+                          key={index}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                              className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-gray-900 text-sm sm:text-base">
+                                    {suggestion}
+                                  </h4>
+                                  <p className="text-gray-600 text-xs sm:text-sm mt-1">
+                                    Click to view detailed recipe and instructions
+                                  </p>
                                 </div>
-                                <div className="p-6">
-                                  <h4 className="font-bold text-[#2D3436] text-base mb-1 line-clamp-2 leading-tight text-left">{item.title}</h4>
-                                  <p className="text-xs text-gray-500 mb-4 text-left">{item.channel || ''}</p>
-                                </div>
-                          </div>
-                        ) : (
-                              <div key={idx} className="group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                                <div className="p-6">
-                                  <h4 className="font-bold text-[#2D3436] text-base mb-1 line-clamp-2 leading-tight text-left">{item.title}</h4>
-                          <a
-                            href={item.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 text-red-500 text-base font-semibold hover:underline"
-                                  >
-                                    Watch Tutorial
-                                  </a>
-                                </div>
-                              </div>
-                        )
-                          })}
-                        </div>
-                    ) : (
-                        <p className="text-center text-gray-600">No video tutorials available.</p>
-                    )}
-                    </div>
-                  </div>
-
-                  {/* Google Resources */}
-                  <div 
-                    className="bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
-                  >
-                    <div className="p-4 mt-2.5">
-                      <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
-                        Google Resources
-                      </h5>
-                      <h6 className="font-bold mb-3 text-left">Recommended Articles</h6>
-                    {resources.GoogleSearch && resources.GoogleSearch.length > 0 ? (
-                        <div className="space-y-6">
-                          {resources.GoogleSearch.map((item: any, idx: number) => (
-                            <div key={idx} className="group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                              <div className="p-6">
-                                <h4 className="font-bold text-[#2D3436] text-base mb-1 line-clamp-2 leading-tight text-left">{item.title}</h4>
-                                <p className="text-xs text-gray-500 mb-4 line-clamp-3 leading-relaxed text-left">{item.description}</p>
-                                <a
-                          href={item.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-400 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow hover:from-blue-400 hover:to-blue-500 transition-colors"
-                        >
-                                  Read More
-                        </a>
+                                <ChefHat className="h-5 w-5 text-orange-500" />
                               </div>
                             </div>
-                          ))}
+                      ))}
                         </div>
-                    ) : (
-                        <p className="text-center text-gray-600">No articles available.</p>
+                      </div>
                     )}
                     </div>
-                  </div>
-              </div>
-            )}
-
-              {/* Done Button - Only show when we have complete results */}
-              {instructions && resources && !loadingResources && (
-                <div className="mt-6 sm:mt-8 flex justify-center">
-                    <button
-                    onClick={() => window.location.href = '/history'}
-                    className="bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-[#FF5A5A] hover:to-[#FF7A3A] transform hover:-translate-y-1 text-base sm:text-lg"
-                  >
-                    ✅ Done - View in History
-                    </button>
-                </div>
+                  </CardContent>
+                </Card>
               )}
+
+            {/* Detailed Recipe View */}
+              {instructions && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg sm:text-xl">Recipe Details</CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setInstructions("")
+                        setResources(null)
+                        setSelectedSuggestion("")
+                      }}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Close
+                    </Button>
+                  </div>
+                  </CardHeader>
+                  <CardContent>
+                  <div className="space-y-6">
+                    {/* Recipe Title */}
+                    {selectedSuggestion && (
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">{selectedSuggestion}</h3>
+                      </div>
+                    )}
+
+                    {/* Instructions */}
+                    {instructions && (
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">Cooking Instructions:</h4>
+                        <div 
+                          className="prose prose-sm max-w-none text-gray-700"
+                      dangerouslySetInnerHTML={{ __html: instructions }}
+                    />
+                      </div>
+              )}
+
+              {/* Resources */}
+                    {loadingResources && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="h-6 w-6 animate-spin text-orange-500 mr-2" />
+                          <span className="text-gray-600">Loading resources...</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {resources && !loadingResources && (
+                    <div className="space-y-4">
+                      {/* YouTube Videos */}
+                      {resources.YoutubeSearch && resources.YoutubeSearch.length > 0 && (
+                        <div>
+                            <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base flex items-center gap-2">
+                              <Play className="h-4 w-4 text-red-500" />
+                              YouTube Tutorials
+                          </h4>
+                            <div className="space-y-3">
+                              {resources.YoutubeSearch.slice(0, 3).map((video: any, index: number) => {
+                                const videoId = getYouTubeVideoId(video.link);
+                                return videoId ? (
+                                  <div key={index} className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                                    <div className="aspect-video bg-gray-100">
+                                      <iframe
+                                        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
+                                        title={video.title}
+                                        className="w-full h-full"
+                                        frameBorder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                      />
+                                    </div>
+                                    <div className="p-3">
+                                      <h5 className="font-medium text-gray-900 text-sm mb-1 line-clamp-2">
+                                        {video.title}
+                                      </h5>
+                                      <p className="text-gray-600 text-xs mb-2">
+                                        {video.channel}
+                                      </p>
+                                      <a
+                                        href={video.link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-red-600 hover:text-red-700 text-xs font-medium"
+                                      >
+                                        <ExternalLink className="h-3 w-3" />
+                                        Watch on YouTube
+                                      </a>
+                                    </div>
+                                  </div>
+                                ) : (
+                              <a
+                                key={index}
+                                href={video.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                    className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                              >
+                                <div className="w-12 h-8 bg-red-500 rounded flex items-center justify-center">
+                                  <span className="text-white text-xs">▶</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                      <p className="font-medium text-gray-900 text-sm truncate">
+                                    {video.title}
+                                  </p>
+                                      <p className="text-gray-600 text-xs">
+                                    {video.channel}
+                                  </p>
+                                </div>
+                                    <ExternalLink className="h-4 w-4 text-gray-400" />
+                              </a>
+                                );
+                              })}
+                            </div>
+                        </div>
+                      )}
+
+                        {/* Web Resources */}
+                      {resources.GoogleSearch && resources.GoogleSearch.length > 0 && (
+                        <div>
+                            <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base flex items-center gap-2">
+                              <ExternalLink className="h-4 w-4 text-blue-500" />
+                              Web Resources
+                          </h4>
+                            <div className="space-y-3">
+                            {resources.GoogleSearch.slice(0, 3).map((result: any, index: number) => (
+                              <a
+                                key={index}
+                                href={result.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                  className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                              >
+                                <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
+                                  <span className="text-white text-xs">🔍</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-gray-900 text-sm truncate">
+                                    {result.title}
+                                  </p>
+                                    <p className="text-gray-600 text-xs truncate">
+                                    {result.snippet}
+                                  </p>
+                                </div>
+                                  <ExternalLink className="h-4 w-4 text-gray-400" />
+                              </a>
+                            ))}
+                          </div>
+                          </div>
+                        )}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+            {/* Tips */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg sm:text-xl">Tips for better results</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm sm:text-base">
+                  <div className="flex items-start gap-3">
+                    <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-gray-700">List all available ingredients, including spices and condiments</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-gray-700">Take clear photos of your ingredients for better AI recognition</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-gray-700">Include quantities when possible for more accurate recipe suggestions</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             </div>
-          )}
-          </div>
+        </div>
       </div>
 
-      <style>{`
-        @keyframes loading-slide {
-          0% {
-            left: -30%;
-          }
-          100% {
-            left: 100%;
-          }
-        }
-      `}</style>
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Upload Ingredient Image</h3>
+              <p className="text-gray-600">Choose how you'd like to upload your ingredient photo</p>
+            </div>
+            
+            <div className="space-y-4">
+              <Button 
+                onClick={() => {
+                  document.getElementById('cameraInput')?.click();
+                  setShowUploadModal(false);
+                }}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-4 px-6 rounded-lg transition-colors"
+              >
+                <Camera className="h-5 w-5 mr-3" />
+                Take Photo with Camera
+              </Button>
+              
+              <Button 
+                onClick={() => {
+                  fileInputRef.current?.click();
+                  setShowUploadModal(false);
+                }}
+                variant="outline" 
+                className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white font-medium py-4 px-6 rounded-lg transition-colors"
+              >
+                <ImageIcon className="h-5 w-5 mr-3" />
+                Choose from Gallery
+              </Button>
+            </div>
+            
+            <div className="mt-6 pt-4 border-t">
+              <Button
+                onClick={() => setShowUploadModal(false)}
+                variant="ghost"
+                className="w-full text-gray-500 hover:text-gray-700"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden camera input */}
+      <input
+        id="cameraInput"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleImageSelect}
+        className="hidden"
+      />
     </div>
   )
 }

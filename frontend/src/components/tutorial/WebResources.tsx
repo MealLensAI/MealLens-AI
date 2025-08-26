@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Globe, ExternalLink } from 'lucide-react';
+import { Globe, ExternalLink, BookOpen, Loader2 } from 'lucide-react';
 
 interface WebResource {
   title: string;
@@ -51,55 +51,101 @@ const WebResources: React.FC<WebResourcesProps> = ({ resources, onImageError }) 
     }
   };
 
+  if (resources.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Globe className="w-8 h-8 text-blue-500" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Web Resources Available</h3>
+        <p className="text-sm text-gray-600">We couldn't find additional resources for this recipe</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      {resources.map((resource, index) => {
-        const hasImage = resource.image && resource.image.length > 0;
-        const imgSrc = hasImage ? resource.image : images[index];
-        const isLoading = loadingImages[index];
-        useEffect(() => {
-          if (!hasImage && !images[index] && !isLoading) {
-            fetchOgImage(resource.url, index);
-          }
-          // eslint-disable-next-line
-        }, [hasImage, images, isLoading, resource.url, index]);
-        return (
-          <div key={index} className="group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-            <div className="relative overflow-hidden">
-              {isLoading ? (
-                <div className="w-full h-44 flex items-center justify-center bg-gray-100 animate-pulse">
-                  <span className="text-gray-400">Loading image...</span>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+          <Globe className="w-4 h-4 text-white" />
+        </div>
+        <div>
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900">Web Resources</h3>
+          <p className="text-sm text-gray-600">Additional recipes and cooking tips</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {resources.map((resource, index) => {
+          const hasImage = resource.image && resource.image.length > 0;
+          const imgSrc = hasImage ? resource.image : images[index];
+          const isLoading = loadingImages[index];
+          
+          useEffect(() => {
+            if (!hasImage && !images[index] && !isLoading) {
+              fetchOgImage(resource.url, index);
+            }
+            // eslint-disable-next-line
+          }, [hasImage, images, isLoading, resource.url, index]);
+          
+          return (
+            <div key={index} className="group bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="relative overflow-hidden">
+                {isLoading ? (
+                  <div className="w-full h-32 sm:h-40 flex items-center justify-center bg-gray-100">
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-xs">Loading...</span>
+                    </div>
+                  </div>
+                ) : imgSrc ? (
+                  <img 
+                    src={imgSrc}
+                    alt={resource.title}
+                    className="w-full h-32 sm:h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={onImageError}
+                  />
+                ) : (
+                  <div className="w-full h-32 sm:h-40 flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
+                    <div className="text-center">
+                      <BookOpen className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                      <span className="text-xs text-blue-600 font-medium">Recipe Resource</span>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="absolute top-2 left-2">
+                  <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                    Web
+                  </div>
                 </div>
-              ) : imgSrc ? (
-                <img 
-                  src={imgSrc}
-                  alt={resource.title}
-                  className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={onImageError}
-                />
-              ) : (
-                <div className="w-full h-44 flex items-center justify-center bg-gray-100">
-                  <span className="text-gray-300">No image</span>
-                </div>
-              )}
+              </div>
+              
+              <div className="p-3 sm:p-4">
+                <h4 className="font-semibold text-gray-900 text-sm sm:text-base mb-1 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
+                  {resource.title}
+                </h4>
+                
+                <p className="text-xs text-gray-500 mb-3 line-clamp-2 leading-relaxed">
+                  {resource.description}
+                </p>
+                
+                <a
+                  href={resource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 bg-blue-500 text-white text-xs sm:text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Read More</span>
+                  <span className="sm:hidden">Read</span>
+                  <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
+                </a>
+              </div>
             </div>
-            <div className="p-6">
-              <h4 className="font-bold text-[#2D3436] text-base mb-1 line-clamp-2 leading-tight">{resource.title}</h4>
-              <p className="text-xs text-gray-500 mb-4 line-clamp-3 leading-relaxed">{resource.description}</p>
-              <a
-                href={resource.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-400 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow hover:from-blue-400 hover:to-blue-500 transition-colors"
-              >
-                <Globe className="w-4 h-4" />
-                Read More
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 };

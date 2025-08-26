@@ -1,152 +1,159 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, Star } from 'lucide-react';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Clock, Star, Utensils } from 'lucide-react';
 
 interface RecipeCardProps {
   title: string;
-  image?: string;
-  time: string;
-  rating: number;
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  originalTitle?: string;
+  time?: string;
+  rating?: number;
+  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   onClick?: () => void;
-  originalTitle?: string; // Optional prop for displaying the full meal description
+  imageUrl?: string;
 }
 
-const RecipeCard: React.FC<RecipeCardProps> = ({ title, image, time, rating, mealType, onClick, originalTitle }) => {
-  const [imageError, setImageError] = useState(false);
-  const [imageLoading, setImageLoading] = useState(true);
-  const [foodImage, setFoodImage] = useState<string>('');
-
-  // Fetch food image using your hosted API
-  const fetchFoodImage = async (foodName: string) => {
-    if (image) {
-      setFoodImage(image);
-      setImageLoading(false);
-      return;
-    }
-
-    try {
-      console.log('[RecipeCard] Sending to image API:', foodName);
-      const response = await fetch('https://get-images-qa23.onrender.com/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q: foodName }),
-      });
-      console.log('[RecipeCard] API response status:', response.status);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-      const data = await response.json();
-      console.log('[RecipeCard] API response JSON:', data);
-
-      if (data.image_url) {
-        setFoodImage(data.image_url);
-        setImageLoading(false);
-        console.log('[RecipeCard] Set foodImage to:', data.image_url);
-      } else {
-        throw new Error('No image URL in response');
-      }
-    } catch (error) {
-      console.error('[RecipeCard] Error fetching food image:', error);
-      setFoodImage(getFallbackImage());
-      setImageLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    setImageLoading(true);
-    setImageError(false);
-    fetchFoodImage(title); // Use the clean title for image fetching
-  }, [title, image]);
-
-  const getFallbackImage = () => {
-    const fallbackImages = {
-      breakfast: 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.istockphoto.com%2Fphotos%2Floading-circle&psig=AOvVaw28Iyc-z4JEXpGmOScNoX_Q&ust=1752286755158000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODk74Dfs44DFQAAAAAdAAAAABAE',
-      lunch: 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.istockphoto.com%2Fphotos%2Floading-circle&psig=AOvVaw28Iyc-z4JEXpGmOScNoX_Q&ust=1752286755158000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODk74Dfs44DFQAAAAAdAAAAABAE',
-      dinner: 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.istockphoto.com%2Fphotos%2Floading-circle&psig=AOvVaw28Iyc-z4JEXpGmOScNoX_Q&ust=1752286755158000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODk74Dfs44DFQAAAAAdAAAAABAE',
-      snack: 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.istockphoto.com%2Fphotos%2Floading-circle&psig=AOvVaw28Iyc-z4JEXpGmOScNoX_Q&ust=1752286755158000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODk74Dfs44DFQAAAAAdAAAAABAE'
-    };
-    return fallbackImages[mealType] || fallbackImages.dinner;
-  };
-
-  const getMealTypeIcon = () => {
-    switch (mealType) {
+const RecipeCard: React.FC<RecipeCardProps> = ({
+  title,
+  originalTitle,
+  time = '30 mins',
+  rating = 4,
+  mealType,
+  onClick,
+  imageUrl
+}) => {
+  const getMealTypeColor = (type?: string) => {
+    switch (type) {
       case 'breakfast':
-        return '🥞';
+        return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'lunch':
-        return '🍽️';
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'dinner':
-        return '🍛';
+        return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'snack':
-        return '🍪';
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getMealTypeLabel = (type?: string) => {
+    switch (type) {
+      case 'breakfast':
+        return 'Breakfast';
+      case 'lunch':
+        return 'Lunch';
+      case 'dinner':
+        return 'Dinner';
+      case 'snack':
+        return 'Snack';
+      default:
+        return 'Meal';
+    }
+  };
+
+  const getMealTypeIcon = (type?: string) => {
+    switch (type) {
+      case 'breakfast':
+        return '🌅';
+      case 'lunch':
+        return '☀️';
+      case 'dinner':
+        return '🌙';
+      case 'snack':
+        return '🍎';
       default:
         return '🍽️';
     }
   };
 
-  const handleImageLoad = () => {
-    setImageLoading(false);
-    setImageError(false);
-  };
-
-  const handleImageError = () => {
-    if (!imageError) {
-      setImageError(true);
-      // Try to fetch a new image from the API with a slightly modified search term
-      fetchFoodImage(title + ' food');
-    } else {
-      setFoodImage(getFallbackImage());
-      setImageLoading(false);
-    }
-  };
-
   return (
-    <div 
-      className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer transform hover:scale-105"
+    <Card 
+      className="cursor-pointer hover:shadow-lg transition-all duration-300 overflow-hidden group border border-gray-200 hover:border-orange-300"
       onClick={onClick}
     >
-      <div className="relative h-40 sm:h-48">
-        {imageLoading && (
-          <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
-            <div className="text-gray-400 text-xs sm:text-sm">Loading image...</div>
+      <div className="relative">
+        {/* Recipe Image */}
+        <div className="w-full h-32 sm:h-40 lg:h-48 relative overflow-hidden">
+          {imageUrl && (
+            <img 
+              src={imageUrl} 
+              alt={title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                // If image fails to load, hide the img element to show fallback
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          )}
+          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors"></div>
+          {/* Fallback image container - shown when no imageUrl or on error */}
+          <div className={`absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-600 ${imageUrl ? 'hidden' : ''}`}>
+            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-white text-center">
+                <div className="text-2xl sm:text-3xl lg:text-4xl mb-2">{getMealTypeIcon(mealType)}</div>
+                <div className="text-xs sm:text-sm font-medium opacity-90">Recipe Image</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Meal Type Badge */}
+        {mealType && (
+          <div className="absolute top-2 left-2">
+            <Badge className={`text-xs sm:text-sm border ${getMealTypeColor(mealType)}`}>
+              {getMealTypeLabel(mealType)}
+            </Badge>
           </div>
         )}
-        <img 
-          src={foodImage || getFallbackImage()}
-          alt={title}
-          className="w-full h-full object-cover"
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          style={{ display: imageLoading ? 'none' : 'block' }}
-        />
-        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-white/90 backdrop-blur-sm rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center shadow-sm">
-          <span className="text-sm sm:text-lg">{getMealTypeIcon()}</span>
+
+        {/* Rating Badge */}
+        <div className="absolute top-2 right-2">
+          <Badge className="bg-white/95 text-gray-800 text-xs sm:text-sm border border-gray-200">
+            <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
+            {rating}
+          </Badge>
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
+
+        {/* Time Badge */}
+        <div className="absolute bottom-2 left-2">
+          <Badge className="bg-black/70 text-white text-xs sm:text-sm border-0">
+            <Clock className="h-3 w-3 mr-1" />
+            {time}
+          </Badge>
+        </div>
       </div>
       
-      <div className="p-3 sm:p-4">
-        <h3 className="font-semibold text-[#2D3436] mb-2 text-xs sm:text-sm leading-tight line-clamp-2">
-          {originalTitle || title}
+      <CardContent className="p-3 sm:p-4">
+        <div className="space-y-2 sm:space-y-3">
+          {/* Title */}
+          <h3 className="font-semibold text-gray-900 text-sm sm:text-base lg:text-lg line-clamp-2 leading-tight group-hover:text-orange-600 transition-colors">
+            {title}
         </h3>
         
-        <div className="flex items-center justify-between">
-          <div className="flex items-center text-[#1e293b] text-xs">
-            <Clock className="w-3 h-3 mr-1" />
-            <span>{time}</span>
+          {/* Original Title (if different) */}
+          {originalTitle && originalTitle !== title && (
+            <p className="text-xs sm:text-sm text-gray-500 line-clamp-1">
+              {originalTitle}
+            </p>
+          )}
+
+          {/* Recipe Info */}
+          <div className="flex items-center justify-between text-xs sm:text-sm text-gray-600">
+            <div className="flex items-center space-x-2">
+              <Utensils className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500" />
+              <span>View Recipe</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
+              <span>{rating}/5</span>
           </div>
-          
-          <div className="flex items-center">
-            {[...Array(5)].map((_, i) => (
-              <Star 
-                key={i}
-                className={`w-3 h-3 ${
-                  i < rating ? 'text-[#e09026] fill-current' : 'text-gray-300'
-                }`}
-              />
-            ))}
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

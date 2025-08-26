@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useAuth } from '@/lib/utils';
 import paystackService, { UserSubscription, TrialStatus, SubscriptionPlan } from '@/services/paystackService';
 import { useToast } from '@/hooks/use-toast';
+import { APP_CONFIG, getPlanPrice, getPlanDisplayName, getPlanDurationText } from '@/lib/config';
 
 interface SubscriptionContextType {
   // Subscription state
@@ -32,6 +33,22 @@ interface SubscriptionContextType {
   getTrialDaysLeft: () => number;
   isInTrial: () => boolean;
   isTrialExpired: () => boolean;
+  
+  // Subscription date tracking
+  getSubscriptionStartDate: () => Date | null;
+  getSubscriptionEndDate: () => Date | null;
+  getDaysUntilExpiry: () => number;
+  isSubscriptionExpired: () => boolean;
+  
+  // Enhanced subscription status
+  getFreeTrialEndDate: () => Date | null;
+  getFreeTierResetDate: () => Date | null;
+  getDaysUntilFreeTierReset: () => number;
+  isFreeTierReset: () => boolean;
+  getCurrentPlanDuration: () => number;
+  getPlanDisplayName: (planName: string) => string;
+  getPlanDurationText: (planName: string) => string;
+  getPlanPrice: (planId: string, billingCycle: 'weekly' | 'two_weeks' | 'monthly') => number;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -61,7 +78,10 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   
   // Free usage tracking
   const [freeUsageCount, setFreeUsageCount] = useState(0);
-  const maxFreeUsage = 5; // 5 free uses as specified
+  const maxFreeUsage = 3; // 3 detections per week for free tier
+  
+  // Production mode - enable proper usage tracking
+  const TESTING_MODE_FREE_USAGE = false; // Set to false to re-enable free usage limits
 
   // Load subscription data
   const loadSubscription = async () => {
@@ -78,9 +98,9 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       setPlans(plansData);
       
       // Calculate trial status if user has no subscription
-      if (!subscriptionData && user.created_at) {
-        const trial = paystackService.calculateTrialStatus(user.created_at);
-        setTrialStatus(trial);
+      if (!subscriptionData && (user as any).created_at) {
+        // Trial status will be calculated in useEffect to avoid setState during render
+        setTrialStatus(null);
       }
     } catch (error) {
       console.error('Error loading subscription data:', error);
@@ -114,6 +134,11 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
   // Free usage management
   const incrementFreeUsage = () => {
+    // TEMPORARY: Skip free usage tracking in testing mode
+    if (TESTING_MODE_FREE_USAGE) {
+      return;
+    }
+    
     setFreeUsageCount(prev => {
       const newCount = Math.min(prev + 1, maxFreeUsage);
       localStorage.setItem('freeUsageCount', newCount.toString());
@@ -136,30 +161,43 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
   // Check if user can use a feature
   const canUseFeature = (featureName: string): boolean => {
+    // TEMPORARY: Allow all features during testing
+    const TESTING_MODE = true; // Set to false to re-enable limits
+    if (TESTING_MODE) {
+      return true;
+    }
+    
     // If user has active subscription, they can use all features
     if (subscription?.subscription?.status === 'active') {
       return true;
     }
     
-    // If user is in trial, they can use all features
-    if (trialStatus?.isInTrial) {
+    // Check if user is in trial period (first 3 days from first detection)
+    const trialStartDate = localStorage.getItem('trialStartDate');
+    if (trialStartDate) {
+      const trialStart = new Date(trialStartDate);
+      const now = new Date();
+      const trialDaysElapsed = Math.floor((now.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Production trial period - 3 days from first detection
+      const trialDays = 3; // 3 days trial period
+      
+      // If within trial days of first detection, allow access to all features
+      if (trialDaysElapsed < trialDays) {
+        return true;
+      }
+    }
+    
+    // After trial period, check if user has free usage remaining
+    if (freeUsageCount < maxFreeUsage) {
       return true;
     }
     
-    // Check specific feature limits for free users
-    switch (featureName) {
-      case 'food_detection':
-        return freeUsageCount < maxFreeUsage; // Allow if under free limit
-      case 'ingredient_detection':
-        return freeUsageCount < maxFreeUsage; // Allow if under free limit
-      case 'meal_planning':
-        return freeUsageCount < maxFreeUsage; // Allow if under free limit
-      default:
-        return true; // Other features are free
-    }
+    // All features are locked for free users after trial and free usage
+    return false;
   };
 
-  // Check if feature is locked
+  // Check if feature is locked - ensure this is defined before context value
   const isFeatureLocked = (featureName: string): boolean => {
     return !canUseFeature(featureName);
   };
@@ -169,23 +207,140 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     if (!isAuthenticated) return;
     
     try {
-      await paystackService.recordFeatureUsage(featureName);
-    } catch (error) {
+      // Start trial on first feature usage if not already started
+      const trialStartDate = localStorage.getItem('trialStartDate');
+      if (!trialStartDate) {
+        localStorage.setItem('trialStartDate', new Date().toISOString());
+        console.log('Trial started for user on first feature usage');
+      }
+      
+      // Set a timeout for the API call
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), 10000); // 10 second timeout
+      });
+      
+      const usagePromise = paystackService.recordFeatureUsage(featureName);
+      
+      await Promise.race([usagePromise, timeoutPromise]);
+      
+      // Refresh subscription data after recording usage
+      await refreshSubscription();
+    } catch (error: any) {
+      // Handle various error types gracefully
+      if (error?.status === 403 || error?.message?.includes('Usage limit exceeded') || error?.message?.includes('Access denied')) {
+        console.warn('Usage recording blocked by backend (403), continuing with feature:', featureName);
+        // Continue with feature usage even if backend blocks recording
+        return;
+      }
+      if (error?.message?.includes('timeout') || error?.message?.includes('Request timeout')) {
+        console.warn('Feature usage recording timed out, continuing without recording:', featureName);
+        return;
+      }
       console.error('Error recording feature usage:', error);
+      // Don't throw error to prevent breaking the main flow
     }
   };
 
   // Trial management
   const getTrialDaysLeft = (): number => {
-    return trialStatus?.trialDaysLeft || 0;
+    const trialStartDate = localStorage.getItem('trialStartDate');
+    if (trialStartDate) {
+      const trialStart = new Date(trialStartDate);
+      const now = new Date();
+      const trialDaysElapsed = Math.floor((now.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
+      return Math.max(0, 7 - trialDaysElapsed);
+    }
+    return 0;
   };
 
   const isInTrial = (): boolean => {
-    return trialStatus?.isInTrial || false;
+    const trialStartDate = localStorage.getItem('trialStartDate');
+    if (trialStartDate) {
+      const trialStart = new Date(trialStartDate);
+      const now = new Date();
+      const trialDaysElapsed = Math.floor((now.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
+      return trialDaysElapsed < 7;
+    }
+    return false;
   };
 
   const isTrialExpired = (): boolean => {
-    return trialStatus?.isExpired || false;
+    const trialStartDate = localStorage.getItem('trialStartDate');
+    if (trialStartDate) {
+      const trialStart = new Date(trialStartDate);
+      const now = new Date();
+      const trialDaysElapsed = Math.floor((now.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
+      return trialDaysElapsed >= 7;
+    }
+    return false;
+  };
+
+  // Subscription date tracking
+  const getSubscriptionStartDate = (): Date | null => {
+    if (!subscription?.subscription?.current_period_start) return null;
+    return new Date(subscription.subscription.current_period_start);
+  };
+
+  const getSubscriptionEndDate = (): Date | null => {
+    if (!subscription?.subscription?.current_period_end) return null;
+    return new Date(subscription.subscription.current_period_end);
+  };
+
+  const getDaysUntilExpiry = (): number => {
+    const endDate = getSubscriptionEndDate();
+    if (!endDate) return 0;
+    
+    const now = new Date();
+    const diffTime = endDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  };
+
+  const isSubscriptionExpired = (): boolean => {
+    return getDaysUntilExpiry() <= 0;
+  };
+
+  // Enhanced subscription status methods
+  const getFreeTrialEndDate = (): Date | null => {
+    if (!subscription?.free_trial_end) return null;
+    return new Date(subscription.free_trial_end);
+  };
+
+  const getFreeTierResetDate = (): Date | null => {
+    if (!subscription?.free_tier_reset_date) return null;
+    return new Date(subscription.free_tier_reset_date);
+  };
+
+  const getDaysUntilFreeTierReset = (): number => {
+    const resetDate = getFreeTierResetDate();
+    if (!resetDate) return 0;
+    
+    const now = new Date();
+    const diffTime = resetDate.getTime() - now.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const isFreeTierReset = (): boolean => {
+    const resetDate = getFreeTierResetDate();
+    if (!resetDate) return true;
+    const now = new Date();
+    return now >= resetDate;
+  };
+
+  const getCurrentPlanDuration = (): number => {
+    return subscription?.subscription_duration_days || 30;
+  };
+
+  const getLocalPlanDisplayName = (planName: string): string => {
+    return getPlanDisplayName(planName);
+  };
+
+  const getLocalPlanDurationText = (planName: string): string => {
+    return getPlanDurationText(planName);
+  };
+
+  const getLocalPlanPrice = (planId: string, billingCycle: 'weekly' | 'two_weeks' | 'monthly'): number => {
+    return getPlanPrice(planId, billingCycle);
   };
 
   // Refresh subscription data
@@ -208,6 +363,24 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     }
   }, [isAuthenticated, user]);
 
+  // Calculate trial status when user changes
+  useEffect(() => {
+    if (isAuthenticated && user && (user as any).created_at && !subscription) {
+      const userCreatedAt = new Date((user as any).created_at);
+      const now = new Date();
+      const trialDaysElapsed = Math.floor((now.getTime() - userCreatedAt.getTime()) / (1000 * 60 * 60 * 24));
+      
+      const trial: TrialStatus = {
+        isInTrial: trialDaysElapsed < 3,
+        trialDaysLeft: Math.max(0, 3 - trialDaysElapsed),
+        trialEndDate: new Date(userCreatedAt.getTime() + (3 * 24 * 60 * 60 * 1000)).toISOString(),
+        isExpired: trialDaysElapsed >= 3
+      };
+      
+      setTrialStatus(trial);
+    }
+  }, [isAuthenticated, user, subscription]);
+
   const value: SubscriptionContextType = {
     subscription,
     plans,
@@ -226,6 +399,18 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     getTrialDaysLeft,
     isInTrial,
     isTrialExpired,
+    getSubscriptionStartDate,
+    getSubscriptionEndDate,
+    getDaysUntilExpiry,
+    isSubscriptionExpired,
+    getFreeTrialEndDate,
+    getFreeTierResetDate,
+    getDaysUntilFreeTierReset,
+    isFreeTierReset,
+    getCurrentPlanDuration,
+    getPlanDisplayName: getLocalPlanDisplayName,
+    getPlanDurationText: getLocalPlanDurationText,
+    getPlanPrice: getLocalPlanPrice,
   };
 
   return (

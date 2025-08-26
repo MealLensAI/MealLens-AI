@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,27 +11,23 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/utils';
 import { api } from '@/lib/api';
 import { 
-  User, 
-  Target, 
-  Heart, 
-  Utensils, 
-  ArrowRight, 
+  User,
+  Heart,
+  Utensils,
+  ArrowRight,
   ArrowLeft,
-  CheckCircle,
-  Camera
+  CheckCircle
 } from 'lucide-react';
 
 interface OnboardingData {
   firstName: string;
   lastName: string;
-  age: number;
-  gender: string;
-  weight: number;
-  height: number;
-  activityLevel: string;
-  goal: string;
-  dietaryRestrictions: string[];
-  healthConditions: string[];
+  dateOfBirth: string; // ISO date string
+  country: string;
+  currency: string; // default USD
+  hasSickness: boolean;
+  sicknessType: string;
+  dietaryPreferences: string[];
   allergies: string[];
 }
 
@@ -45,18 +41,76 @@ const OnboardingPage: React.FC = () => {
   const [formData, setFormData] = useState<OnboardingData>({
     firstName: '',
     lastName: '',
-    age: 0,
-    gender: '',
-    weight: 0,
-    height: 0,
-    activityLevel: '',
-    goal: '',
-    dietaryRestrictions: [],
-    healthConditions: [],
+    dateOfBirth: '',
+    country: '',
+    currency: 'USD',
+    hasSickness: false,
+    sicknessType: '',
+    dietaryPreferences: [],
     allergies: []
   });
 
-  const totalSteps = 4;
+  const totalSteps = 3;
+
+  // Prefill from local user data and backend profile
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('user_data');
+      if (raw) {
+        const ud = JSON.parse(raw);
+        if (!formData.firstName || !formData.lastName) {
+          let first = '';
+          let last = '';
+          if (ud.displayName) {
+            const parts = String(ud.displayName).trim().split(/\s+/);
+            first = parts[0] || '';
+            last = parts.slice(1).join(' ') || '';
+          }
+          if ((!first || !last) && ud.email) {
+            const namePart = String(ud.email).split('@')[0];
+            if (!first) first = namePart;
+          }
+          setFormData(prev => ({
+            ...prev,
+            firstName: prev.firstName || first,
+            lastName: prev.lastName || last,
+          }));
+        }
+        // Default currency
+        setFormData(prev => ({ ...prev, currency: prev.currency || 'USD' }));
+      }
+    } catch {}
+
+    (async () => {
+      try {
+        const res: any = await api.getUserProfile();
+        const profile = res?.profile || res?.data;
+        if (profile) {
+          const fn = profile.first_name || '';
+          const ln = profile.last_name || '';
+          const country = profile.country || '';
+          const currency = profile.currency || 'USD';
+          const hasSickness = !!profile.has_sickness;
+          const sicknessType = profile.sickness_type || '';
+          const dietaryPreferences = Array.isArray(profile.dietary_preferences) ? profile.dietary_preferences : [];
+          const allergies = Array.isArray(profile.allergies) ? profile.allergies : [];
+          if (fn || ln) {
+            setFormData(prev => ({
+              ...prev,
+              firstName: prev.firstName || fn,
+              lastName: prev.lastName || ln,
+              country: prev.country || country,
+              currency: prev.currency || currency,
+              hasSickness: prev.hasSickness || hasSickness,
+              sicknessType: prev.sicknessType || sicknessType,
+              dietaryPreferences: prev.dietaryPreferences.length ? prev.dietaryPreferences : dietaryPreferences,
+              allergies: prev.allergies.length ? prev.allergies : allergies,
+            }));
+          }
+        }
+      } catch {}
+    })();
+  }, []);
 
   const updateFormData = (field: keyof OnboardingData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -77,15 +131,49 @@ const OnboardingPage: React.FC = () => {
   const handleComplete = async () => {
     setLoading(true);
     try {
-      // Save onboarding data to backend
-      await api.post('/api/profile/onboarding', formData);
+      // Compute age from DOB if provided
+      let age: number | undefined = undefined;
+      if (formData.dateOfBirth) {
+        const dob = new Date(formData.dateOfBirth);
+        const now = new Date();
+        let years = now.getFullYear() - dob.getFullYear();
+        const m = now.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) years--;
+        age = years;
+      }
+
+      // Persist to profile
+      const payload: any = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        country: formData.country,
+        currency: formData.currency || 'USD',
+        age: age ?? undefined,
+        has_sickness: formData.hasSickness,
+        sickness_type: formData.sicknessType,
+        dietary_preferences: formData.dietaryPreferences,
+        allergies: formData.allergies,
+      };
+      await api.updateUserProfile(payload);
+
+      // Update cached user display name
+      try {
+        const raw = localStorage.getItem('user_data');
+        if (raw) {
+          const ud = JSON.parse(raw);
+          ud.displayName = `${formData.firstName} ${formData.lastName}`.trim();
+          localStorage.setItem('user_data', JSON.stringify(ud));
+        }
+      } catch {}
       
       toast({
         title: "Profile Setup Complete!",
         description: "Welcome to MealLens! Your personalized nutrition journey begins now.",
       });
       
-      navigate('/dashboard');
+      // Mark onboarding complete locally
+      localStorage.setItem('onboarding_complete', 'true');
+      navigate('/home');
     } catch (error) {
       toast({
         title: "Error",
@@ -129,32 +217,37 @@ const OnboardingPage: React.FC = () => {
             />
           </div>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="age">Age</Label>
+            <Label htmlFor="dob">Date of Birth</Label>
             <Input
-              id="age"
-              type="number"
-              value={formData.age || ''}
-              onChange={(e) => updateFormData('age', parseInt(e.target.value))}
-              placeholder="25"
+              id="dob"
+              type="date"
+              value={formData.dateOfBirth}
+              onChange={(e) => updateFormData('dateOfBirth', e.target.value)}
             />
           </div>
           <div>
-            <Label htmlFor="gender">Gender</Label>
-            <Select value={formData.gender} onValueChange={(value) => updateFormData('gender', value)}>
+            <Label htmlFor="country">Country</Label>
+            <Select value={formData.country} onValueChange={(value) => updateFormData('country', value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select gender" />
+                <SelectValue placeholder="Select country" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-                <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                <SelectItem value="United States">United States</SelectItem>
+                <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                <SelectItem value="Canada">Canada</SelectItem>
+                <SelectItem value="Nigeria">Nigeria</SelectItem>
+                <SelectItem value="Ghana">Ghana</SelectItem>
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        <div>
+          <Label htmlFor="currency">Currency</Label>
+          <Input id="currency" value={formData.currency || 'USD'} disabled />
         </div>
       </CardContent>
     </Card>
@@ -164,52 +257,34 @@ const OnboardingPage: React.FC = () => {
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
         <div className="w-16 h-16 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Target className="h-8 w-8 text-white" />
+          <Heart className="h-8 w-8 text-white" />
         </div>
-        <CardTitle className="text-2xl">Physical Information</CardTitle>
+        <CardTitle className="text-2xl">Health</CardTitle>
         <CardDescription>
-          Help us understand your current physical state for better recommendations.
+          Tell us if you have any current sickness we should consider.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="hasSickness"
+            checked={formData.hasSickness}
+            onCheckedChange={(checked) => updateFormData('hasSickness', Boolean(checked))}
+          />
+          <Label htmlFor="hasSickness">I currently have a health condition/sickness</Label>
+        </div>
+
+        {formData.hasSickness && (
           <div>
-            <Label htmlFor="weight">Weight (kg)</Label>
+            <Label htmlFor="sicknessType">Please specify</Label>
             <Input
-              id="weight"
-              type="number"
-              value={formData.weight || ''}
-              onChange={(e) => updateFormData('weight', parseFloat(e.target.value))}
-              placeholder="70"
+              id="sicknessType"
+              value={formData.sicknessType}
+              onChange={(e) => updateFormData('sicknessType', e.target.value)}
+              placeholder="e.g., flu, malaria, stomach upset"
             />
           </div>
-          <div>
-            <Label htmlFor="height">Height (cm)</Label>
-            <Input
-              id="height"
-              type="number"
-              value={formData.height || ''}
-              onChange={(e) => updateFormData('height', parseFloat(e.target.value))}
-              placeholder="170"
-            />
-          </div>
-        </div>
-        
-        <div>
-          <Label htmlFor="activityLevel">Activity Level</Label>
-          <Select value={formData.activityLevel} onValueChange={(value) => updateFormData('activityLevel', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select activity level" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="sedentary">Sedentary (little or no exercise)</SelectItem>
-              <SelectItem value="light">Lightly active (light exercise 1-3 days/week)</SelectItem>
-              <SelectItem value="moderate">Moderately active (moderate exercise 3-5 days/week)</SelectItem>
-              <SelectItem value="active">Very active (hard exercise 6-7 days/week)</SelectItem>
-              <SelectItem value="very-active">Extremely active (very hard exercise, physical job)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -218,48 +293,53 @@ const OnboardingPage: React.FC = () => {
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
         <div className="w-16 h-16 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Heart className="h-8 w-8 text-white" />
+          <Utensils className="h-8 w-8 text-white" />
         </div>
-        <CardTitle className="text-2xl">Health Goals</CardTitle>
+        <CardTitle className="text-2xl">Preferences & Allergies</CardTitle>
         <CardDescription>
-          What would you like to achieve with your nutrition journey?
+          Choose any dietary preferences and allergies we should respect.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <Label htmlFor="goal">Primary Goal</Label>
-          <Select value={formData.goal} onValueChange={(value) => updateFormData('goal', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select your primary goal" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weight-loss">Weight Loss</SelectItem>
-              <SelectItem value="weight-gain">Weight Gain</SelectItem>
-              <SelectItem value="maintenance">Maintain Current Weight</SelectItem>
-              <SelectItem value="muscle-gain">Build Muscle</SelectItem>
-              <SelectItem value="energy">Increase Energy</SelectItem>
-              <SelectItem value="health">Improve Overall Health</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div>
-          <Label>Dietary Restrictions</Label>
+          <Label>Dietary Preferences</Label>
           <div className="grid grid-cols-2 gap-2 mt-2">
             {['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Keto', 'Paleo'].map((diet) => (
               <div key={diet} className="flex items-center space-x-2">
                 <Checkbox
-                  id={diet}
-                  checked={formData.dietaryRestrictions.includes(diet.toLowerCase())}
+                  id={`diet-${diet}`}
+                  checked={formData.dietaryPreferences.includes(diet.toLowerCase())}
                   onCheckedChange={(checked) => {
                     if (checked) {
-                      updateFormData('dietaryRestrictions', [...formData.dietaryRestrictions, diet.toLowerCase()]);
+                      updateFormData('dietaryPreferences', [...formData.dietaryPreferences, diet.toLowerCase()]);
                     } else {
-                      updateFormData('dietaryRestrictions', formData.dietaryRestrictions.filter(d => d !== diet.toLowerCase()));
+                      updateFormData('dietaryPreferences', formData.dietaryPreferences.filter(d => d !== diet.toLowerCase()));
                     }
                   }}
                 />
-                <Label htmlFor={diet} className="text-sm">{diet}</Label>
+                <Label htmlFor={`diet-${diet}`} className="text-sm">{diet}</Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label>Common Allergies</Label>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {['Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Soy', 'Wheat', 'Fish', 'Shellfish'].map((allergy) => (
+              <div key={allergy} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`allergy-${allergy}`}
+                  checked={formData.allergies.includes(allergy.toLowerCase())}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      updateFormData('allergies', [...formData.allergies, allergy.toLowerCase()]);
+                    } else {
+                      updateFormData('allergies', formData.allergies.filter(a => a !== allergy.toLowerCase()));
+                    }
+                  }}
+                />
+                <Label htmlFor={`allergy-${allergy}`} className="text-sm">{allergy}</Label>
               </div>
             ))}
           </div>
@@ -332,7 +412,6 @@ const OnboardingPage: React.FC = () => {
       case 1: return renderStep1();
       case 2: return renderStep2();
       case 3: return renderStep3();
-      case 4: return renderStep4();
       default: return renderStep1();
     }
   };
@@ -373,7 +452,7 @@ const OnboardingPage: React.FC = () => {
             {currentStep < totalSteps ? (
               <Button
                 onClick={handleNext}
-                className="bg-[#FF6B6B] hover:bg-[#FF5252] text-white flex items-center"
+                className="bg-orange-500 hover:bg-orange-600 text-white flex items-center"
               >
                 Next
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -382,7 +461,7 @@ const OnboardingPage: React.FC = () => {
               <Button
                 onClick={handleComplete}
                 disabled={loading}
-                className="bg-[#FF6B6B] hover:bg-[#FF5252] text-white flex items-center"
+                className="bg-orange-500 hover:bg-orange-600 text-white flex items-center"
               >
                 {loading ? (
                   <>
@@ -404,7 +483,7 @@ const OnboardingPage: React.FC = () => {
         <div className="text-center mt-6">
           <Button
             variant="ghost"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => { localStorage.setItem('onboarding_complete', 'true'); navigate('/home') }}
             className="text-gray-600 hover:text-[#FF6B6B]"
           >
             Skip for now

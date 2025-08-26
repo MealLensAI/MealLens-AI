@@ -1,32 +1,15 @@
-"use client"
-
-import React, { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/lib/utils"
-import { api, APIError } from "@/lib/api"
-import LoadingScreen from "@/components/LoadingScreen"
-// Force refresh - Loader2 import
-import { 
-  Loader2, 
-  Utensils, 
-  Filter, 
-  Search, 
-  Bell, 
-  Play, 
-  Clock, 
-  CalendarDays, 
-  BookOpen,
-  X,
-  ExternalLink,
-  Youtube,
-  Globe
-} from "lucide-react"
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Camera, XCircle, Loader2, Search, Play, ExternalLink, Info, Filter, Bell, Clock, CalendarDays, BookOpen, X, Youtube, Globe } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/utils';
+import { api, APIError } from '@/lib/api';
+import LoadingScreen from '@/components/LoadingScreen';
 
 interface SharedRecipe {
   id: string
@@ -45,93 +28,22 @@ interface SharedRecipe {
   image_url?: string // Supabase Storage URL for the uploaded image
 }
 
-// Helper functions moved outside components
-const getStatusColor = (recipeType: string) => {
-  switch (recipeType) {
-    case "food_detection":
-      return "bg-green-100 text-green-700 border-green-200"
-    case "ingredient_detection":
-      return "bg-blue-100 text-blue-700 border-blue-200"
-    default:
-      return "bg-gray-100 text-gray-700 border-gray-200"
-  }
-}
-
-const getStatusText = (recipeType: string) => {
-  switch (recipeType) {
-    case "food_detection":
-      return "Food Detection"
-    case "ingredient_detection":
-      return "Ingredient Detection"
-    default:
-      return "Detection"
-  }
-}
-
-const getYouTubeVideoId = (url: string): string | null => {
-  try {
-    const urlObj = new URL(url)
-    if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
-      if (urlObj.hostname.includes('youtu.be')) {
-        return urlObj.pathname.slice(1)
-      }
-      const searchParams = urlObj.searchParams
-      return searchParams.get('v')
-    }
-    return null
-  } catch {
-    return null
-  }
-}
-
-export function HistoryPage() {
-  const navigate = useNavigate()
-  const [history, setHistory] = useState<SharedRecipe[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedItem, setSelectedItem] = useState<SharedRecipe | null>(null)
-  const [showDetailModal, setShowDetailModal] = useState(false)
-  const { isAuthenticated, loading: authLoading } = useAuth()
-  const { toast } = useToast()
-
-  if (authLoading) {
-    return <LoadingScreen 
-      message="Loading authentication..." 
-      subMessage="Please wait while we verify your login" 
-      showLogo={true}
-      size="lg"
-      fullScreen={true}
-    />
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-orange-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center space-y-6">
-          <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl shadow-lg mx-auto">
-            <Utensils className="h-8 w-8 text-white" />
-          </div>
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-800">Authentication Required</h2>
-            <p className="text-gray-600">
-              Please log in to view your detection history and saved recipes.
-            </p>
-            <Button 
-              onClick={() => navigate('/login')}
-              className="w-full py-3 text-lg font-bold bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg hover:from-red-600 hover:to-orange-600 transition-all duration-300"
-            >
-              Go to Login
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
+export default function HistoryPage() {
+  const navigate = useNavigate();
+  const [history, setHistory] = useState<SharedRecipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const setIsLoading = setLoading;
+  const isLoading = loading;
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedItem, setSelectedItem] = useState<SharedRecipe | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchHistory = async () => {
-      setIsLoading(true)
+      setLoading(true)
       setError(null)
       
       console.log("🔍 [History] Starting fetchHistory...")
@@ -148,7 +60,7 @@ export function HistoryPage() {
       if (!isAuthenticated) {
         console.log("🔍 [History] Not authenticated, setting error...")
         setError("Please log in to view your history.")
-        setIsLoading(false)
+        setLoading(false)
         return
       }
       
@@ -194,7 +106,7 @@ export function HistoryPage() {
         }
       } finally {
         console.log("🔍 [History] Setting loading to false")
-        setIsLoading(false)
+        setLoading(false)
       }
     }
     fetchHistory()
@@ -214,17 +126,11 @@ export function HistoryPage() {
 
   // Show loading while auth is initializing
   if (authLoading) {
-    return <LoadingScreen message="Loading authentication..." subMessage="Please wait while we verify your login" />
+    return <LoadingScreen size="lg" />
   }
 
-  if (isLoading) {
-    return <LoadingScreen 
-      message="Loading history..." 
-      subMessage="Fetching your detection history"
-      showLogo={true}
-      size="lg"
-      fullScreen={true}
-    />
+  if (loading) {
+    return <LoadingScreen size="lg" />
   }
 
   if (error) {
@@ -273,7 +179,7 @@ export function HistoryPage() {
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
         {filteredHistory.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-gray-500 text-center p-8 min-h-[400px]">
-            <Utensils className="h-16 w-16 text-gray-300 mb-4" aria-hidden="true" />
+            <Camera className="h-16 w-16 text-gray-300 mb-4" aria-hidden="true" />
             <p className="text-xl font-semibold">No detection history yet.</p>
             <p className="text-md mt-2">Start scanning to see your results here.</p>
           </div>
@@ -286,6 +192,9 @@ export function HistoryPage() {
                 onCardClick={(item) => {
                   setSelectedItem(item)
                   setShowDetailModal(true)
+                }}
+                onViewDetails={(item) => {
+                  navigate(`/history/${item.id}`)
                 }}
               />
             ))}
@@ -306,13 +215,60 @@ export function HistoryPage() {
   )
 }
 
-interface HistoryCardProps {
-  item: SharedRecipe
+
+// Helper functions moved outside components
+const getStatusColor = (recipeType: string) => {
+  switch (recipeType) {
+    case "food_detection":
+      return "bg-green-100 text-green-700 border-green-200"
+    case "ingredient_detection":
+      return "bg-blue-100 text-blue-700 border-blue-200"
+    default:
+      return "bg-gray-100 text-gray-700 border-gray-200"
+  }
 }
 
-function HistoryCard({ item, onCardClick }: HistoryCardProps & { onCardClick: (item: SharedRecipe) => void }) {
+const getStatusText = (recipeType: string) => {
+  switch (recipeType) {
+    case "food_detection":
+      return "Food Detection"
+    case "ingredient_detection":
+      return "Ingredient Detection"
+    default:
+      return "Detection"
+  }
+}
+
+const getYouTubeVideoId = (url: string): string | null => {
+  try {
+    const urlObj = new URL(url)
+    if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
+      if (urlObj.hostname.includes('youtu.be')) {
+        return urlObj.pathname.slice(1)
+      }
+      const searchParams = urlObj.searchParams
+      return searchParams.get('v')
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+interface HistoryCardProps {
+  item: SharedRecipe
+  onCardClick: (item: SharedRecipe) => void
+  onViewDetails: (item: SharedRecipe) => void
+}
+
+function HistoryCard({ item, onCardClick, onViewDetails }: HistoryCardProps) {
   const handleCardClick = () => {
     onCardClick(item)
+  }
+
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onViewDetails(item)
   }
 
   const getDetectedFoods = () => {
@@ -487,6 +443,18 @@ function HistoryCard({ item, onCardClick }: HistoryCardProps & { onCardClick: (i
             </div>
           </div>
         )}
+
+        {/* View Details Button */}
+        <div className="mt-3 pt-2 border-t border-gray-100">
+          <Button
+            onClick={handleViewDetails}
+            variant="outline"
+            size="sm"
+            className="w-full text-xs"
+          >
+            View Details
+          </Button>
+        </div>
       </div>
         </div>
   )
@@ -501,22 +469,6 @@ interface DetailModalProps {
 
 function DetailModal({ item, isOpen, onClose }: DetailModalProps) {
   if (!item) return null
-
-  const getYouTubeVideoId = (url: string): string | null => {
-    try {
-      const urlObj = new URL(url)
-      if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
-        if (urlObj.hostname.includes('youtu.be')) {
-          return urlObj.pathname.slice(1)
-        }
-        const searchParams = urlObj.searchParams
-        return searchParams.get('v')
-      }
-      return null
-    } catch {
-      return null
-    }
-  }
 
   const getDetectedFoods = () => {
     try {
@@ -722,4 +674,3 @@ function DetailModal({ item, isOpen, onClose }: DetailModalProps) {
   )
 }
 
-export default HistoryPage

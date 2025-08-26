@@ -174,21 +174,21 @@ const LaunchCountdown: React.FC<LaunchCountdownProps> = ({ onLaunchComplete }) =
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-[#FF6B6B]/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-3">
                     <span className="text-2xl">📷</span>
                   </div>
                   <h3 className="font-semibold text-gray-900">Smart Food Detection</h3>
                   <p className="text-sm text-gray-600">AI-powered ingredient recognition</p>
                 </div>
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-[#FF6B6B]/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-3">
                     <span className="text-2xl">🍽️</span>
                   </div>
                   <h3 className="font-semibold text-gray-900">Recipe Suggestions</h3>
                   <p className="text-sm text-gray-600">Personalized meal recommendations</p>
                 </div>
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-[#FF6B6B]/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-3">
                     <span className="text-2xl">📅</span>
                   </div>
                   <h3 className="font-semibold text-gray-900">Meal Planning</h3>
@@ -217,7 +217,7 @@ const LaunchCountdown: React.FC<LaunchCountdownProps> = ({ onLaunchComplete }) =
                   <Button
                     onClick={handleSubscribe}
                     disabled={!email || !email.includes('@')}
-                    className="bg-[#FF6B6B] hover:bg-[#FF5252] text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Subscribe

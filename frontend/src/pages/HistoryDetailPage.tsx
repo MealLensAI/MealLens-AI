@@ -9,21 +9,23 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/utils"
 import { api } from "@/lib/api"
 import LoadingScreen from "@/components/LoadingScreen"
-import { ArrowLeft, Utensils, BookOpen } from "lucide-react"
+import { ArrowLeft, Utensils, BookOpen, XCircle, Camera, Search, Youtube, ExternalLink, Play } from "lucide-react"
 
 interface HistoryDetail {
   id: string
   recipe_type: "food_detection" | "ingredient_detection"
   detected_foods?: string // JSON string of string[]
   instructions?: string // HTML string
-  resources?: string // HTML string
+  resources?: string // JSON string of resources object
   suggestion?: string // for ingredient detection
   ingredients?: string // JSON string of string[]
   created_at: string
-  youtube_link?: string
-  google_link?: string
-  resources_link?: string
+  youtube?: string // Updated field name
+  google?: string // Updated field name
+  analysis_id?: string
   input_data?: string // Image URL for food detection entries
+  image_data?: string // Base64 encoded compressed image (fallback)
+  image_url?: string // Supabase Storage URL for the uploaded image
 }
 
 const HistoryDetailPage = () => {
@@ -92,31 +94,33 @@ const HistoryDetailPage = () => {
     return (match && match[2] && match[2].length === 11) ? match[2] : null
   }
 
+  const getGoogleSearchUrl = (foodName: string) => {
+    return `https://www.google.com/search?q=${encodeURIComponent(foodName + ' recipe cooking instructions')}`;
+  };
+
+  const getYouTubeSearchUrl = (foodName: string) => {
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(foodName + ' recipe tutorial')}`;
+  };
+
   if (authLoading) {
-    return <LoadingScreen 
-      message="Loading authentication..." 
-      subMessage="Please wait while we verify your login"
-      showLogo={true}
-      size="lg"
-      fullScreen={true}
-    />
+    return <LoadingScreen size="md" />
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-orange-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center space-y-6">
-          <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl shadow-lg mx-auto">
+          <div className="flex items-center justify-center w-16 h-16 bg-orange-500 rounded-2xl shadow-lg mx-auto">
             <Utensils className="h-8 w-8 text-white" />
           </div>
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-800">Authentication Required</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Authentication Required</h2>
             <p className="text-gray-600">
               Please log in to view your detection history.
             </p>
             <Button 
               onClick={() => navigate('/login')}
-              className="w-full py-3 text-lg font-bold bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg hover:from-red-600 hover:to-orange-600 transition-all duration-300"
+              className="w-full py-3 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg transition-all duration-300"
             >
               Go to Login
             </Button>
@@ -127,30 +131,24 @@ const HistoryDetailPage = () => {
   }
 
   if (isLoading) {
-    return <LoadingScreen 
-      message="Loading details..." 
-      subMessage="Fetching detailed information"
-      showLogo={true}
-      size="lg"
-      fullScreen={true}
-    />
+    return <LoadingScreen size="md" />
   }
 
   if (error || !historyDetail) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-orange-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center space-y-6">
-          <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl shadow-lg mx-auto">
+          <div className="flex items-center justify-center w-16 h-16 bg-orange-500 rounded-2xl shadow-lg mx-auto">
             <Utensils className="h-8 w-8 text-white" />
           </div>
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-800">History Entry Not Found</h2>
+            <h2 className="text-2xl font-bold text-gray-900">History Entry Not Found</h2>
             <p className="text-gray-600">
               {error || "The requested history entry could not be found."}
             </p>
             <Button 
               onClick={() => navigate('/history')}
-              className="w-full py-3 text-lg font-bold bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg hover:from-red-600 hover:to-orange-600 transition-all duration-300"
+              className="w-full py-3 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg transition-all duration-300"
             >
               Back to History
             </Button>
@@ -161,228 +159,336 @@ const HistoryDetailPage = () => {
   }
 
   return (
-    <div 
-      className="min-h-screen py-8 text-[#2D3436] leading-[1.6]"
-      style={{
-        fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
-        background: "url('https://images.unsplash.com/photo-1495195134817-aeb325a55b65?auto=format&fit=crop&w=2000&q=80') center/cover no-repeat fixed"
-      }}
-    >
-      <div className="max-w-[800px] mx-auto">
-        <div 
-          className="bg-[rgba(255,255,255,0.95)] rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.1)] overflow-hidden p-12 relative"
-        >
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
           {/* Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-            <Button 
-              onClick={() => navigate('/history')}
-              variant="ghost"
-              className="text-[#FF6B6B] hover:text-[#FF8E53] p-0"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
+        <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-gray-600 hover:text-gray-900">
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back
+          </Button>
+          <div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Detection Details</h1>
+            <p className="text-sm sm:text-base text-gray-600">Detailed analysis of your food detection</p>
+          </div>
+        </div>
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-12">
+            <LoadingScreen size="lg" message="Loading details..." />
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <div className="text-red-600 mb-4">
+              <XCircle className="h-12 w-12 mx-auto mb-2" />
+              <p className="text-sm sm:text-base">Failed to load detection details</p>
+            </div>
+            <Button onClick={() => navigate('/history')} variant="outline" className="text-sm sm:text-base">
               Back to History
             </Button>
-            <div className="flex items-center gap-2">
-              {historyDetail.recipe_type === "food_detection" ? (
-                <Utensils className="h-5 w-5 text-red-600" />
-              ) : (
-                <BookOpen className="h-5 w-5 text-orange-600" />
-              )}
-              <span className="text-sm text-gray-600">
-                {new Date(historyDetail.created_at).toLocaleDateString()}
-              </span>
-            </div>
           </div>
+        )}
 
-          {/* Title */}
-          <h1 
-            className="text-[2.5rem] font-[800] text-center mb-8"
-            style={{
-              background: "linear-gradient(135deg, #FF6B6B, #FF8E53)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
-              letterSpacing: "-1px"
-            }}
-          >
-            {historyDetail.recipe_type === "food_detection" ? "Food Detection Result" : "Ingredient Detection Result"}
-          </h1>
-
-          {/* Image for food detection entries */}
-          {historyDetail.recipe_type === "food_detection" && historyDetail.input_data && historyDetail.input_data.startsWith('http') && (
-            <div className="mb-6 p-4 bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]">
-              <div className="p-4 mt-2.5">
-                <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
-                  Detected Image
-                </h5>
-                <div className="relative w-full h-80 rounded-xl overflow-hidden shadow-lg">
-                  <img 
-                    src={historyDetail.input_data} 
-                    alt="Detected Food"
-                    className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-10 hover:bg-opacity-20 transition-opacity" />
-                  <div className="absolute top-4 right-4 w-10 h-10 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center text-white shadow-lg">
-                    <Utensils className="h-5 w-5" />
+        {/* Content */}
+        {!isLoading && !error && historyDetail && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+            {/* Left Column - Image and Basic Info */}
+            <div className="space-y-6">
+              {/* Image */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg sm:text-xl">Detected Image</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="w-full h-64 sm:h-80 rounded-lg overflow-hidden bg-gray-100">
+                    {historyDetail.image_url ? (
+                      <img
+                        src={historyDetail.image_url}
+                        alt="Detected food"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : historyDetail.input_data && historyDetail.input_data.startsWith('http') ? (
+                      <img
+                        src={historyDetail.input_data}
+                        alt="Detected food"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : historyDetail.image_data ? (
+                      <img
+                        src={`data:image/jpeg;base64,${historyDetail.image_data}`}
+                        alt="Detected food"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <Camera className="h-12 w-12" />
+                      </div>
+                    )}
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Detection Info */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg sm:text-xl">Detection Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm sm:text-base">
+                    <div>
+                      <label className="font-medium text-gray-900">Date & Time</label>
+                      <p className="text-gray-600">
+                        {new Date(historyDetail.created_at).toLocaleDateString()} at {new Date(historyDetail.created_at).toLocaleTimeString()}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="font-medium text-gray-900">Detection ID</label>
+                      <p className="text-gray-600 font-mono text-xs sm:text-sm">{historyDetail.id}</p>
                 </div>
               </div>
+                </CardContent>
+              </Card>
             </div>
-          )}
 
-          {/* Detected Foods/Ingredients */}
-          {historyDetail.detected_foods && (
-            <div className="mb-6 p-4 bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]">
-              <div className="p-4 mt-2.5">
-                <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
-                  {historyDetail.recipe_type === "food_detection" ? "Detected Foods" : "Ingredients"}
-                </h5>
+            {/* Right Column - Analysis Results */}
+            <div className="space-y-6">
+              {/* Detected Foods */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg sm:text-xl">Detected Foods</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {historyDetail.detected_foods ? (
                 <div className="flex flex-wrap gap-2">
                   {(() => {
                     try {
                       const foods = JSON.parse(historyDetail.detected_foods)
                       return foods.map((food: string, index: number) => (
-                        <span 
-                          key={index}
-                          className="inline-block px-3 py-1 bg-gradient-to-r from-red-100 to-orange-100 text-red-700 border border-red-200 rounded-full text-sm font-medium"
-                        >
+                            <Badge key={index} variant="default" className="text-xs sm:text-sm">
                           {food}
-                        </span>
+                            </Badge>
                       ))
                     } catch {
                       return <span className="text-gray-600">No foods detected</span>
                     }
                   })()}
                 </div>
-              </div>
-            </div>
-          )}
+                  ) : (
+                    <p className="text-gray-500 text-sm sm:text-base">No foods were detected in this image</p>
+                  )}
+                </CardContent>
+              </Card>
 
-          {/* Recipe Suggestion */}
-          {historyDetail.suggestion && (
-            <div className="mb-6 p-4 bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]">
-              <div className="p-4 mt-2.5">
-                <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
-                  Recipe Suggestion
-                </h5>
-                <p className="text-lg font-medium text-red-600">{historyDetail.suggestion}</p>
+              {/* Ingredients */}
+              {historyDetail.ingredients && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg sm:text-xl">Ingredients</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {(() => {
+                        try {
+                          const ingredients = JSON.parse(historyDetail.ingredients)
+                          return ingredients.map((ingredient: string, index: number) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                              <span className="text-sm sm:text-base text-gray-700">{ingredient.trim()}</span>
               </div>
+                          ))
+                        } catch {
+                          return <span className="text-gray-600">No ingredients detected</span>
+                        }
+                      })()}
             </div>
-          )}
-
-          {/* Instructions */}
-          {historyDetail.instructions && (
-            <div className="mb-6 p-4 bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]">
-              <div className="p-4 mt-2.5">
-                <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
-                  Cooking Instructions
-                </h5>
-                <div 
-                  className="leading-[1.4] m-0 text-left"
-                  style={{ lineHeight: '1.4', margin: 0, textAlign: 'left' }}
-                  dangerouslySetInnerHTML={{ __html: historyDetail.instructions }}
-                />
-              </div>
-            </div>
+                  </CardContent>
+                </Card>
           )}
 
           {/* Resources */}
-          {historyDetail.resources_link && (
-            <div className="mb-6 p-4 bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]">
-              <div className="p-4 mt-2.5">
-                <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
-                  Additional Resources
-                </h5>
-                <div 
-                  className="leading-[1.4] m-0 text-left"
-                  style={{ lineHeight: '1.4', margin: 0, textAlign: 'left' }}
-                  dangerouslySetInnerHTML={{ __html: historyDetail.resources_link }}
-                />
+              {historyDetail.resources && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg sm:text-xl">Additional Resources</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {(() => {
+                      try {
+                        const resources = JSON.parse(historyDetail.resources)
+                        return Object.entries(resources).map(([key, value]: [string, any]) => (
+                          <div key={key}>
+                            <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base capitalize">
+                              {key.replace(/([A-Z])/g, ' $1').trim()}
+                            </h4>
+                            {Array.isArray(value) && value.length > 0 ? (
+                              <div className="space-y-2">
+                                {value.slice(0, 3).map((item: any, index: number) => {
+                                  // Display actual resource data (Google search results, YouTube videos, etc.)
+                                  if (typeof item === 'string') {
+                                    return (
+                                      <div key={index} className="text-sm sm:text-base text-gray-600">
+                                        {item}
+                                      </div>
+                                    );
+                                  } else if (item && typeof item === 'object') {
+                                    // Handle Google search results
+                                    if (item.title && item.link) {
+                                      return (
+                                        <div key={index} className="text-sm sm:text-base">
+                                          <a 
+                                            href={item.link} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 hover:text-blue-800 underline"
+                                          >
+                                            {item.title}
+                                          </a>
+                                          {item.description && (
+                                            <p className="text-gray-600 text-xs mt-1">{item.description}</p>
+                                          )}
+                                        </div>
+                                      );
+                                    }
+                                    // Handle YouTube videos
+                                    if (item.title && item.link) {
+                                      return (
+                                        <div key={index} className="text-sm sm:text-base">
+                                          <a 
+                                            href={item.link} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-red-600 hover:text-red-800 underline"
+                                          >
+                                            {item.title}
+                                          </a>
               </div>
+                                      );
+                                    }
+                                    // Fallback for other resource types
+                                    return (
+                                      <div key={index} className="text-sm sm:text-base text-gray-600">
+                                        {item.title || item.name || item.description || JSON.stringify(item)}
             </div>
-          )}
-
-          {/* Resource Links */}
-          {(historyDetail.youtube_link || historyDetail.google_link) && (
-            <div className="mb-6 p-4 bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]">
-              <div className="p-4 mt-2.5">
-                <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
-                  External Resources
-                </h5>
-                <div className="space-y-6">
-                  {/* YouTube Video Preview */}
-                  {historyDetail.youtube_link && (
-                    <div>
-                      <h6 className="font-medium text-[#2D3436] mb-3 flex items-center gap-2">
-                        🎥 YouTube Tutorial
-                      </h6>
-                      {(() => {
-                        const videoId = getYouTubeVideoId(historyDetail.youtube_link);
-                        return videoId ? (
-                          <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg">
-                            <iframe
-                              src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
-                              title="YouTube Tutorial"
-                              className="w-full h-full"
-                              frameBorder="0"
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              allowFullScreen
-                            />
+                                    );
+                                  }
+                                  return null;
+                                })}
+                                {value.length > 3 && (
+                                  <p className="text-xs text-gray-500">+{value.length - 3} more items</p>
+                                )}
                           </div>
                         ) : (
-                          <div className="aspect-video bg-gradient-to-br from-red-50 to-orange-50 rounded-xl flex items-center justify-center">
-                            <div className="text-center">
-                              <div className="text-4xl mb-2">🎥</div>
-                              <p className="text-sm text-gray-600">Video Preview</p>
-                            </div>
+                              <p className="text-sm sm:text-base text-gray-600">No {key.toLowerCase()} available</p>
+                            )}
                           </div>
-                        );
+                        ))
+                      } catch {
+                        return <p className="text-sm sm:text-base text-gray-600">No resources available</p>
+                      }
                       })()}
-                      <div className="mt-3">
-                    <a 
-                      href={historyDetail.youtube_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-medium px-4 py-2 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-300 shadow-sm hover:shadow-md"
-                    >
-                          Watch on YouTube
-                    </a>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* External Links */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg sm:text-xl">Cooking Resources</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Google Search Links */}
+                  {historyDetail.detected_foods && (
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-gray-900 text-sm sm:text-base">Recipe Search</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {(() => {
+                          try {
+                            const foods = JSON.parse(historyDetail.detected_foods)
+                            return foods.slice(0, 4).map((food: string, index: number) => (
+                              <Button
+                                key={index}
+                                onClick={() => window.open(getGoogleSearchUrl(food), '_blank')}
+                                variant="outline"
+                                size="sm"
+                                className="justify-start text-xs sm:text-sm"
+                              >
+                                <Search className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                                {food} Recipes
+                              </Button>
+                            ))
+                          } catch {
+                            return <span className="text-gray-600 text-sm">No foods detected</span>
+                          }
+                        })()}
                       </div>
                     </div>
                   )}
                   
-                  {/* Google Search Link */}
-                  {historyDetail.google_link && (
-                    <div>
-                      <h6 className="font-medium text-[#2D3436] mb-3 flex items-center gap-2">
-                        🔍 Google Search
-                      </h6>
-                      <div className="aspect-video bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="text-4xl mb-2">🔍</div>
-                          <p className="text-sm text-gray-600">Search Results</p>
-                        </div>
-                      </div>
-                      <div className="mt-3">
-                    <a 
-                      href={historyDetail.google_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-sm hover:shadow-md"
-                    >
-                          View Search Results
-                    </a>
+                  {/* YouTube Video Links */}
+                  {historyDetail.detected_foods && (
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-gray-900 text-sm sm:text-base">Video Tutorials</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {(() => {
+                          try {
+                            const foods = JSON.parse(historyDetail.detected_foods)
+                            return foods.slice(0, 4).map((food: string, index: number) => (
+                              <Button
+                                key={index}
+                                onClick={() => window.open(getYouTubeSearchUrl(food), '_blank')}
+                                variant="outline"
+                                size="sm"
+                                className="justify-start text-xs sm:text-sm"
+                              >
+                                <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                                {food} Tutorials
+                              </Button>
+                            ))
+                          } catch {
+                            return <span className="text-gray-600 text-sm">No foods detected</span>
+                          }
+                        })()}
                       </div>
                     </div>
                   )}
-                </div>
+
+                  {/* Direct Links */}
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-gray-900 text-sm sm:text-base">Direct Links</h4>
+                    {historyDetail.youtube && (
+                      <Button
+                        onClick={() => window.open(historyDetail.youtube, '_blank')}
+                        variant="outline"
+                        className="w-full justify-start text-sm sm:text-base"
+                      >
+                        <Youtube className="h-4 w-4 mr-2" />
+                        Watch on YouTube
+                        <ExternalLink className="h-3 w-3 ml-auto" />
+                      </Button>
+                    )}
+                    {historyDetail.google && (
+                      <Button
+                        onClick={() => window.open(historyDetail.google, '_blank')}
+                        variant="outline"
+                        className="w-full justify-start text-sm sm:text-base"
+                      >
+                        <Search className="h-4 w-4 mr-2" />
+                        Search on Google
+                        <ExternalLink className="h-3 w-3 ml-auto" />
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
               </div>
             </div>
           )}
         </div>
       </div>
-    </div>
-  )
+  );
 }
 
 export default HistoryDetailPage 

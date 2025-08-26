@@ -35,6 +35,7 @@ const Signup = () => {
     confirmPassword: "",
   })
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -56,6 +57,19 @@ const Signup = () => {
     if (validationErrors[name as keyof ValidationErrors]) {
       setValidationErrors(prev => ({ ...prev, [name]: undefined }))
     }
+
+    // Real-time validation after touch
+    if (touched[name]) {
+      const error = validateField(name, value)
+      setValidationErrors(prev => ({ ...prev, [name]: error }))
+    }
+  }
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setTouched(prev => ({ ...prev, [name]: true }))
+    const error = validateField(name, value)
+    setValidationErrors(prev => ({ ...prev, [name]: error }))
   }
 
   const validateField = (name: string, value: string): string | undefined => {
@@ -108,6 +122,10 @@ const Signup = () => {
     })
     
     setValidationErrors(errors)
+    // Mark all as touched
+    const allTouched: Record<string, boolean> = {}
+    Object.keys(formData).forEach(key => { allTouched[key] = true })
+    setTouched(allTouched)
     return Object.keys(errors).length === 0
   }
 
@@ -128,7 +146,7 @@ const Signup = () => {
     
     try {
       // Use centralized API service for registration
-      const registerResult = await api.register({
+      const registerResult: any = await api.register({
         email: formData.email.trim(),
         password: formData.password,
         first_name: formData.firstName.trim(),
@@ -137,7 +155,7 @@ const Signup = () => {
       
       if (registerResult.status !== 'success') {
         // Handle specific error types
-        if (registerResult.error_type === 'duplicate_email') {
+        if ((registerResult as any).error_type === 'duplicate_email') {
           toast({
             title: "Email Already Exists",
             description: "An account with this email already exists. Please try logging in instead.",
@@ -156,23 +174,29 @@ const Signup = () => {
       }
 
       // Auto-login after successful registration
-      const loginResult = await api.login({ 
+      const loginResult: any = await api.login({ 
         email: formData.email.trim(), 
         password: formData.password 
       })
       
       if (loginResult.status === 'success') {
         // Store the token in localStorage for future authenticated requests
-        if (loginResult.access_token) {
-          localStorage.setItem('access_token', loginResult.access_token)
-          if (loginResult.refresh_token) localStorage.setItem('supabase_refresh_token', loginResult.refresh_token)
-          if (loginResult.session_id) localStorage.setItem('supabase_session_id', loginResult.session_id)
-          if (loginResult.user_id) localStorage.setItem('supabase_user_id', loginResult.user_id)
+        const accessToken = (loginResult as any).access_token
+        const refreshToken = (loginResult as any).refresh_token
+        const sessionId = (loginResult as any).session_id
+        const userId = (loginResult as any).user_id
+        const userDataResp = (loginResult as any).user_data
+        
+        if (accessToken) {
+          localStorage.setItem('access_token', accessToken)
+          if (refreshToken) localStorage.setItem('supabase_refresh_token', refreshToken)
+          if (sessionId) localStorage.setItem('supabase_session_id', sessionId)
+          if (userId) localStorage.setItem('supabase_user_id', userId)
           
           // Store user data for auth context
           const userData = {
-            uid: loginResult.user_id || loginResult.user_data?.id,
-            email: loginResult.user_data?.email || formData.email.trim(),
+            uid: userId || userDataResp?.id,
+            email: userDataResp?.email || formData.email.trim(),
             displayName: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
             photoURL: null
           }
@@ -186,8 +210,8 @@ const Signup = () => {
             description: "Your account has been successfully created. Let's get started!",
           })
           
-          // Redirect to onboarding for new users
-          navigate("/onboarding", { replace: true })
+          // Redirect to home page for new users with 3-day free trial
+          navigate("/home", { replace: true })
         } else {
           toast({
             title: "Registration Complete",
@@ -228,7 +252,7 @@ const Signup = () => {
   }
 
   const isFieldValid = (fieldName: keyof ValidationErrors) => {
-    return !validationErrors[fieldName] && formData[fieldName as keyof typeof formData].length > 0
+    return !validationErrors[fieldName] && (formData[fieldName as keyof typeof formData] as string).length > 0
   }
 
   return (
@@ -238,7 +262,7 @@ const Signup = () => {
           <CardHeader className="text-center pb-6">
             <div className="flex justify-center mb-4">
               <Logo size="lg" showText={true} />
-            </div>
+        </div>
             <CardTitle className="text-2xl font-bold text-gray-900">
               Create Your Account
             </CardTitle>
@@ -262,6 +286,7 @@ const Signup = () => {
                       type="text"
                       value={formData.firstName}
                       onChange={handleInputChange}
+                      onBlur={handleBlur}
                       className={`h-10 ${
                         getFieldError('firstName') 
                           ? 'border-red-500 focus:border-red-500' 
@@ -286,7 +311,7 @@ const Signup = () => {
                     </p>
                   )}
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
                     Last Name
@@ -298,6 +323,7 @@ const Signup = () => {
                       type="text"
                       value={formData.lastName}
                       onChange={handleInputChange}
+                      onBlur={handleBlur}
                       className={`h-10 ${
                         getFieldError('lastName') 
                           ? 'border-red-500 focus:border-red-500' 
@@ -337,6 +363,7 @@ const Signup = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     className={`h-10 pl-10 ${
                       getFieldError('email') 
                         ? 'border-red-500 focus:border-red-500' 
@@ -346,6 +373,7 @@ const Signup = () => {
                     }`}
                     placeholder="john@example.com"
                     disabled={isLoading}
+                    autoComplete="email"
                   />
                   {isFieldValid('email') && (
                     <CheckCircle className="absolute right-3 top-2.5 h-5 w-5 text-green-500" />
@@ -375,6 +403,7 @@ const Signup = () => {
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     className={`h-10 pl-10 pr-10 ${
                       getFieldError('password') 
                         ? 'border-red-500 focus:border-red-500' 
@@ -384,6 +413,7 @@ const Signup = () => {
                     }`}
                     placeholder="Create a strong password"
                     disabled={isLoading}
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
@@ -406,9 +436,18 @@ const Signup = () => {
                     {getFieldError('password')}
                   </p>
                 )}
-                <p className="text-xs text-gray-500">
-                  Must be at least 8 characters with uppercase, lowercase, and number
-                </p>
+                <div className="text-xs text-gray-600">
+                  <div className="h-1 w-full bg-gray-200 rounded overflow-hidden mb-2">
+                    <div
+                      className={`h-full transition-all ${
+                        formData.password.length >= 12 ? 'w-11/12 bg-green-500' :
+                        formData.password.length >= 10 ? 'w-3/4 bg-yellow-500' :
+                        formData.password.length >= 8 ? 'w-1/2 bg-orange-500' : 'w-1/4 bg-red-400'
+                      }`}
+                    />
+                  </div>
+                  <p>Must be at least 8 characters with uppercase, lowercase, and number</p>
+                </div>
               </div>
 
               {/* Confirm Password Field */}
@@ -424,6 +463,7 @@ const Signup = () => {
                     type={showConfirmPassword ? "text" : "password"}
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     className={`h-10 pl-10 pr-10 ${
                       getFieldError('confirmPassword') 
                         ? 'border-red-500 focus:border-red-500' 
@@ -433,6 +473,7 @@ const Signup = () => {
                     }`}
                     placeholder="Confirm your password"
                     disabled={isLoading}
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
@@ -460,7 +501,7 @@ const Signup = () => {
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full h-11 bg-[#FF6B6B] hover:bg-[#FF5252] text-white font-semibold"
+                className="w-full h-11 bg-orange-500 hover:bg-orange-600 text-white font-semibold"
                 disabled={isLoading || isValidating}
               >
                 {isLoading ? (

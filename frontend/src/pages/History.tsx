@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/utils';
 import { api, APIError } from '@/lib/api';
@@ -37,7 +37,6 @@ export default function HistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedItem, setSelectedItem] = useState<SharedRecipe | null>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
@@ -190,8 +189,8 @@ export default function HistoryPage() {
                 key={item.id} 
                 item={item} 
                 onCardClick={(item) => {
-                  setSelectedItem(item)
-                  setShowDetailModal(true)
+                  // Navigate to detail page instead of opening modal
+                  navigate(`/history/${item.id}`)
                 }}
                 onViewDetails={(item) => {
                   navigate(`/history/${item.id}`)
@@ -202,15 +201,7 @@ export default function HistoryPage() {
         )}
       </div>
       
-      {/* Detail Modal */}
-      <DetailModal 
-        item={selectedItem}
-        isOpen={showDetailModal}
-        onClose={() => {
-          setShowDetailModal(false)
-          setSelectedItem(null)
-        }}
-      />
+
     </div>
   )
 }
@@ -268,7 +259,7 @@ function HistoryCard({ item, onCardClick, onViewDetails }: HistoryCardProps) {
 
   const handleViewDetails = (e: React.MouseEvent) => {
     e.stopPropagation()
-    onViewDetails(item)
+    // Navigation is now handled directly in the button onClick
   }
 
   const getDetectedFoods = () => {
@@ -447,7 +438,7 @@ function HistoryCard({ item, onCardClick, onViewDetails }: HistoryCardProps) {
         {/* View Details Button */}
         <div className="mt-3 pt-2 border-t border-gray-100">
           <Button
-            onClick={handleViewDetails}
+            onClick={() => navigate(`/history/${item.id}`)}
             variant="outline"
             size="sm"
             className="w-full text-xs"
@@ -460,217 +451,5 @@ function HistoryCard({ item, onCardClick, onViewDetails }: HistoryCardProps) {
   )
 }
 
-// Detail Modal Component
-interface DetailModalProps {
-  item: SharedRecipe | null
-  isOpen: boolean
-  onClose: () => void
-}
 
-function DetailModal({ item, isOpen, onClose }: DetailModalProps) {
-  if (!item) return null
-
-  const getDetectedFoods = () => {
-    try {
-      if (item.detected_foods) {
-        return JSON.parse(item.detected_foods)
-      }
-      if (item.ingredients) {
-        return JSON.parse(item.ingredients)
-      }
-      return []
-    } catch {
-      return []
-    }
-  }
-
-  const getResources = () => {
-    try {
-      if (item.resources && item.resources !== '{}') {
-        const resources = JSON.parse(item.resources)
-        
-        // Handle both flattened and double-nested array formats
-        if (resources.GoogleSearch && Array.isArray(resources.GoogleSearch)) {
-          resources.GoogleSearch = resources.GoogleSearch.flat()
-        }
-        if (resources.YoutubeSearch && Array.isArray(resources.YoutubeSearch)) {
-          resources.YoutubeSearch = resources.YoutubeSearch.flat()
-        }
-        
-        return resources
-      }
-      return null
-    } catch {
-      return null
-    }
-  }
-
-  const detectedFoods = getDetectedFoods()
-  const resources = getResources()
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl font-bold text-gray-900">
-              {detectedFoods[0] || "Recipe Details"}
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          {/* Image for food detection entries */}
-          {item.recipe_type === "food_detection" && item.input_data && item.input_data.startsWith('http') && (
-            <div className="relative w-full h-64 rounded-lg overflow-hidden">
-              <img 
-                src={item.input_data} 
-                alt={detectedFoods[0] || "Detected Food"}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black bg-opacity-10" />
-            </div>
-          )}
-          
-          {/* Recipe Info */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="flex items-center gap-4 mb-4">
-              <Badge variant="outline" className={getStatusColor(item.recipe_type)}>
-            {getStatusText(item.recipe_type)}
-          </Badge>
-              <span className="text-sm text-gray-600">
-                {new Date(item.created_at).toLocaleDateString()} at{' '}
-                {new Date(item.created_at).toLocaleTimeString()}
-              </span>
-            </div>
-            
-            {detectedFoods.length > 0 && (
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Detected Foods:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {detectedFoods.map((food: string, index: number) => (
-                    <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800">
-                      {food}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Instructions */}
-          {item.instructions && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Cooking Instructions</h4>
-              <div 
-                className="prose prose-sm max-w-none bg-white rounded-lg p-4 border"
-                dangerouslySetInnerHTML={{ __html: item.instructions }}
-              />
-            </div>
-          )}
-
-          {/* Resources */}
-          {resources && (
-            <div className="space-y-4">
-              <h4 className="font-semibold text-gray-900">Cooking Resources</h4>
-              
-              {/* YouTube Videos */}
-              {resources.YoutubeSearch && Array.isArray(resources.YoutubeSearch) && resources.YoutubeSearch.length > 0 && (
-                <div>
-                  <h5 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                    <Youtube className="h-5 w-5 text-red-600" />
-                    Video Tutorials
-                  </h5>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {resources.YoutubeSearch.slice(0, 4).map((video: any, index: number) => {
-                      const videoId = getYouTubeVideoId(video.link);
-                      return (
-                        <div key={index} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-                          {videoId ? (
-                            <div className="aspect-video bg-gray-100">
-                              <iframe
-                                src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
-                                title={video.title}
-                                className="w-full h-full"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                              />
-                            </div>
-                          ) : (
-                            <div className="aspect-video bg-gray-100 flex items-center justify-center">
-                              <div className="text-center">
-                                <Youtube className="h-12 w-12 text-red-500 mx-auto mb-2" />
-                                <p className="text-sm text-gray-600">Video Preview</p>
-                              </div>
-                            </div>
-                          )}
-                          <div className="p-4">
-                            <h6 className="font-semibold text-sm mb-2 line-clamp-2 text-gray-900">{video.title}</h6>
-                        <a
-                          href={video.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-medium px-3 py-2 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-300 shadow-sm hover:shadow-md"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                              Watch on YouTube
-                        </a>
-                      </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Google Articles */}
-              {resources.GoogleSearch && Array.isArray(resources.GoogleSearch) && resources.GoogleSearch.length > 0 && (
-                <div>
-                  <h5 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                    <Globe className="h-5 w-5 text-blue-600" />
-                    Articles & Recipes
-                  </h5>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {resources.GoogleSearch.slice(0, 4).map((article: any, index: number) => (
-                      <div key={index} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-                        <div className="aspect-video bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
-                          <div className="text-center">
-                            <Globe className="h-12 w-12 text-blue-500 mx-auto mb-2" />
-                            <p className="text-sm text-gray-600">Article Preview</p>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h6 className="font-semibold text-sm mb-2 line-clamp-2 text-gray-900">{article.title}</h6>
-                          <p className="text-xs text-gray-600 mb-3 line-clamp-3 leading-relaxed text-left">{article.description}</p>
-                        <a
-                          href={article.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-medium px-3 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-sm hover:shadow-md"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          Read Article
-                        </a>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
 

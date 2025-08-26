@@ -1,494 +1,426 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/lib/utils"
-import { api } from "@/lib/api"
-import LoadingScreen from "@/components/LoadingScreen"
-import { ArrowLeft, Utensils, BookOpen, XCircle, Camera, Search, Youtube, ExternalLink, Play } from "lucide-react"
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Loader2, Play, ExternalLink, Lightbulb, Search, Youtube, Globe, Clock, CalendarDays } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/utils';
+import { api } from '@/lib/api';
+import LoadingScreen from '@/components/LoadingScreen';
 
-interface HistoryDetail {
-  id: string
-  recipe_type: "food_detection" | "ingredient_detection"
-  detected_foods?: string // JSON string of string[]
-  instructions?: string // HTML string
-  resources?: string // JSON string of resources object
-  suggestion?: string // for ingredient detection
-  ingredients?: string // JSON string of string[]
-  created_at: string
-  youtube?: string // Updated field name
-  google?: string // Updated field name
-  analysis_id?: string
-  input_data?: string // Image URL for food detection entries
-  image_data?: string // Base64 encoded compressed image (fallback)
-  image_url?: string // Supabase Storage URL for the uploaded image
+interface HistoryItem {
+  id: string;
+  recipe_type: "food_detection" | "ingredient_detection";
+  detected_foods?: string; // JSON string of string[]
+  instructions?: string; // HTML string
+  resources?: string; // JSON string of resources object
+  suggestion?: string; // for ingredient detection
+  ingredients?: string; // JSON string of string[]
+  created_at: string;
+  youtube?: string;
+  google?: string;
+  analysis_id?: string;
+  input_data?: string;
+  image_data?: string;
+  image_url?: string;
 }
 
-const HistoryDetailPage = () => {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const [historyDetail, setHistoryDetail] = useState<HistoryDetail | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const { isAuthenticated, loading: authLoading } = useAuth()
-  const { toast } = useToast()
+const HistoryDetailPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const [historyItem, setHistoryItem] = useState<HistoryItem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [resources, setResources] = useState<any>(null);
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchHistoryDetail = async () => {
+    const fetchHistoryItem = async () => {
       if (!id) {
-        setError("No history ID provided")
-        setIsLoading(false)
-        return
+        toast({
+          title: "Error",
+          description: "No history item ID provided.",
+          variant: "destructive",
+        });
+        navigate('/history');
+        return;
       }
 
-      setIsLoading(true)
-      setError(null)
+      if (authLoading) return;
+
+      if (!isAuthenticated) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to view history details.",
+          variant: "destructive",
+        });
+        navigate('/login');
+        return;
+      }
 
       try {
-        // Get all history and find the specific entry
-        const result = await api.getDetectionHistory()
+        setLoading(true);
+        const result = await api.getDetectionHistory();
         
         if (result.status === 'success') {
-          let historyData = []
-          if (result.detection_history) {
-            historyData = result.detection_history
-          } else if (result.data?.detection_history) {
-            historyData = result.data.detection_history
-          } else if (Array.isArray(result.data)) {
-            historyData = result.data
-          } else if (result.data) {
-            historyData = [result.data]
+          let historyData: HistoryItem[] = [];
+          if ((result as any).detection_history) {
+            historyData = (result as any).detection_history;
+          } else if ((result as any).data?.detection_history) {
+            historyData = (result as any).data.detection_history;
+          } else if (Array.isArray((result as any).data)) {
+            historyData = (result as any).data;
           }
 
-          const detail = historyData.find((item: any) => item.id === id)
-          
-          if (detail) {
-            setHistoryDetail(detail)
+          const item = historyData.find(h => h.id === id);
+          if (item) {
+            setHistoryItem(item);
+            
+            // Parse resources if available
+            if (item.resources) {
+              try {
+                const parsedResources = JSON.parse(item.resources);
+                setResources(parsedResources);
+              } catch (error) {
+                console.error('Error parsing resources:', error);
+              }
+            }
           } else {
-            setError("History entry not found")
+            toast({
+              title: "Not Found",
+              description: "History item not found.",
+              variant: "destructive",
+            });
+            navigate('/history');
           }
         } else {
-          setError(result.message || 'Failed to load history detail.')
+          toast({
+            title: "Error",
+            description: result.message || 'Failed to load history item.',
+            variant: "destructive",
+          });
+          navigate('/history');
         }
-      } catch (err) {
-        console.error("Error fetching history detail:", err)
-        setError("Failed to load history detail. Please try again later.")
+      } catch (error) {
+        console.error('Error fetching history item:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load history item.",
+          variant: "destructive",
+        });
+        navigate('/history');
       } finally {
-        setIsLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    if (!authLoading && isAuthenticated) {
-      fetchHistoryDetail()
-    }
-  }, [id, isAuthenticated, authLoading, api])
+    fetchHistoryItem();
+  }, [id, isAuthenticated, authLoading, navigate, toast]);
 
-  const getYouTubeVideoId = (url: string) => {
-    if (!url) return null
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
-    const match = url.match(regExp)
-    return (match && match[2] && match[2].length === 11) ? match[2] : null
-  }
-
-  const getGoogleSearchUrl = (foodName: string) => {
-    return `https://www.google.com/search?q=${encodeURIComponent(foodName + ' recipe cooking instructions')}`;
+  const getYouTubeVideoId = (url: string): string | null => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
   };
 
-  const getYouTubeSearchUrl = (foodName: string) => {
-    return `https://www.youtube.com/results?search_query=${encodeURIComponent(foodName + ' recipe tutorial')}`;
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  if (authLoading) {
-    return <LoadingScreen size="md" />
+  const parseDetectedFoods = (): string[] => {
+    if (!historyItem?.detected_foods) return [];
+    try {
+      return JSON.parse(historyItem.detected_foods);
+    } catch {
+      return [];
+    }
+  };
+
+  const parseIngredients = (): string[] => {
+    if (!historyItem?.ingredients) return [];
+    try {
+      return JSON.parse(historyItem.ingredients);
+    } catch {
+      return [];
+    }
+  };
+
+  if (authLoading || loading) {
+    return <LoadingScreen size="md" />;
   }
 
-  if (!isAuthenticated) {
+  if (!historyItem) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center space-y-6">
-          <div className="flex items-center justify-center w-16 h-16 bg-orange-500 rounded-2xl shadow-lg mx-auto">
-            <Utensils className="h-8 w-8 text-white" />
-          </div>
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900">Authentication Required</h2>
-            <p className="text-gray-600">
-              Please log in to view your detection history.
-            </p>
-            <Button 
-              onClick={() => navigate('/login')}
-              className="w-full py-3 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg transition-all duration-300"
-            >
-              Go to Login
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return <LoadingScreen size="md" />
-  }
-
-  if (error || !historyDetail) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center space-y-6">
-          <div className="flex items-center justify-center w-16 h-16 bg-orange-500 rounded-2xl shadow-lg mx-auto">
-            <Utensils className="h-8 w-8 text-white" />
-          </div>
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900">History Entry Not Found</h2>
-            <p className="text-gray-600">
-              {error || "The requested history entry could not be found."}
-            </p>
-            <Button 
-              onClick={() => navigate('/history')}
-              className="w-full py-3 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg transition-all duration-300"
-            >
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-600">History item not found.</p>
+            <Button onClick={() => navigate('/history')} className="mt-4">
               Back to History
             </Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-          {/* Header */}
-        <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-gray-600 hover:text-gray-900">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back
+      <div className="container mx-auto px-4 py-6 max-w-4xl">
+        {/* Header */}
+        <div className="mb-6">
+          <Button
+            onClick={() => navigate('/history')}
+            variant="outline"
+            className="mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to History
           </Button>
-          <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Detection Details</h1>
-            <p className="text-sm sm:text-base text-gray-600">Detailed analysis of your food detection</p>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                {historyItem.recipe_type === 'food_detection' ? 'Food Detection' : 'Recipe Generation'}
+              </h1>
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-1">
+                  <CalendarDays className="h-4 w-4" />
+                  {formatDate(historyItem.created_at)}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  {historyItem.recipe_type === 'food_detection' ? 'Food Analysis' : 'Recipe Creation'}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex justify-center items-center py-12">
-            <LoadingScreen size="lg" message="Loading details..." />
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="text-center py-12">
-            <div className="text-red-600 mb-4">
-              <XCircle className="h-12 w-12 mx-auto mb-2" />
-              <p className="text-sm sm:text-base">Failed to load detection details</p>
-            </div>
-            <Button onClick={() => navigate('/history')} variant="outline" className="text-sm sm:text-base">
-              Back to History
-            </Button>
-          </div>
-        )}
-
-        {/* Content */}
-        {!isLoading && !error && historyDetail && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-            {/* Left Column - Image and Basic Info */}
-            <div className="space-y-6">
-              {/* Image */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Details */}
+          <div className="space-y-6">
+            {/* Detected Foods/Ingredients */}
+            {historyItem.recipe_type === 'food_detection' && parseDetectedFoods().length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Detected Image</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Search className="h-5 w-5 text-orange-500" />
+                    Detected Foods
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="w-full h-64 sm:h-80 rounded-lg overflow-hidden bg-gray-100">
-                    {historyDetail.image_url ? (
-                      <img
-                        src={historyDetail.image_url}
-                        alt="Detected food"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : historyDetail.input_data && historyDetail.input_data.startsWith('http') ? (
-                      <img
-                        src={historyDetail.input_data}
-                        alt="Detected food"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : historyDetail.image_data ? (
-                      <img
-                        src={`data:image/jpeg;base64,${historyDetail.image_data}`}
-                        alt="Detected food"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <Camera className="h-12 w-12" />
+                  <div className="flex flex-wrap gap-2">
+                    {parseDetectedFoods().map((food, index) => (
+                      <Badge key={index} variant="secondary" className="bg-orange-100 text-orange-800 border-orange-300">
+                        {food}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {historyItem.recipe_type === 'ingredient_detection' && parseIngredients().length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Search className="h-5 w-5 text-orange-500" />
+                    Ingredients Used
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {parseIngredients().map((ingredient, index) => (
+                      <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800 border-blue-300">
+                        {ingredient}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Recipe Suggestion */}
+            {historyItem.suggestion && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5 text-yellow-500" />
+                    Recipe Suggestion
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-900 font-medium">{historyItem.suggestion}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Image Preview */}
+            {(historyItem.image_url || historyItem.image_data) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Original Image</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                    <img
+                      src={historyItem.image_url || `data:image/jpeg;base64,${historyItem.image_data}`}
+                      alt="Detection input"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Right Column - Instructions & Resources */}
+          <div className="space-y-6">
+            {/* Instructions */}
+            {historyItem.instructions && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5 text-yellow-500" />
+                    Step-by-Step Instructions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 instruction-card">
+                    <div 
+                      className="prose prose-sm max-w-none text-gray-700 leading-relaxed space-y-3 instructions-content"
+                      dangerouslySetInnerHTML={{ __html: historyItem.instructions }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Resources */}
+            {resources && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Cooking Resources</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* YouTube Videos */}
+                    {resources.YoutubeSearch && Array.isArray(resources.YoutubeSearch) && resources.YoutubeSearch.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <Play className="h-4 w-4 text-red-500" />
+                          YouTube Tutorials
+                        </h4>
+                        <div className="space-y-3">
+                          {resources.YoutubeSearch.slice(0, 3).map((video: any, index: number) => {
+                            const videoId = getYouTubeVideoId(video.link);
+                            return videoId ? (
+                              <div key={index} className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm youtube-container">
+                                <div className="aspect-video bg-gray-100">
+                                  <iframe
+                                    src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
+                                    title={video.title}
+                                    className="w-full h-full"
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                  />
+                                </div>
+                                <div className="p-3">
+                                  <h5 className="font-medium text-gray-900 text-sm mb-1 line-clamp-2">
+                                    {video.title}
+                                  </h5>
+                                  <p className="text-gray-600 text-xs mb-2">
+                                    {video.channel}
+                                  </p>
+                                  <a
+                                    href={video.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-red-600 hover:text-red-700 text-xs font-medium"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                    Watch on YouTube
+                                  </a>
+                                </div>
+                              </div>
+                            ) : (
+                              <a
+                                key={index}
+                                href={video.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors google-result"
+                              >
+                                <div className="w-12 h-8 bg-red-500 rounded flex items-center justify-center">
+                                  <span className="text-white text-xs">▶</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-gray-900 text-sm truncate">
+                                    {video.title}
+                                  </p>
+                                  <p className="text-gray-600 text-xs">
+                                    {video.channel}
+                                  </p>
+                                </div>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Google Search Results */}
+                    {resources.GoogleSearch && Array.isArray(resources.GoogleSearch) && resources.GoogleSearch.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <Globe className="h-4 w-4 text-blue-500" />
+                          Articles & Recipes
+                        </h4>
+                        <div className="space-y-3">
+                          {resources.GoogleSearch.slice(0, 3).map((article: any, index: number) => (
+                            <a
+                              key={index}
+                              href={article.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors google-result"
+                            >
+                              <div className="w-12 h-8 bg-blue-500 rounded flex items-center justify-center">
+                                <Globe className="h-4 w-4 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 text-sm truncate">
+                                  {article.title}
+                                </p>
+                                <p className="text-gray-600 text-xs line-clamp-2">
+                                  {article.description}
+                                </p>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Detection Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Detection Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm sm:text-base">
-                    <div>
-                      <label className="font-medium text-gray-900">Date & Time</label>
-                      <p className="text-gray-600">
-                        {new Date(historyDetail.created_at).toLocaleDateString()} at {new Date(historyDetail.created_at).toLocaleTimeString()}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="font-medium text-gray-900">Detection ID</label>
-                      <p className="text-gray-600 font-mono text-xs sm:text-sm">{historyDetail.id}</p>
-                </div>
-              </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right Column - Analysis Results */}
-            <div className="space-y-6">
-              {/* Detected Foods */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Detected Foods</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {historyDetail.detected_foods ? (
-                <div className="flex flex-wrap gap-2">
-                  {(() => {
-                    try {
-                      const foods = JSON.parse(historyDetail.detected_foods)
-                      return foods.map((food: string, index: number) => (
-                            <Badge key={index} variant="default" className="text-xs sm:text-sm">
-                          {food}
-                            </Badge>
-                      ))
-                    } catch {
-                      return <span className="text-gray-600">No foods detected</span>
-                    }
-                  })()}
-                </div>
-                  ) : (
-                    <p className="text-gray-500 text-sm sm:text-base">No foods were detected in this image</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Ingredients */}
-              {historyDetail.ingredients && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg sm:text-xl">Ingredients</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {(() => {
-                        try {
-                          const ingredients = JSON.parse(historyDetail.ingredients)
-                          return ingredients.map((ingredient: string, index: number) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                              <span className="text-sm sm:text-base text-gray-700">{ingredient.trim()}</span>
-              </div>
-                          ))
-                        } catch {
-                          return <span className="text-gray-600">No ingredients detected</span>
-                        }
-                      })()}
-            </div>
-                  </CardContent>
-                </Card>
-          )}
-
-          {/* Resources */}
-              {historyDetail.resources && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg sm:text-xl">Additional Resources</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {(() => {
-                      try {
-                        const resources = JSON.parse(historyDetail.resources)
-                        return Object.entries(resources).map(([key, value]: [string, any]) => (
-                          <div key={key}>
-                            <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base capitalize">
-                              {key.replace(/([A-Z])/g, ' $1').trim()}
-                            </h4>
-                            {Array.isArray(value) && value.length > 0 ? (
-                              <div className="space-y-2">
-                                {value.slice(0, 3).map((item: any, index: number) => {
-                                  // Display actual resource data (Google search results, YouTube videos, etc.)
-                                  if (typeof item === 'string') {
-                                    return (
-                                      <div key={index} className="text-sm sm:text-base text-gray-600">
-                                        {item}
-                                      </div>
-                                    );
-                                  } else if (item && typeof item === 'object') {
-                                    // Handle Google search results
-                                    if (item.title && item.link) {
-                                      return (
-                                        <div key={index} className="text-sm sm:text-base">
-                                          <a 
-                                            href={item.link} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="text-blue-600 hover:text-blue-800 underline"
-                                          >
-                                            {item.title}
-                                          </a>
-                                          {item.description && (
-                                            <p className="text-gray-600 text-xs mt-1">{item.description}</p>
-                                          )}
-                                        </div>
-                                      );
-                                    }
-                                    // Handle YouTube videos
-                                    if (item.title && item.link) {
-                                      return (
-                                        <div key={index} className="text-sm sm:text-base">
-                                          <a 
-                                            href={item.link} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="text-red-600 hover:text-red-800 underline"
-                                          >
-                                            {item.title}
-                                          </a>
-              </div>
-                                      );
-                                    }
-                                    // Fallback for other resource types
-                                    return (
-                                      <div key={index} className="text-sm sm:text-base text-gray-600">
-                                        {item.title || item.name || item.description || JSON.stringify(item)}
-            </div>
-                                    );
-                                  }
-                                  return null;
-                                })}
-                                {value.length > 3 && (
-                                  <p className="text-xs text-gray-500">+{value.length - 3} more items</p>
-                                )}
-                          </div>
-                        ) : (
-                              <p className="text-sm sm:text-base text-gray-600">No {key.toLowerCase()} available</p>
-                            )}
-                          </div>
-                        ))
-                      } catch {
-                        return <p className="text-sm sm:text-base text-gray-600">No resources available</p>
-                      }
-                      })()}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* External Links */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Cooking Resources</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Google Search Links */}
-                  {historyDetail.detected_foods && (
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-gray-900 text-sm sm:text-base">Recipe Search</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {(() => {
-                          try {
-                            const foods = JSON.parse(historyDetail.detected_foods)
-                            return foods.slice(0, 4).map((food: string, index: number) => (
-                              <Button
-                                key={index}
-                                onClick={() => window.open(getGoogleSearchUrl(food), '_blank')}
-                                variant="outline"
-                                size="sm"
-                                className="justify-start text-xs sm:text-sm"
-                              >
-                                <Search className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                                {food} Recipes
-                              </Button>
-                            ))
-                          } catch {
-                            return <span className="text-gray-600 text-sm">No foods detected</span>
-                          }
-                        })()}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* YouTube Video Links */}
-                  {historyDetail.detected_foods && (
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-gray-900 text-sm sm:text-base">Video Tutorials</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {(() => {
-                          try {
-                            const foods = JSON.parse(historyDetail.detected_foods)
-                            return foods.slice(0, 4).map((food: string, index: number) => (
-                              <Button
-                                key={index}
-                                onClick={() => window.open(getYouTubeSearchUrl(food), '_blank')}
-                                variant="outline"
-                                size="sm"
-                                className="justify-start text-xs sm:text-sm"
-                              >
-                                <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                                {food} Tutorials
-                              </Button>
-                            ))
-                          } catch {
-                            return <span className="text-gray-600 text-sm">No foods detected</span>
-                          }
-                        })()}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Direct Links */}
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900 text-sm sm:text-base">Direct Links</h4>
-                    {historyDetail.youtube && (
-                      <Button
-                        onClick={() => window.open(historyDetail.youtube, '_blank')}
-                        variant="outline"
-                        className="w-full justify-start text-sm sm:text-base"
-                      >
-                        <Youtube className="h-4 w-4 mr-2" />
-                        Watch on YouTube
-                        <ExternalLink className="h-3 w-3 ml-auto" />
-                      </Button>
-                    )}
-                    {historyDetail.google && (
-                      <Button
-                        onClick={() => window.open(historyDetail.google, '_blank')}
-                        variant="outline"
-                        className="w-full justify-start text-sm sm:text-base"
-                      >
-                        <Search className="h-4 w-4 mr-2" />
-                        Search on Google
-                        <ExternalLink className="h-3 w-3 ml-auto" />
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
+    </div>
   );
-}
+};
 
-export default HistoryDetailPage 
+export default HistoryDetailPage; 

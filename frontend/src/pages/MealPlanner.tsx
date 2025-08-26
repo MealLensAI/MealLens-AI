@@ -179,6 +179,16 @@ const MealPlanner = () => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    // Prevent duplicate submissions
+    if (isLoading) {
+      toast({
+        title: "Processing",
+        description: "Please wait for the current meal plan generation to complete.",
+        variant: "default",
+      });
+      return;
+    }
+
     // Only validate ingredients/image if auto-generate is OFF
     if (!isAutoGenerateEnabled) {
       if (inputType === 'ingredient_list' && !ingredientList.trim()) {
@@ -848,7 +858,7 @@ const MealPlanner = () => {
       {showInputModal && (
         <div className="mobile-modal">
           <div className="mobile-modal-overlay" onClick={() => setShowInputModal(false)} />
-          <div className="mobile-modal-content">
+          <div className="mobile-modal-content animate-slide-up">
             <div className="flex items-center justify-between mb-4 sm:mb-6 p-4 sm:p-6 border-b border-gray-200">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Create Your Meal Plan</h2>
               <button
@@ -1088,11 +1098,11 @@ const MealPlanner = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                  className="w-full py-4 bg-orange-500 text-white font-bold text-lg rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="w-full py-4 bg-orange-500 text-white font-bold text-lg rounded-xl hover:bg-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center loading-button"
               >
                 {isLoading ? (
                   <>
-                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
+                    <Loader2 className="w-6 h-6 mr-3 animate-spin" />
                     {isAutoGenerateEnabled ? 'Auto-Generating Plan...' : 'Generating Plan...'}
                   </>
                 ) : (

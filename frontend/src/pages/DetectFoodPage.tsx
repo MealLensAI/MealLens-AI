@@ -141,7 +141,18 @@ const DetectFoodPage = () => {
       return
     }
     
+    // Prevent duplicate submissions
+    if (isLoading) {
+      toast({
+        title: "Processing",
+        description: "Please wait for the current detection to complete.",
+        variant: "default",
+      })
+      return
+    }
+    
     setIsLoading(true)
+    setIsProcessing(true)
     setInstructions("")
     setDetectedFoods([])
     setResources(null)
@@ -187,11 +198,23 @@ const DetectFoodPage = () => {
         return
       }
       
-      // Format instructions
+      // Format instructions for better readability
       let formattedInstructions = data.instructions || ""
-      formattedInstructions = formattedInstructions.replace(/\*\*(.*?)\*\*/g, '<br><strong>$1</strong><br>')
-      formattedInstructions = formattedInstructions.replace(/\*\s*(.*?)\s*\*/g, '<p>$1</p>')
-      formattedInstructions = formattedInstructions.replace(/(\d+\.)/g, '<br>$1')
+      
+      // Convert markdown-style formatting to HTML
+      formattedInstructions = formattedInstructions
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
+        .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic text
+        .replace(/\n\n/g, '</p><p>') // Double line breaks to paragraphs
+        .replace(/\n/g, '<br>') // Single line breaks
+      
+      // Format numbered steps
+      formattedInstructions = formattedInstructions.replace(/(\d+\.\s*)/g, '<br><strong>$1</strong>')
+      
+      // Wrap in paragraph tags if not already wrapped
+      if (!formattedInstructions.startsWith('<p>')) {
+        formattedInstructions = '<p>' + formattedInstructions + '</p>'
+      }
       
       setInstructions(formattedInstructions)
       setDetectedFoods(data.food_detected || [])
@@ -295,6 +318,7 @@ const DetectFoodPage = () => {
       })
     } finally {
       setIsLoading(false)
+      setIsProcessing(false)
     }
   };
 
@@ -410,7 +434,7 @@ const DetectFoodPage = () => {
                 <Button
                   onClick={handleSubmit}
                   disabled={!imagePreview || isProcessing}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-base sm:text-lg font-semibold"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-base sm:text-lg font-semibold loading-button"
                 >
                   {isProcessing ? (
                     <>
@@ -457,13 +481,58 @@ const DetectFoodPage = () => {
             {instructions && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Cooking Instructions</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+                      <Utensils className="h-5 w-5 text-orange-500" />
+                      Cooking Instructions
+                    </CardTitle>
+                    <Button
+                      onClick={() => {
+                        setShowResults(false)
+                        setInstructions("")
+                        setDetectedFoods([])
+                        setResources(null)
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="text-gray-600 hover:text-gray-800"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-1" />
+                      Back
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div 
-                    className="prose prose-sm max-w-none text-gray-700"
-                    dangerouslySetInnerHTML={{ __html: instructions }}
-                  />
+                  <div className="space-y-4">
+                    {/* Detected Foods */}
+                    {detectedFoods.length > 0 && (
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 detected-foods-container">
+                        <h4 className="font-semibold text-orange-800 mb-2 flex items-center gap-2">
+                          <Search className="h-4 w-4" />
+                          Detected Foods:
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {detectedFoods.map((food, index) => (
+                            <Badge key={index} variant="secondary" className="bg-orange-100 text-orange-800 border-orange-300">
+                              {food}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Instructions */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-4 instruction-card">
+                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <Lightbulb className="h-4 w-4 text-yellow-500" />
+                        Step-by-Step Instructions:
+                      </h4>
+                      <div 
+                        className="prose prose-sm max-w-none text-gray-700 leading-relaxed space-y-3 instructions-content"
+                        dangerouslySetInnerHTML={{ __html: instructions }}
+                      />
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             )}

@@ -175,6 +175,16 @@ const AIResponsePage: FC = () => {
       })
       return
     }
+
+    // Prevent duplicate submissions
+    if (isLoading) {
+      toast({
+        title: "Processing",
+        description: "Please wait for the current processing to complete.",
+        variant: "default",
+      })
+      return
+    }
     
     setIsLoading(true)
     setInstructions("")
@@ -240,6 +250,16 @@ const AIResponsePage: FC = () => {
   }
 
   const handleSuggestionClick = async (suggestion: string) => {
+    // Prevent duplicate clicks
+    if (isLoading) {
+      toast({
+        title: "Processing",
+        description: "Please wait for the current recipe to load.",
+        variant: "default",
+      })
+      return
+    }
+
     setIsLoading(true)
     setSelectedSuggestion(suggestion)
     setInstructions("")
@@ -299,12 +319,23 @@ const AIResponsePage: FC = () => {
         throw new Error(instrData.error);
       }
       
-      // Convert markdown to HTML (same as tutorial page)
+      // Format instructions for better readability
       let htmlInstructions = instrData.instructions || '';
+      
+      // Convert markdown-style formatting to HTML
       htmlInstructions = htmlInstructions
-        .replace(/\*\*(.*?)\*\*/g, '<br><strong>$1</strong><br>')
-        .replace(/\*\s*(.*?)\s*\*/g, '<p>$1</p>')
-        .replace(/(\d+\.)/g, '<br>$1');
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
+        .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic text
+        .replace(/\n\n/g, '</p><p>') // Double line breaks to paragraphs
+        .replace(/\n/g, '<br>') // Single line breaks
+      
+      // Format numbered steps
+      htmlInstructions = htmlInstructions.replace(/(\d+\.\s*)/g, '<br><strong>$1</strong>')
+      
+      // Wrap in paragraph tags if not already wrapped
+      if (!htmlInstructions.startsWith('<p>')) {
+        htmlInstructions = '<p>' + htmlInstructions + '</p>'
+      }
       
       console.log('Converted HTML instructions:', htmlInstructions)
       setInstructions(htmlInstructions);
@@ -499,7 +530,7 @@ const AIResponsePage: FC = () => {
           <Button
             onClick={handleSubmit}
             disabled={isLoading || (inputType === "image" && !selectedImage) || (inputType === "ingredient_list" && !ingredientList.trim())}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-base sm:text-lg font-semibold"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-base sm:text-lg font-semibold loading-button"
           >
             {isLoading ? (
                     <>
@@ -627,14 +658,17 @@ const AIResponsePage: FC = () => {
 
                     {/* Instructions */}
                     {instructions && (
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">Cooking Instructions:</h4>
+                      <div className="bg-white border border-gray-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base flex items-center gap-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500" />
+                          Step-by-Step Instructions:
+                        </h4>
                         <div 
-                          className="prose prose-sm max-w-none text-gray-700"
-                      dangerouslySetInnerHTML={{ __html: instructions }}
-                    />
+                          className="prose prose-sm max-w-none text-gray-700 leading-relaxed space-y-3 instructions-content"
+                          dangerouslySetInnerHTML={{ __html: instructions }}
+                        />
                       </div>
-              )}
+                    )}
 
               {/* Resources */}
                     {loadingResources && (

@@ -107,7 +107,7 @@ def create_app():
     if PAYMENT_ENABLED:
         try:
             # TEMPORARY TESTING MODE: Always use simulated payment service
-            TESTING_MODE = True  # Set to False to use real payment service
+            TESTING_MODE = False  # Set to False to use real payment service
             
             if TESTING_MODE:
                 print("[TESTING MODE] Using SimulatedPaymentService for testing")

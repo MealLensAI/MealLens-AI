@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/utils';
 import { api } from '@/lib/api';
 import LoadingScreen from '@/components/LoadingScreen';
+import { formatInstructionsForDisplay } from '@/utils/instructionFormatter';
+import { formatInstructions, extractSteps } from '@/utils/instructionFormatter';
 
 interface HistoryItem {
   id: string;
@@ -176,7 +178,7 @@ const HistoryDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6 max-w-4xl">
-        {/* Header */}
+          {/* Header */}
         <div className="mb-6">
           <Button
             onClick={() => navigate('/history')}
@@ -188,7 +190,7 @@ const HistoryDetailPage: React.FC = () => {
           </Button>
           
           <div className="flex items-center justify-between">
-            <div>
+          <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 {historyItem.recipe_type === 'food_detection' ? 'Food Detection' : 'Recipe Generation'}
               </h1>
@@ -200,15 +202,15 @@ const HistoryDetailPage: React.FC = () => {
                 <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
                   {historyItem.recipe_type === 'food_detection' ? 'Food Analysis' : 'Recipe Creation'}
-                </div>
-              </div>
+          </div>
+        </div>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Details */}
-          <div className="space-y-6">
+            <div className="space-y-6">
             {/* Detected Foods/Ingredients */}
             {historyItem.recipe_type === 'food_detection' && parseDetectedFoods().length > 0 && (
               <Card>
@@ -245,7 +247,7 @@ const HistoryDetailPage: React.FC = () => {
                         {ingredient}
                       </Badge>
                     ))}
-                  </div>
+              </div>
                 </CardContent>
               </Card>
             )}
@@ -267,44 +269,44 @@ const HistoryDetailPage: React.FC = () => {
 
             {/* Image Preview */}
             {(historyItem.image_url || historyItem.image_data) && (
-              <Card>
-                <CardHeader>
+                <Card>
+                  <CardHeader>
                   <CardTitle className="text-lg">Original Image</CardTitle>
-                </CardHeader>
-                <CardContent>
+                  </CardHeader>
+                  <CardContent>
                   <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                     <img
                       src={historyItem.image_url || `data:image/jpeg;base64,${historyItem.image_data}`}
                       alt="Detection input"
                       className="w-full h-full object-cover"
                     />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            </div>
+                  </CardContent>
+                </Card>
+          )}
           </div>
 
           {/* Right Column - Instructions & Resources */}
           <div className="space-y-6">
             {/* Instructions */}
             {historyItem.instructions && (
-              <Card>
-                <CardHeader>
+                <Card>
+                  <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Lightbulb className="h-5 w-5 text-yellow-500" />
                     Step-by-Step Instructions
                   </CardTitle>
-                </CardHeader>
+                  </CardHeader>
                 <CardContent>
                   <div className="bg-white border border-gray-200 rounded-lg p-4 instruction-card">
                     <div 
                       className="prose prose-sm max-w-none text-gray-700 leading-relaxed space-y-3 instructions-content"
-                      dangerouslySetInnerHTML={{ __html: historyItem.instructions }}
+                      dangerouslySetInnerHTML={{ __html: formatInstructionsForDisplay(historyItem.instructions) }}
                     />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                          </div>
+                  </CardContent>
+                </Card>
+              )}
 
             {/* Resources */}
             {resources && (
@@ -321,7 +323,7 @@ const HistoryDetailPage: React.FC = () => {
                           <Play className="h-4 w-4 text-red-500" />
                           YouTube Tutorials
                         </h4>
-                        <div className="space-y-3">
+                    <div className="space-y-3">
                           {resources.YoutubeSearch.slice(0, 3).map((video: any, index: number) => {
                             const videoId = getYouTubeVideoId(video.link);
                             return videoId ? (
@@ -377,9 +379,9 @@ const HistoryDetailPage: React.FC = () => {
                             );
                           })}
                         </div>
-                      </div>
-                    )}
-
+                    </div>
+                  )}
+                  
                     {/* Google Search Results */}
                     {resources.GoogleSearch && Array.isArray(resources.GoogleSearch) && resources.GoogleSearch.length > 0 && (
                       <div>
@@ -387,27 +389,27 @@ const HistoryDetailPage: React.FC = () => {
                           <Globe className="h-4 w-4 text-blue-500" />
                           Articles & Recipes
                         </h4>
-                        <div className="space-y-3">
+                    <div className="space-y-3">
                           {resources.GoogleSearch.slice(0, 3).map((article: any, index: number) => (
-                            <a
-                              key={index}
-                              href={article.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors google-result"
-                            >
-                              <div className="w-12 h-8 bg-blue-500 rounded flex items-center justify-center">
-                                <Globe className="h-4 w-4 text-white" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-gray-900 text-sm truncate">
+                            <div key={index} className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                              <div className="p-4">
+                                <h5 className="font-medium text-gray-900 text-sm mb-2 line-clamp-2">
                                   {article.title}
-                                </p>
-                                <p className="text-gray-600 text-xs line-clamp-2">
+                                </h5>
+                                <p className="text-gray-600 text-xs mb-3 line-clamp-3 leading-relaxed">
                                   {article.description}
                                 </p>
+                                <a
+                                  href={article.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 text-xs font-medium"
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                  Read Article
+                                </a>
                               </div>
-                            </a>
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -416,10 +418,10 @@ const HistoryDetailPage: React.FC = () => {
                 </CardContent>
               </Card>
             )}
-          </div>
+            </div>
+        </div>
         </div>
       </div>
-    </div>
   );
 };
 

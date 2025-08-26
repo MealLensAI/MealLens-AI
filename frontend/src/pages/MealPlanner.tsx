@@ -70,6 +70,8 @@ const MealPlanner = () => {
     refreshMealPlans
   } = useMealPlans();
 
+
+
   const { toast } = useToast();
   // Get sickness info from profile instead of separate hook
   const [sicknessInfo, setSicknessInfo] = useState<{ hasSickness: boolean, sicknessType: string } | null>(null);
@@ -136,7 +138,7 @@ const MealPlanner = () => {
     }
   }, [showPlanManager, currentPlan, savedPlans]);
 
-  const weekDates = generateWeekDates(selectedDate);
+  const weekDates = currentPlan ? generateWeekDates(new Date(currentPlan.startDate)) : generateWeekDates(selectedDate);
 
   // Find all unique week start dates from savedPlans, sorted ascending
   const savedWeeks = savedPlans

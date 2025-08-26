@@ -16,6 +16,7 @@ import { handleAuthError } from "@/lib/utils"
 import { api } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
+import { formatInstructionsForDisplay } from '@/utils/instructionFormatter';
 
 interface Recipe {
   name: string
@@ -665,7 +666,7 @@ const AIResponsePage: FC = () => {
                         </h4>
                         <div 
                           className="prose prose-sm max-w-none text-gray-700 leading-relaxed space-y-3 instructions-content"
-                          dangerouslySetInnerHTML={{ __html: instructions }}
+                          dangerouslySetInnerHTML={{ __html: formatInstructionsForDisplay(instructions) }}
                         />
                       </div>
                     )}

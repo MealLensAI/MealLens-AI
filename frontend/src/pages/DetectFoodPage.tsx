@@ -13,6 +13,7 @@ import { api } from "@/lib/api"
 import { handleAuthError } from "@/lib/utils"
 import { compressImage, validateImage, formatFileSize, generateThumbnail } from "@/utils/imageUtils"
 import { Badge } from "@/components/ui/badge"
+import { formatInstructionsForDisplay } from '@/utils/instructionFormatter';
 
 const DetectFoodPage = () => {
   const navigate = useNavigate()
@@ -529,7 +530,7 @@ const DetectFoodPage = () => {
                       </h4>
                       <div 
                         className="prose prose-sm max-w-none text-gray-700 leading-relaxed space-y-3 instructions-content"
-                        dangerouslySetInnerHTML={{ __html: instructions }}
+                        dangerouslySetInnerHTML={{ __html: formatInstructionsForDisplay(instructions) }}
                       />
                     </div>
                   </div>

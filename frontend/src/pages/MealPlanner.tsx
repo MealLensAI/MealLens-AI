@@ -123,12 +123,14 @@ const MealPlanner = () => {
   }
 
   useEffect(() => {
+    console.log('[MealPlanner] Current plan changed:', currentPlan);
+    console.log('[MealPlanner] Saved plans:', savedPlans);
     if (!currentPlan) {
       setSelectedDay('Monday'); // Reset to default
       setSelectedMealType('all'); // Optionally reset meal type
       // Optionally clear other state if needed
     }
-  }, [currentPlan]);
+  }, [currentPlan, savedPlans]);
 
   useEffect(() => {
     if (!showPlanManager && (!currentPlan || !savedPlans.some(plan => plan.id === currentPlan.id))) {
@@ -445,14 +447,35 @@ const MealPlanner = () => {
 
   // Helper: rotate meal plan array to start from selectedDay
   const getRotatedMealPlan = () => {
-    if (!currentPlan) return [];
+    console.log('[MealPlanner] getRotatedMealPlan called');
+    console.log('[MealPlanner] currentPlan:', currentPlan);
+    console.log('[MealPlanner] selectedDay:', selectedDay);
+    
+    if (!currentPlan) {
+      console.log('[MealPlanner] No current plan, returning empty array');
+      return [];
+    }
+    
+    console.log('[MealPlanner] currentPlan.mealPlan:', currentPlan.mealPlan);
+    
     const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const startIdx = daysOfWeek.indexOf(selectedDay);
-    if (startIdx === -1) return currentPlan.mealPlan;
+    console.log('[MealPlanner] startIdx:', startIdx);
+    
+    if (startIdx === -1) {
+      console.log('[MealPlanner] selectedDay not found, returning original mealPlan');
+      return currentPlan.mealPlan;
+    }
+    
     // Sort mealPlan to match daysOfWeek order
     const sortedPlan = daysOfWeek.map(day => currentPlan.mealPlan.find(mp => mp.day === day)).filter(Boolean);
+    console.log('[MealPlanner] sortedPlan:', sortedPlan);
+    
     // Rotate
-    return [...sortedPlan.slice(startIdx), ...sortedPlan.slice(0, startIdx)];
+    const rotated = [...sortedPlan.slice(startIdx), ...sortedPlan.slice(0, startIdx)];
+    console.log('[MealPlanner] rotated result:', rotated);
+    
+    return rotated;
   };
 
   // In the main content, use the rotated meal plan for display
@@ -489,9 +512,17 @@ const MealPlanner = () => {
 
   // Replace getRecipesForSelectedDay to use rotated plan
   const getRecipesForSelectedDay = () => {
+    console.log('[MealPlanner] getRecipesForSelectedDay called');
+    console.log('[MealPlanner] currentPlan:', currentPlan);
+    console.log('[MealPlanner] selectedDay:', selectedDay);
+    
     const rotatedPlan = getRotatedMealPlan();
+    console.log('[MealPlanner] rotatedPlan:', rotatedPlan);
+    
     // Always show the first day's recipes (the selected day)
     const dayPlan = rotatedPlan[0];
+    console.log('[MealPlanner] dayPlan:', dayPlan);
+    
     if (!dayPlan) return [];
     // Helper function to extract clean food name from meal description
     const extractFoodName = (mealDescription: string): string => {

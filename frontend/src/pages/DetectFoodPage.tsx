@@ -692,19 +692,19 @@ const DetectFoodPage = () => {
                           <div className="bg-gray-50 p-2 rounded">
                             <div className="font-medium text-gray-900">{detectionResult.nutrition.calories}</div>
                             <div className="text-gray-600">Calories</div>
-                          </div>
+                                </div>
                           <div className="bg-gray-50 p-2 rounded">
                             <div className="font-medium text-gray-900">{detectionResult.nutrition.protein}g</div>
                             <div className="text-gray-600">Protein</div>
-                          </div>
+                                </div>
                           <div className="bg-gray-50 p-2 rounded">
                             <div className="font-medium text-gray-900">{detectionResult.nutrition.carbs}g</div>
                             <div className="text-gray-600">Carbs</div>
-                          </div>
+                              </div>
                           <div className="bg-gray-50 p-2 rounded">
                             <div className="font-medium text-gray-900">{detectionResult.nutrition.fat}g</div>
                             <div className="text-gray-600">Fat</div>
-                          </div>
+                              </div>
                         </div>
                       </div>
                     )}
@@ -722,8 +722,8 @@ const DetectFoodPage = () => {
                           ))}
                         </div>
                       </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
                 </CardContent>
               </Card>
             )}

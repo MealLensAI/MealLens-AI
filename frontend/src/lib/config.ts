@@ -130,7 +130,7 @@ export const APP_CONFIG = {
 
   // Trial Configuration
   trial: {
-    duration_days: 7, // Updated from 3 to 7 days
+    duration_days: 3, // 3-day free trial as required
     features_unlocked: true
   },
 

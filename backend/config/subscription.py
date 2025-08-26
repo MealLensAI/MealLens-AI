@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any
 
 # Free tier configuration
-FREE_TRIAL_DAYS = int(os.getenv('FREE_TRIAL_DAYS', '7'))  # Updated from 3 to 7 days
+FREE_TRIAL_DAYS = int(os.getenv('FREE_TRIAL_DAYS', '3'))  # 3-day free trial as required
 FREE_RESET_PERIOD = os.getenv('FREE_RESET_PERIOD', 'monthly')
 
 # Paid plan durations (in days)

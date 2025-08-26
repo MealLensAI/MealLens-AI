@@ -23,7 +23,10 @@ const PaymentSuccess: React.FC = () => {
 
   useEffect(() => {
     const verifyPayment = async () => {
+      console.log('[PaymentSuccess] Starting payment verification with reference:', reference);
+      
       if (!reference) {
+        console.error('[PaymentSuccess] No payment reference found');
         setErrorMessage('No payment reference found');
         setVerificationStatus('error');
         setIsVerifying(false);
@@ -31,13 +34,17 @@ const PaymentSuccess: React.FC = () => {
       }
 
       try {
+        console.log('[PaymentSuccess] Calling paystackService.verifyPayment...');
         // Verify the payment with Paystack
         const verificationResult = await paystackService.verifyPayment(reference);
+        console.log('[PaymentSuccess] Verification result:', verificationResult);
         
         if (verificationResult.status === 'success') {
+          console.log('[PaymentSuccess] Payment verification successful');
           setVerificationStatus('success');
           
           // Refresh user subscription
+          console.log('[PaymentSuccess] Refreshing subscription...');
           await refreshSubscription();
           
           toast({
@@ -45,11 +52,12 @@ const PaymentSuccess: React.FC = () => {
             description: "Welcome to MealLens Pro! You now have access to all premium features.",
           });
         } else {
+          console.error('[PaymentSuccess] Payment verification failed:', verificationResult);
           setErrorMessage('Payment verification failed');
           setVerificationStatus('error');
         }
       } catch (error) {
-        console.error('Payment verification error:', error);
+        console.error('[PaymentSuccess] Payment verification error:', error);
         setErrorMessage('Failed to verify payment. Please contact support.');
         setVerificationStatus('error');
       } finally {

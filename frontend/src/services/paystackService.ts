@@ -33,7 +33,7 @@ export interface SubscriptionPlan {
   limits: Record<string, any>;
   is_active: boolean;
   duration_days: number;
-  billing_cycle: 'trial' | 'weekly' | 'two_weeks' | 'monthly';
+  billing_cycle: string;
 }
 
 export interface UserSubscription {
@@ -77,11 +77,13 @@ class PaystackService {
    * Initialize a payment transaction with retry mechanism
    */
   async initializePayment(config: PaystackConfig): Promise<PaymentResponse> {
+    console.log('[PaystackService] Initializing payment with config:', config);
     const maxRetries = 3;
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      console.log(`[PaystackService] Payment initialization attempt ${attempt}/${maxRetries}`);
       const response = await api.post('/payment/initialize-payment', {
         email: config.email,
         amount: config.amount,
@@ -92,6 +94,7 @@ class PaystackService {
         metadata: config.metadata
       });
 
+      console.log('[PaystackService] Payment initialization successful:', response);
       return response;
       } catch (error: any) {
         lastError = error;
@@ -136,11 +139,13 @@ class PaystackService {
    * Verify a payment transaction
    */
   async verifyPayment(reference: string): Promise<any> {
+    console.log('[PaystackService] Verifying payment with reference:', reference);
     try {
       const response = await api.get(`/payment/verify-payment/${reference}`);
+      console.log('[PaystackService] Payment verification successful:', response);
       return response;
     } catch (error) {
-      console.error('Error verifying payment:', error);
+      console.error('[PaystackService] Error verifying payment:', error);
       throw new Error('Failed to verify payment');
     }
   }

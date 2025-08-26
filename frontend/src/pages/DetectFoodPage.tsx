@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, Loader2, Utensils, Camera, Image as ImageIcon, ArrowLeft, Star, Clock, ExternalLink, X, Search, Lightbulb } from "lucide-react"
+import { Upload, Loader2, Utensils, Camera, Image as ImageIcon, ArrowLeft, Star, Clock, ExternalLink, X, Search, Lightbulb, Play } from "lucide-react"
 import { useAuth } from "@/lib/utils"
 import { useSubscription } from "@/contexts/SubscriptionContext"
 import { useToast } from "@/hooks/use-toast"

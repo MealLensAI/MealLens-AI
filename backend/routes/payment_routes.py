@@ -421,32 +421,47 @@ def initialize_payment():
 @payment_bp.route('/verify-payment/<reference>', methods=['GET'])
 def verify_payment(reference):
     """Verify a payment transaction."""
+    print(f"[DEBUG] Payment verification requested for reference: {reference}")
+    
     user_id = authenticate_user()
     if not user_id:
+        print(f"[DEBUG] Authentication failed for payment verification")
         return jsonify({
             'status': 'error',
             'message': 'Authentication required'
         }), 401
     
+    print(f"[DEBUG] User authenticated: {user_id}")
+    
     payment_service = get_payment_service()
     if not payment_service:
+        print(f"[DEBUG] Payment service not configured")
         return jsonify({
             'status': 'error',
             'message': 'Payment service not configured'
         }), 500
     
+    print(f"[DEBUG] Payment service type: {type(payment_service).__name__}")
+    
     # Verify with Paystack
+    print(f"[DEBUG] Calling payment_service.verify_transaction...")
     result = payment_service.verify_transaction(reference)
+    print(f"[DEBUG] Verification result: {result}")
     
     if result.get('status') and result['data']['status'] == 'success':
+        print(f"[DEBUG] Payment verification successful")
+        
         # Update transaction status
+        print(f"[DEBUG] Saving payment transaction...")
         payment_service.save_payment_transaction(user_id, result['data'])
         
         # Get metadata to determine plan
         metadata = result['data'].get('metadata', {})
         plan_id = metadata.get('plan_id')
+        print(f"[DEBUG] Plan ID from metadata: {plan_id}")
         
         if plan_id:
+            print(f"[DEBUG] Creating user subscription for plan: {plan_id}")
             # Create or update user subscription
             subscription_result = payment_service.create_user_subscription(
                 user_id=user_id,
@@ -456,24 +471,29 @@ def verify_payment(reference):
                     'reference': reference
                 }
             )
+            print(f"[DEBUG] Subscription creation result: {subscription_result}")
             
             if subscription_result['success']:
+                print(f"[DEBUG] Subscription activated successfully")
                 return jsonify({
                     'status': 'success',
                     'message': 'Payment verified and subscription activated',
                     'subscription': subscription_result['data']
                 }), 200
             else:
+                print(f"[DEBUG] Failed to activate subscription: {subscription_result}")
                 return jsonify({
                     'status': 'error',
                     'message': 'Payment verified but failed to activate subscription'
                 }), 500
         
+        print(f"[DEBUG] No plan_id found, returning success")
         return jsonify({
             'status': 'success',
             'message': 'Payment verified successfully'
         }), 200
     else:
+        print(f"[DEBUG] Payment verification failed: {result}")
         return jsonify({
             'status': 'error',
             'message': 'Payment verification failed'

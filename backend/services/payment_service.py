@@ -363,96 +363,79 @@ class SimulatedPaymentService:
         return {'success': True, 'data': plan_data}
 
     def get_subscription_plans(self):
-        # Return USD-based subscription plans with currency conversion support
+        # Return USD-based subscription plans with correct pricing
         return {'success': True, 'data': [
             {
-                'id': 'free-plan',
-                'name': 'free',
-                'display_name': 'Free',
-                'price_monthly': 0.00,
-                'price_yearly': 0.00,
-                'currency': 'USD',
-                'features': [
-                    '5 food detections per month',
-                    '3 meal plans per month',
-                    '10 recipe generations per month',
-                    'Basic AI assistance'
-                ],
-                'limits': {
-                    'food_detection': 5,
-                    'meal_planning': 3,
-                    'recipe_generation': 10
-                },
-                'is_active': True
-            },
-            {
-                'id': 'basic-plan',
-                'name': 'basic',
-                'display_name': 'Basic',
-                'price_monthly': 0.50,
-                'price_yearly': 5.00,
-                'currency': 'USD',
-                'features': [
-                    '50 food detections per month',
-                    '20 meal plans per month',
-                    '100 recipe generations per month',
-                    'Priority customer support',
-                    'Recipe export functionality'
-                ],
-                'limits': {
-                    'food_detection': 50,
-                    'meal_planning': 20,
-                    'recipe_generation': 100
-                },
-                'is_active': True
-            },
-            {
-                'id': 'standard-plan',
-                'name': 'standard',
-                'display_name': 'Standard',
-                'price_monthly': 5.00,
-                'price_yearly': 50.00,
-                'currency': 'USD',
-                'features': [
-                    '200 food detections per month',
-                    '100 meal plans per month',
-                    '500 recipe generations per month',
-                    'Custom meal plans',
-                    'Nutrition analysis',
-                    'Priority customer support',
-                    'Recipe export functionality'
-                ],
-                'limits': {
-                    'food_detection': 200,
-                    'meal_planning': 100,
-                    'recipe_generation': 500
-                },
-                'is_active': True
-            },
-            {
-                'id': 'premium-plan',
-                'name': 'premium',
-                'display_name': 'Premium',
+                'id': 'weekly',
+                'name': 'weekly',
+                'display_name': 'Weekly',
+                'price_weekly': 2.50,
+                'price_two_weeks': 5.00,
                 'price_monthly': 10.00,
-                'price_yearly': 100.00,
                 'currency': 'USD',
                 'features': [
-                    'Unlimited food detections',
-                    'Unlimited meal plans',
-                    'Unlimited recipe generations',
-                    'Advanced nutrition analysis',
-                    'Custom meal plans',
-                    'API access',
-                    'White-label options',
-                    'Priority customer support',
-                    'Recipe export functionality'
+                    'Unlimited Food Detection',
+                    'Unlimited AI Kitchen Assistant',
+                    'Unlimited Meal Planning',
+                    'Full History Access',
+                    'Priority Support'
                 ],
                 'limits': {
                     'food_detection': -1,  # Unlimited
                     'meal_planning': -1,   # Unlimited
                     'recipe_generation': -1  # Unlimited
                 },
-                'is_active': True
+                'is_active': True,
+                'duration_days': 7,
+                'billing_cycle': 'weekly'
+            },
+            {
+                'id': 'two_weeks',
+                'name': 'two_weeks',
+                'display_name': 'Two Weeks',
+                'price_weekly': 2.50,
+                'price_two_weeks': 5.00,
+                'price_monthly': 10.00,
+                'currency': 'USD',
+                'features': [
+                    'Unlimited Food Detection',
+                    'Unlimited AI Kitchen Assistant',
+                    'Unlimited Meal Planning',
+                    'Full History Access',
+                    'Priority Support'
+                ],
+                'limits': {
+                    'food_detection': -1,  # Unlimited
+                    'meal_planning': -1,   # Unlimited
+                    'recipe_generation': -1  # Unlimited
+                },
+                'is_active': True,
+                'duration_days': 14,
+                'billing_cycle': 'two_weeks'
+            },
+            {
+                'id': 'monthly',
+                'name': 'monthly',
+                'display_name': 'Monthly',
+                'price_weekly': 2.50,
+                'price_two_weeks': 5.00,
+                'price_monthly': 10.00,
+                'currency': 'USD',
+                'features': [
+                    'Unlimited Food Detection',
+                    'Unlimited AI Kitchen Assistant',
+                    'Unlimited Meal Planning',
+                    'Full History Access',
+                    'Priority Support'
+                ],
+                'limits': {
+                    'food_detection': -1,  # Unlimited
+                    'meal_planning': -1,   # Unlimited
+                    'recipe_generation': -1  # Unlimited
+                },
+                'is_active': True,
+                'duration_days': 30,
+                'billing_cycle': 'monthly'
             }
         ]}
 

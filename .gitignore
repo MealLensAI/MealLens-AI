@@ -112,6 +112,9 @@ jspm_packages/
 !frontend/netlify.toml
 !frontend/.gitignore
 
+# Exclude Yess/ folder (reference only, not for production)
+frontend/src/pages/Yess/
+
 !backend/app.py
 !backend/requirements.txt
 !backend/wsgi.py

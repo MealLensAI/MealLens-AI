@@ -30,7 +30,7 @@ import AdminPanel from "./components/AdminPanel"
 import AdminDashboard from "./pages/AdminDashboard"
 import AdminLoginPage from "./pages/AdminLoginPage"
 import AdminRoute from "./components/AdminRoute"
-import AuthTest from "./components/AuthTest"
+
 import ErrorBoundary from "./components/ErrorBoundary"
 
 // Launch countdown wrapper component
@@ -205,10 +205,7 @@ const router = createBrowserRouter([
     )
   },
 
-  {
-    path: "/auth-test",
-    element: <AuthTest />
-  },
+
   {
     path: "*",
     element: <Navigate to="/" replace />

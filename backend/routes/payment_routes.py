@@ -380,10 +380,10 @@ def initialize_payment():
         
         print(f"[DEBUG] Paystack response: {result}")
         
-        if result.get('status'):
+        if result.get('status') and result.get('data'):
             # Save transaction record
             transaction_data = {
-                'id': result['data']['id'],
+                'id': result['data'].get('id', reference),  # Use reference as fallback if no id
                 'reference': reference,
                 'amount': amount_kobo,
                 'currency': 'USD',
@@ -391,19 +391,24 @@ def initialize_payment():
                 'description': f'Subscription payment for plan {plan_id}'
             }
             
-            payment_service.save_payment_transaction(user_id, transaction_data)
+            try:
+                payment_service.save_payment_transaction(user_id, transaction_data)
+            except Exception as e:
+                print(f"[WARNING] Failed to save transaction record: {str(e)}")
+                # Continue anyway, don't fail the payment initialization
             
             return jsonify({
                 'status': 'success',
                 'data': {
-                    'authorization_url': result['data']['authorization_url'],
+                    'authorization_url': result['data'].get('authorization_url'),
                     'reference': reference,
-                    'access_code': result['data']['access_code']
+                    'access_code': result['data'].get('access_code')
                 }
             }), 200
         else:
             error_msg = result.get('message', 'Failed to initialize payment')
             print(f"[ERROR] Paystack initialization failed: {error_msg}")
+            print(f"[ERROR] Full response: {result}")
             return jsonify({
                 'status': 'error',
                 'message': error_msg

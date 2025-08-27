@@ -54,12 +54,15 @@ CREATE INDEX IF NOT EXISTS idx_paystack_webhooks_reference ON public.paystack_we
 -- Add RLS policies for payment_transactions
 ALTER TABLE public.payment_transactions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own payment transactions" ON public.payment_transactions;
 CREATE POLICY "Users can view their own payment transactions" ON public.payment_transactions
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own payment transactions" ON public.payment_transactions;
 CREATE POLICY "Users can insert their own payment transactions" ON public.payment_transactions
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Admins can view all payment transactions" ON public.payment_transactions;
 CREATE POLICY "Admins can view all payment transactions" ON public.payment_transactions
     FOR SELECT USING (
         EXISTS (
@@ -71,12 +74,15 @@ CREATE POLICY "Admins can view all payment transactions" ON public.payment_trans
 -- Add RLS policies for user_subscriptions
 ALTER TABLE public.user_subscriptions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own subscriptions" ON public.user_subscriptions;
 CREATE POLICY "Users can view their own subscriptions" ON public.user_subscriptions
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own subscriptions" ON public.user_subscriptions;
 CREATE POLICY "Users can insert their own subscriptions" ON public.user_subscriptions
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Admins can view all subscriptions" ON public.user_subscriptions;
 CREATE POLICY "Admins can view all subscriptions" ON public.user_subscriptions
     FOR SELECT USING (
         EXISTS (
@@ -88,6 +94,7 @@ CREATE POLICY "Admins can view all subscriptions" ON public.user_subscriptions
 -- Add RLS policies for paystack_webhooks (admin only)
 ALTER TABLE public.paystack_webhooks ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins can view all webhooks" ON public.paystack_webhooks;
 CREATE POLICY "Admins can view all webhooks" ON public.paystack_webhooks
     FOR SELECT USING (
         EXISTS (
@@ -96,6 +103,7 @@ CREATE POLICY "Admins can view all webhooks" ON public.paystack_webhooks
         )
     );
 
+DROP POLICY IF EXISTS "Service can insert webhooks" ON public.paystack_webhooks;
 CREATE POLICY "Service can insert webhooks" ON public.paystack_webhooks
     FOR INSERT WITH CHECK (true);
 

@@ -76,9 +76,8 @@ const Navbar: React.FC = () => {
   }, []);
 
   const navigationItems = [
-    { path: '/home', label: 'Home', icon: Home },
+    { path: '/ai-kitchen', label: 'Home', icon: Home },
     { path: '/detect-food', label: 'Detect Food', icon: Camera },
-    { path: '/ai-kitchen', label: 'AI Kitchen', icon: ChefHat },
     { path: '/meal-planner', label: 'Meal Planner', icon: Calendar },
     { path: '/history', label: 'History', icon: History },
   ];
@@ -94,8 +93,8 @@ const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
           {/* Logo and Navigation */}
           <div className="flex items-center space-x-4 sm:space-x-8">
-            <Link to="/home">
-              <Logo size="md" variant="nav" showText={false} />
+            <Link to="/ai-kitchen">
+              <Logo size="md" />
             </Link>
 
             {/* Navigation Links */}
@@ -205,8 +204,8 @@ const Navbar: React.FC = () => {
       <nav className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-50">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/home">
-            <Logo size="md" variant="nav" showText={false} />
+          <Link to="/ai-kitchen">
+            <Logo size="md" />
           </Link>
 
           {/* Mobile Menu Button */}

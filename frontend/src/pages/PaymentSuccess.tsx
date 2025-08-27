@@ -73,7 +73,7 @@ const PaymentSuccess: React.FC = () => {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
     } else if (verificationStatus === 'success' && countdown === 0) {
-      navigate('/home');
+      navigate('/ai-kitchen');
     }
   }, [verificationStatus, countdown, navigate]);
 
@@ -117,12 +117,12 @@ const PaymentSuccess: React.FC = () => {
                 Try Again
               </Button>
               <Button 
-                onClick={() => navigate('/home')}
+                onClick={() => navigate('/ai-kitchen')}
                 variant="outline"
                 className="w-full"
               >
                 <Home className="h-4 w-4 mr-2" />
-                Go to Home
+                Go to AI Kitchen
               </Button>
             </div>
           </CardContent>
@@ -171,15 +171,15 @@ const PaymentSuccess: React.FC = () => {
             </div>
             
             <div className="text-sm text-gray-500">
-              Redirecting to dashboard in {countdown} seconds...
+              Redirecting to AI Kitchen in {countdown} seconds...
             </div>
             
             <Button 
-              onClick={() => navigate('/home')}
+              onClick={() => navigate('/ai-kitchen')}
               className="w-full bg-orange-500 hover:bg-orange-600"
             >
               <ArrowRight className="h-4 w-4 mr-2" />
-              Go to Dashboard Now
+              Go to AI Kitchen Now
             </Button>
           </div>
         </CardContent>

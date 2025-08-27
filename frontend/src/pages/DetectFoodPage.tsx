@@ -337,148 +337,104 @@ const DetectFoodPage = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
         {/* Header */}
-        <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-gray-600 hover:text-gray-900">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back
-          </Button>
-          <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">AI Food Detection</h1>
-            <p className="text-sm sm:text-base text-gray-600">Upload photos of your meals to get detailed nutritional information</p>
-          </div>
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">AI Food Detection</h1>
+          <p className="text-sm sm:text-base text-gray-600">Upload photos of your meals to get detailed nutritional information</p>
         </div>
 
-          {/* Free Usage Indicator */}
-        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Camera className="h-5 w-5 text-blue-600" />
-                <span className="text-sm sm:text-base font-medium text-blue-900">
-                  Free Uses: {freeUsageCount}/{maxFreeUsage}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-24 sm:w-32 h-2 bg-blue-200 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full transition-all duration-300 ${
-                      freeUsageCount >= maxFreeUsage 
-                        ? 'bg-red-500' 
-                        : freeUsageCount >= maxFreeUsage * 0.8 
-                        ? 'bg-orange-500' 
-                        : 'bg-blue-500'
-                    }`}
-                    style={{ width: `${Math.min((freeUsageCount / maxFreeUsage) * 100, 100)}%` }}
-                  ></div>
-                </div>
-                <span className="text-xs text-blue-600 font-medium">
-                  {Math.round((freeUsageCount / maxFreeUsage) * 100)}%
-                </span>
-              </div>
-            </div>
-            {freeUsageCount >= maxFreeUsage && (
-              <div className="mt-2 text-xs text-red-600 font-medium">
-                Free limit reached. Upgrade to continue using this feature.
-              </div>
-            )}
-          </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-          {/* Left Column - Input */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                  <Camera className="h-5 w-5 text-[#FF6B6B]" /> Upload Image
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Prominent Image Upload Button */}
-                <div className="text-center">
-                  <Button 
-                    onClick={() => {
-                      // Show upload options modal
-                      setShowUploadModal(true);
-                    }}
-                    className="w-full h-32 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-8 px-6 rounded-xl transition-all duration-300 text-lg sm:text-xl shadow-lg hover:shadow-xl"
-                  >
-                    <div className="flex flex-col items-center gap-3">
-                      <ImageIcon className="h-12 w-12" />
-                      <div>
-                        <div className="font-bold">Upload Food Image</div>
-                        <div className="text-sm opacity-90">Take photo or choose from gallery</div>
-            </div>
-                    </div>
-                  </Button>
-          </div>
-
-                {/* Hidden file inputs for modal */}
-                <input type="file" id="cameraInput" accept="image/*" capture="environment" className="hidden" onChange={handleImageSelect} />
-                <input type="file" id="fileInput" accept="image/*" className="hidden" onChange={handleImageSelect} />
-                
-                {imagePreview && (
-                  <div className="relative">
-                    <img src={imagePreview} alt="Preview" className="w-full h-48 sm:h-64 object-cover rounded-lg shadow-md" />
-                    <Button
-                      onClick={() => {
-                        setImagePreview(null);
-                        setSelectedImage(null);
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="absolute top-2 right-2 bg-white/90 hover:bg-white shadow-md"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-            </div>
-          )}
-
-                {/* Submit Button */}
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!imagePreview || isProcessing}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-base sm:text-lg font-semibold loading-button"
+                <div className="max-w-4xl mx-auto space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Camera className="h-5 w-5 text-[#FF6B6B]" /> Upload Image
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Prominent Image Upload Button */}
+              <div className="text-center">
+                <Button 
+                  onClick={() => {
+                    // Show upload options modal
+                    setShowUploadModal(true);
+                  }}
+                  className="w-full h-32 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-8 px-6 rounded-xl transition-all duration-300 text-lg sm:text-xl shadow-lg hover:shadow-xl"
                 >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                      Detect Food
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Instructions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">How it works</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm sm:text-base">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
-                    <p className="text-gray-700">Take a photo of your meal or upload an existing image</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
-                    <p className="text-gray-700">Our AI analyzes the image to identify food items and ingredients</p>
-                </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
-                    <p className="text-gray-700">Get detailed nutritional information and recipe suggestions</p>
-                      </div>
+                  <div className="flex flex-col items-center gap-3">
+                    <ImageIcon className="h-12 w-12" />
+                    <div>
+                      <div className="font-bold">Upload Food Image</div>
+                      <div className="text-sm opacity-90">Take photo or choose from gallery</div>
                     </div>
-              </CardContent>
-            </Card>
                   </div>
+                </Button>
+              </div>
 
-          {/* Right Column - Results */}
-          <div className="space-y-6">
-            {/* Instructions Section */}
+              {/* Hidden file inputs for modal */}
+              <input type="file" id="cameraInput" accept="image/*" capture="environment" className="hidden" onChange={handleImageSelect} />
+              <input type="file" id="fileInput" accept="image/*" className="hidden" onChange={handleImageSelect} />
+              
+              {imagePreview && (
+                <div className="relative">
+                  <img src={imagePreview} alt="Preview" className="w-full h-48 sm:h-64 object-cover rounded-lg shadow-md" />
+                  <Button
+                    onClick={() => {
+                      setImagePreview(null);
+                      setSelectedImage(null);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="absolute top-2 right-2 bg-white/90 hover:bg-white shadow-md"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <Button
+                onClick={handleSubmit}
+                disabled={!imagePreview || isProcessing}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-base sm:text-lg font-semibold loading-button"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                    Detect Food
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Instructions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl">How it works</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 text-sm sm:text-base">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
+                  <p className="text-gray-700">Take a photo of your meal or upload an existing image</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
+                  <p className="text-gray-700">Our AI analyzes the image to identify food items and ingredients</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
+                  <p className="text-gray-700">Get detailed nutritional information and recipe suggestions</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Instructions Section */}
             {instructions && (
               <Card>
                 <CardHeader>
@@ -548,12 +504,12 @@ const DetectFoodPage = () => {
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-orange-500 mr-2" />
                     <span className="text-gray-600">Loading cooking resources...</span>
-                  </div>
+                </div>
                 </CardContent>
               </Card>
-            )}
+              )}
 
-            {resources && !loadingResources && (
+              {resources && !loadingResources && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg sm:text-xl">Cooking Resources</CardTitle>
@@ -639,8 +595,8 @@ const DetectFoodPage = () => {
                             <a
                               key={index}
                               href={result.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                               className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                             >
                               <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
@@ -727,31 +683,7 @@ const DetectFoodPage = () => {
                 </CardContent>
               </Card>
             )}
-
-            {/* Tips */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Tips for better results</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm sm:text-base">
-                  <div className="flex items-start gap-3">
-                    <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-gray-700">Ensure good lighting and clear focus on the food</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-gray-700">Include the entire meal in the frame for comprehensive analysis</p>
-                    </div>
-                  <div className="flex items-start gap-3">
-                    <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-gray-700">Avoid blurry or heavily edited images for accurate detection</p>
-                  </div>
-              </div>
-              </CardContent>
-            </Card>
-            </div>
-          </div>
+        </div>
       </div>
 
       {/* Upload Modal */}

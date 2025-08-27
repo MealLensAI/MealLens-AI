@@ -413,6 +413,38 @@ class APIService {
     const proxyUrl = '/api/proxy?url='
     return this.get(proxyUrl + encodeURIComponent(url), { skipAuth: true })
   }
+
+  // Admin methods
+  async getAdminUsers(params?: any): Promise<APIResponse> {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
+    return this.get(`/admin/users${queryString}`)
+  }
+
+  async getAdminSubscriptionSummary(): Promise<APIResponse> {
+    return this.get('/admin/subscriptions/summary')
+  }
+
+  async getAdminRevenueMetrics(params?: any): Promise<APIResponse> {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
+    return this.get(`/admin/metrics/revenue${queryString}`)
+  }
+
+  async getAdminUsageMetrics(params?: any): Promise<APIResponse> {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
+    return this.get(`/admin/metrics/usage${queryString}`)
+  }
+
+  async getAdminUserDetails(userId: string): Promise<APIResponse> {
+    return this.get(`/admin/users/${userId}/details`)
+  }
+
+  async updateAdminSubscription(subscriptionId: string, data: any): Promise<APIResponse> {
+    return this.put(`/admin/subscriptions/${subscriptionId}/update`, data)
+  }
+
+  async cancelAdminSubscription(subscriptionId: string): Promise<APIResponse> {
+    return this.post(`/admin/subscriptions/${subscriptionId}/cancel`)
+  }
 }
 
 // Create singleton instance

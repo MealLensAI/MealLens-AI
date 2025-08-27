@@ -44,7 +44,7 @@ const Signup = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      const from = location.state?.from?.pathname || "/home"
+      const from = location.state?.from?.pathname || "/ai-kitchen"
       navigate(from, { replace: true })
     }
   }, [isAuthenticated, navigate, location])
@@ -211,7 +211,7 @@ const Signup = () => {
           })
           
           // Redirect to home page for new users with 3-day free trial
-          navigate("/home", { replace: true })
+          navigate("/ai-kitchen", { replace: true })
         } else {
           toast({
             title: "Registration Complete",

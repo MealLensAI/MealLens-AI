@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast"
 import { LogOut, Home, Camera, History, CalendarDays, User } from "lucide-react"
 import { useAuth } from "@/lib/utils"
 import DashboardHeader from "./DashboardHeader"
+
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
 import { Badge } from "./ui/badge"
@@ -49,15 +50,6 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
-  const isActive = (path: string) => location.pathname === path
-
-  const navItems = [
-    { icon: CalendarDays, label: "Meal Planner", path: "/" },
-    { icon: Home, label: "AI Kitchen", path: "/ai-kitchen" },
-    { icon: Camera, label: "Detect Food", path: "/detected" },
-    { icon: History, label: "History", path: "/history" },
-  ]
-
   if (!isAuthenticated) {
     return null // Don't render layout if not authenticated
   }
@@ -82,7 +74,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
               <Badge className="bg-orange-500 text-white">3 Free Detections</Badge>
               <p>Enjoy 3 free AI detections to get started. Upgrade anytime for unlimited access.</p>
               <div className="flex gap-2 justify-center">
-                <Button onClick={() => { setShowWelcome(false); navigate('/detected') }} className="bg-orange-500 hover:bg-orange-600">Try Detection</Button>
+                <Button onClick={() => { setShowWelcome(false); navigate('/detect-food') }} className="bg-orange-500 hover:bg-orange-600">Try Detection</Button>
                 <Button variant="outline" onClick={() => setShowWelcome(false)}>Close</Button>
               </div>
             </CardContent>

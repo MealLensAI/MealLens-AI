@@ -213,16 +213,16 @@ const AIResponsePage: FC = () => {
     try {
       // Step 1: Process ingredients
       console.log("[AIResponse] Starting ingredient processing...")
-      const response = await fetch("https://ai-utu2.onrender.com/process", {
-        method: "POST",
-        body: formData,
-      })
+    const response = await fetch("https://ai-utu2.onrender.com/process", {
+      method: "POST",
+      body: formData,
+    })
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const data = await response.json()
+    const data = await response.json()
       console.log("[AIResponse] Process response:", data)
 
       if (data.error) {
@@ -234,9 +234,9 @@ const AIResponsePage: FC = () => {
         return
       }
 
-      setAnalysisId(data.analysis_id)
-      setDetectedIngredients(data.response || [])
-      setSuggestions(data.food_suggestions || [])
+    setAnalysisId(data.analysis_id)
+    setDetectedIngredients(data.response || [])
+    setSuggestions(data.food_suggestions || [])
       setShowResults(true)
     } catch (error) {
       console.error("Error processing ingredients:", error)
@@ -428,16 +428,13 @@ const AIResponsePage: FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          {/* Left Column - Input */}
-          <div className="space-y-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto space-y-6">
             {/* Header */}
-            <div className="text-center lg:text-left">
+            <div className="text-center">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
                 AI Kitchen Assistant
-          </h1>
+              </h1>
               <p className="text-gray-600 text-sm sm:text-base">
                 Get personalized recipe suggestions based on your available ingredients
               </p>
@@ -453,29 +450,29 @@ const AIResponsePage: FC = () => {
                 {/* Input Type Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                  How would you like to start?
-                </label>
-                <select
-                  value={inputType}
+              How would you like to start?
+            </label>
+            <select
+              value={inputType}
                   onChange={(e) => setInputType(e.target.value as "image" | "ingredient_list")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-                >
+            >
                     <option value="image">Upload Ingredient Image</option>
                   <option value="ingredient_list">List Your Ingredients</option>
-                </select>
-              </div>
+            </select>
+          </div>
 
           {/* Image Input */}
           {inputType === "image" && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Upload Image
-                  </label>
+              </label>
                   <div className="relative">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageSelect}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
                       className="hidden"
                       ref={fileInputRef}
                     />
@@ -485,9 +482,9 @@ const AIResponsePage: FC = () => {
                     >
                       {imagePreview ? (
                         <div className="space-y-4">
-                          <img 
-                            src={imagePreview} 
-                            alt="Preview" 
+                  <img
+                    src={imagePreview} 
+                    alt="Preview" 
                             className="max-w-full h-auto max-h-48 mx-auto rounded-lg shadow-lg"
                           />
                             <p className="text-sm text-gray-500">Click to change image</p>
@@ -505,11 +502,11 @@ const AIResponsePage: FC = () => {
                               Click to browse or drag and drop
                             </p>
                           </div>
-                        </div>
-                      )}
+                </div>
+              )}
                     </div>
                   </div>
-                </div>
+            </div>
           )}
 
                 {/* Text Input */}
@@ -541,7 +538,7 @@ const AIResponsePage: FC = () => {
                   ) : (
                     <>
                       <Search className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                      Discover Recipes
+            Discover Recipes
                     </>
             )}
           </Button>
@@ -562,7 +559,7 @@ const AIResponsePage: FC = () => {
                   <div className="flex items-start gap-3">
                     <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
                     <p className="text-gray-700">Our AI analyzes your ingredients and suggests delicious recipes</p>
-                  </div>
+            </div>
                   <div className="flex items-start gap-3">
                     <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
                     <p className="text-gray-700">Get step-by-step cooking instructions and video tutorials</p>
@@ -570,7 +567,7 @@ const AIResponsePage: FC = () => {
                 </div>
               </CardContent>
             </Card>
-          </div>
+                </div>
 
           {/* Right Column - Results */}
           <div className="space-y-6">
@@ -605,11 +602,11 @@ const AIResponsePage: FC = () => {
                           key={index}
                           onClick={() => handleSuggestionClick(suggestion)}
                               className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200"
-                            >
+                        >
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
                                   <h4 className="font-medium text-gray-900 text-sm sm:text-base">
-                                    {suggestion}
+                          {suggestion}
                                   </h4>
                                   <p className="text-gray-600 text-xs sm:text-sm mt-1">
                                     Click to view detailed recipe and instructions
@@ -619,10 +616,10 @@ const AIResponsePage: FC = () => {
                               </div>
                             </div>
                       ))}
-                        </div>
-                      </div>
-                    )}
                     </div>
+                  </div>
+                    )}
+                </div>
                   </CardContent>
                 </Card>
               )}
@@ -654,8 +651,8 @@ const AIResponsePage: FC = () => {
                     {selectedSuggestion && (
                       <div>
                         <h3 className="text-xl font-bold text-gray-900 mb-2">{selectedSuggestion}</h3>
-                      </div>
-                    )}
+                </div>
+              )}
 
                     {/* Instructions */}
                     {instructions && (
@@ -677,11 +674,11 @@ const AIResponsePage: FC = () => {
                         <div className="flex items-center justify-center py-8">
                           <Loader2 className="h-6 w-6 animate-spin text-orange-500 mr-2" />
                           <span className="text-gray-600">Loading resources...</span>
-                        </div>
-                      </div>
-                    )}
+                  </div>
+                </div>
+              )}
 
-                    {resources && !loadingResources && (
+              {resources && !loadingResources && (
                     <div className="space-y-4">
                       {/* YouTube Videos */}
                       {resources.YoutubeSearch && resources.YoutubeSearch.length > 0 && (
@@ -693,18 +690,18 @@ const AIResponsePage: FC = () => {
                             <div className="space-y-3">
                               {resources.YoutubeSearch.slice(0, 3).map((video: any, index: number) => {
                                 const videoId = getYouTubeVideoId(video.link);
-                                return videoId ? (
+                            return videoId ? (
                                   <div key={index} className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
                                     <div className="aspect-video bg-gray-100">
-                                      <iframe
+                                  <iframe
                                         src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
                                         title={video.title}
                                         className="w-full h-full"
                                         frameBorder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
-                                      />
-                                    </div>
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                  />
+                                </div>
                                     <div className="p-3">
                                       <h5 className="font-medium text-gray-900 text-sm mb-1 line-clamp-2">
                                         {video.title}
@@ -721,16 +718,16 @@ const AIResponsePage: FC = () => {
                                         <ExternalLink className="h-3 w-3" />
                                         Watch on YouTube
                                       </a>
-                                    </div>
-                                  </div>
-                                ) : (
-                              <a
+                                </div>
+                              </div>
+                            ) : (
+                                  <a
                                 key={index}
                                 href={video.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                              >
+                                  >
                                 <div className="w-12 h-8 bg-red-500 rounded flex items-center justify-center">
                                   <span className="text-white text-xs">▶</span>
                                 </div>
@@ -741,11 +738,11 @@ const AIResponsePage: FC = () => {
                                       <p className="text-gray-600 text-xs">
                                     {video.channel}
                                   </p>
-                                </div>
+                              </div>
                                     <ExternalLink className="h-4 w-4 text-gray-400" />
                               </a>
                                 );
-                              })}
+                          })}
                             </div>
                         </div>
                       )}
@@ -762,8 +759,8 @@ const AIResponsePage: FC = () => {
                               <a
                                 key={index}
                                 href={result.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                   className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                               >
                                 <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
@@ -780,8 +777,8 @@ const AIResponsePage: FC = () => {
                                   <ExternalLink className="h-4 w-4 text-gray-400" />
                               </a>
                             ))}
-                          </div>
-                          </div>
+                              </div>
+                            </div>
                         )}
                         </div>
                       )}
@@ -790,88 +787,64 @@ const AIResponsePage: FC = () => {
                 </Card>
               )}
 
-            {/* Tips */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Tips for better results</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm sm:text-base">
-                  <div className="flex items-start gap-3">
-                    <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-gray-700">List all available ingredients, including spices and condiments</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-gray-700">Take clear photos of your ingredients for better AI recognition</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-gray-700">Include quantities when possible for more accurate recipe suggestions</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            </div>
-        </div>
-      </div>
-
-      {/* Upload Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Upload Ingredient Image</h3>
-              <p className="text-gray-600">Choose how you'd like to upload your ingredient photo</p>
-            </div>
-            
-            <div className="space-y-4">
-              <Button 
-                onClick={() => {
-                  document.getElementById('cameraInput')?.click();
-                  setShowUploadModal(false);
-                }}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-4 px-6 rounded-lg transition-colors"
-              >
-                <Camera className="h-5 w-5 mr-3" />
-                Take Photo with Camera
-              </Button>
+        {/* Upload Modal */}
+        {showUploadModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Upload Ingredient Image</h3>
+                <p className="text-gray-600">Choose how you'd like to upload your ingredient photo</p>
+              </div>
               
-              <Button 
-                onClick={() => {
-                  fileInputRef.current?.click();
-                  setShowUploadModal(false);
-                }}
-                variant="outline" 
-                className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white font-medium py-4 px-6 rounded-lg transition-colors"
-              >
-                <ImageIcon className="h-5 w-5 mr-3" />
-                Choose from Gallery
-              </Button>
-            </div>
-            
-            <div className="mt-6 pt-4 border-t">
-              <Button
-                onClick={() => setShowUploadModal(false)}
-                variant="ghost"
-                className="w-full text-gray-500 hover:text-gray-700"
-              >
-                Cancel
-              </Button>
+              <div className="space-y-4">
+                <Button 
+                  onClick={() => {
+                    document.getElementById('cameraInput')?.click();
+                    setShowUploadModal(false);
+                  }}
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-4 px-6 rounded-lg transition-colors"
+                >
+                  <Camera className="h-5 w-5 mr-3" />
+                  Take Photo with Camera
+                </Button>
+                
+                <Button 
+                  onClick={() => {
+                    fileInputRef.current?.click();
+                    setShowUploadModal(false);
+                  }}
+                  variant="outline" 
+                  className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white font-medium py-4 px-6 rounded-lg transition-colors"
+                >
+                  <ImageIcon className="h-5 w-5 mr-3" />
+                  Choose from Gallery
+                </Button>
+              </div>
+              
+              <div className="mt-6 pt-4 border-t">
+                <Button
+                  onClick={() => setShowUploadModal(false)}
+                  variant="ghost"
+                  className="w-full text-gray-500 hover:text-gray-700"
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Hidden camera input */}
-      <input
-        id="cameraInput"
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleImageSelect}
-        className="hidden"
-      />
+        {/* Hidden camera input */}
+        <input
+          id="cameraInput"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleImageSelect}
+          className="hidden"
+        />
+        </div>
+      </div>
     </div>
   )
 }

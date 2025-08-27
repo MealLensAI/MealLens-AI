@@ -48,8 +48,8 @@ const WelcomePage: React.FC = () => {
     seconds: 0
   });
 
-  // Launch date - set to a future date for countdown
-  const launchDate = new Date('2024-12-25T00:00:00Z');
+  // Launch date - set to Aug 27, 2025 at 23:59
+  const launchDate = new Date('2025-08-27T23:59:00Z');
 
   // Fetch user count
   useEffect(() => {
@@ -89,10 +89,10 @@ const WelcomePage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Redirect authenticated users to home only if they're on the root path
+  // Redirect authenticated users to app
   useEffect(() => {
-    if (user && window.location.pathname === '/') {
-      navigate('/home');
+    if (user) {
+      navigate('/ai-kitchen');
     }
   }, [user, navigate]);
 
@@ -100,7 +100,7 @@ const WelcomePage: React.FC = () => {
     if (!user) {
       navigate('/signup');
     } else {
-      navigate('/home');
+      navigate('/ai-kitchen');
     }
   };
 
@@ -172,7 +172,7 @@ const WelcomePage: React.FC = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center">
-              <Logo size="lg" showText={true} onClick={() => navigate('/')} />
+              <Logo size="lg" />
             </div>
             
             {/* Desktop Navigation */}
@@ -546,7 +546,7 @@ const WelcomePage: React.FC = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="col-span-2">
-              <Logo size="lg" showText={true} />
+              <Logo size="lg" />
               <p className="mt-4 text-gray-400 max-w-md">
                 Your AI-powered food detection and meal planning assistant. 
                 Making cooking smarter and easier for everyone.

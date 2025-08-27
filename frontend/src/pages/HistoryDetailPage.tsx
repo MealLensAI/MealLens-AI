@@ -413,8 +413,8 @@ const HistoryDetailPage: React.FC = () => {
                           ))}
                         </div>
                       </div>
-                    )}
-                  </div>
+                  )}
+                </div>
                 </CardContent>
               </Card>
             )}

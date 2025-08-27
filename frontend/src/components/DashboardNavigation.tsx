@@ -35,10 +35,11 @@ const DashboardNavigation: React.FC<DashboardNavigationProps> = ({ className = '
   const { subscription, getPlanDisplayName } = useSubscription();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+
+
   const navigationItems = [
-    { name: 'Dashboard', path: '/home', icon: Home },
+    { name: 'Home', path: '/ai-kitchen', icon: Home },
     { name: 'Detect Food', path: '/detect-food', icon: Camera },
-    { name: 'AI Kitchen', path: '/ai-kitchen', icon: ChefHat },
     { name: 'Meal Planner', path: '/meal-planner', icon: Calendar },
     { name: 'History', path: '/history', icon: History },
   ];
@@ -126,6 +127,7 @@ const DashboardNavigation: React.FC<DashboardNavigationProps> = ({ className = '
             <CreditCard className="mr-2 h-4 w-4" />
             <span>Subscription</span>
           </DropdownMenuItem>
+
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />

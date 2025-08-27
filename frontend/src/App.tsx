@@ -27,6 +27,10 @@ import OnboardingPage from "./pages/OnboardingPage"
 import LaunchCountdown from "./components/LaunchCountdown"
 import LoadingScreen from "./components/LoadingScreen"
 import AdminPanel from "./components/AdminPanel"
+import AdminDashboard from "./pages/AdminDashboard"
+import AdminLoginPage from "./pages/AdminLoginPage"
+import AdminRoute from "./components/AdminRoute"
+import AuthTest from "./components/AuthTest"
 import ErrorBoundary from "./components/ErrorBoundary"
 
 // Launch countdown wrapper component
@@ -77,7 +81,7 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <MainLayout>
-          <HomePage />
+          <AIResponsePage />
         </MainLayout>
       </ProtectedRoute>
     )
@@ -100,7 +104,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <Navigate to="/home" replace />
+    element: <Navigate to="/ai-kitchen" replace />
   },
   {
     path: "/ai-kitchen",
@@ -189,12 +193,21 @@ const router = createBrowserRouter([
     )
   },
   {
+    path: "/admin-login",
+    element: <AdminLoginPage />
+  },
+  {
     path: "/admin",
     element: (
-      <ProtectedRoute>
-        <AdminPanel />
-      </ProtectedRoute>
+      <AdminRoute>
+        <AdminDashboard />
+      </AdminRoute>
     )
+  },
+
+  {
+    path: "/auth-test",
+    element: <AuthTest />
   },
   {
     path: "*",

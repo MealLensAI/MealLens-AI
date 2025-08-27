@@ -12,6 +12,7 @@ interface User {
   email: string
   displayName?: string
   photoURL?: string
+  role?: string
   created_at?: string
 }
 
@@ -89,6 +90,7 @@ export function useProvideAuth(): AuthContextType {
                 email: profile.email,
                 displayName: profile.display_name,
                 photoURL: undefined,
+                role: profile.role || 'user',
                 created_at: profile.created_at || undefined
               }
               setUser(updatedUser)

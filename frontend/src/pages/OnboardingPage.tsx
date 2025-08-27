@@ -173,7 +173,7 @@ const OnboardingPage: React.FC = () => {
       
       // Mark onboarding complete locally
       localStorage.setItem('onboarding_complete', 'true');
-      navigate('/home');
+      navigate('/ai-kitchen');
     } catch (error) {
       toast({
         title: "Error",
@@ -483,7 +483,7 @@ const OnboardingPage: React.FC = () => {
         <div className="text-center mt-6">
           <Button
             variant="ghost"
-            onClick={() => { localStorage.setItem('onboarding_complete', 'true'); navigate('/home') }}
+            onClick={() => { localStorage.setItem('onboarding_complete', 'true'); navigate('/ai-kitchen') }}
             className="text-gray-600 hover:text-[#FF6B6B]"
           >
             Skip for now

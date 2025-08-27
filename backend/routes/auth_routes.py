@@ -88,6 +88,16 @@ def _handle_firebase_login(token: str, supabase_service) -> tuple[dict, int]:
             current_app.logger.warning("Firebase login failed: Invalid or expired token")
             return {'status': 'error', 'message': 'Invalid or expired Firebase token'}, 401
             
+        # Get user profile with role
+        profile_response = supabase_service.supabase.table('profiles').select('role, first_name, last_name').eq('id', user_id).execute()
+        user_role = 'user'
+        user_name = ''
+        
+        if profile_response.data:
+            user_profile = profile_response.data[0]
+            user_role = user_profile.get('role', 'user')
+            user_name = f"{user_profile.get('first_name', '')} {user_profile.get('last_name', '')}".strip()
+        
         # Record session
         session_id = str(uuid.uuid4())
         created_at = datetime.utcnow().isoformat()
@@ -108,7 +118,9 @@ def _handle_firebase_login(token: str, supabase_service) -> tuple[dict, int]:
             'user_id': user_id,
             'auth_type': auth_type,
             'session_id': session_id,
-            'session_created_at': created_at
+            'session_created_at': created_at,
+            'user_role': user_role,
+            'name': user_name
         }, 200
         
     except Exception as e:
@@ -129,12 +141,14 @@ def _handle_supabase_login(email: str, password: str, supabase, supabase_service
         if not response.user:
             current_app.logger.warning(f"Supabase login failed for {email}: No user in response")
             return {'status': 'error', 'message': 'Invalid email or password'}, 401
-        # Get user profile
-        profile = supabase.table('profiles').select('id').eq('email', email).execute()
+        # Get user profile with role
+        profile = supabase.table('profiles').select('id, role, first_name, last_name').eq('email', email).execute()
         if not profile.data:
             current_app.logger.error(f"User {email} exists in auth but missing profile")
             return {'status': 'error', 'message': 'User profile not found'}, 400
-        user_id = profile.data[0]['id']
+        user_profile = profile.data[0]
+        user_id = user_profile['id']
+        user_role = user_profile.get('role', 'user')
         # Record session
         session_id = str(uuid.uuid4())
         created_at = datetime.utcnow().isoformat()
@@ -160,6 +174,8 @@ def _handle_supabase_login(email: str, password: str, supabase, supabase_service
             'session_created_at': created_at,
             'access_token': access_token,
             'refresh_token': refresh_token,
+            'user_role': user_role,
+            'name': f"{user_profile.get('first_name', '')} {user_profile.get('last_name', '')}".strip() or email.split('@')[0],
             'user_data': {
                 'id': response.user.id,
                 'email': response.user.email,
@@ -570,6 +586,7 @@ def get_user_profile():
                     'email': '',  # Will be filled from auth
                     'first_name': '',
                     'last_name': '',
+                    'role': 'user',  # Default role
                     'gender': '',
                     'age': 0,
                     'mobile_number': '',
@@ -630,11 +647,14 @@ def get_user_profile():
                     'city': '',
                     'address': '',
                     'postal_code': '',
-                    'payment_methods': [],
-                    'has_sickness': False,
-                    'sickness_type': '',
-                    'created_at': None,
-                    'updated_at': None
+                                    'payment_methods': [],
+                'has_sickness': False,
+                'sickness_type': '',
+                'date_of_birth': None,
+                'weight': 0,
+                'height': 0,
+                'created_at': None,
+                'updated_at': None
                 }
             }), 200
         
@@ -646,6 +666,7 @@ def get_user_profile():
                 'first_name': profile.get('first_name'),
                 'last_name': profile.get('last_name'),
                 'display_name': f"{profile.get('first_name', '')} {profile.get('last_name', '')}".strip(),
+                'role': profile.get('role', 'user'),
                 'gender': profile.get('gender'),
                 'age': profile.get('age'),
                 'mobile_number': profile.get('mobile_number'),
@@ -664,6 +685,9 @@ def get_user_profile():
                 'payment_methods': profile.get('payment_methods', []),
                 'has_sickness': profile.get('has_sickness', False),
                 'sickness_type': profile.get('sickness_type', ''),
+                'date_of_birth': profile.get('date_of_birth'),
+                'weight': profile.get('weight'),
+                'height': profile.get('height'),
                 'created_at': profile.get('created_at'),
                 'updated_at': profile.get('updated_at')
             }
@@ -744,6 +768,14 @@ def update_user_profile():
             update_data['medical_history'] = data['medical_history']
         if 'emergency_contact' in data:
             update_data['emergency_contact'] = data['emergency_contact']
+        
+        # Additional Health Fields
+        if 'date_of_birth' in data:
+            update_data['date_of_birth'] = data['date_of_birth']
+        if 'weight' in data:
+            update_data['weight'] = data['weight']
+        if 'height' in data:
+            update_data['height'] = data['height']
 
         if not update_data:
             return jsonify({'status': 'error', 'message': 'No valid fields to update'}), 400
@@ -771,6 +803,11 @@ def update_user_profile():
                 'has_health_condition': updated_profile.get('has_health_condition', False),
                 'health_conditions': updated_profile.get('health_conditions', []),
                 'allergies': updated_profile.get('allergies', []),
+                'has_sickness': updated_profile.get('has_sickness', False),
+                'sickness_type': updated_profile.get('sickness_type', ''),
+                'date_of_birth': updated_profile.get('date_of_birth'),
+                'weight': updated_profile.get('weight'),
+                'height': updated_profile.get('height'),
                 'created_at': updated_profile.get('created_at'),
                 'updated_at': updated_profile.get('updated_at')
             }

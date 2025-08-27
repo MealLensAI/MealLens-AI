@@ -62,6 +62,7 @@ export interface TrialStatus {
 
 class PaystackService {
   private publicKey: string;
+  private secretKey?: string; // For direct API calls (if available)
 
   // Use centralized subscription plans configuration
   private get subscriptionPlans(): SubscriptionPlan[] {
@@ -71,10 +72,45 @@ class PaystackService {
   constructor() {
     // Initialize with your Paystack public key
     this.publicKey = APP_CONFIG.paystack.public_key;
+    // Try to get secret key from environment (for direct API calls)
+    this.secretKey = import.meta.env.VITE_PAYSTACK_SECRET_KEY;
+  }
+
+  /**
+   * Make direct Paystack API call (if secret key is available)
+   */
+  private async makeDirectPaystackCall(endpoint: string, method: string = 'GET', data: any = null): Promise<any> {
+    if (!this.secretKey) {
+      throw new Error('Paystack secret key not available for direct API calls');
+    }
+
+    const url = `https://api.paystack.co${endpoint}`;
+    const headers = {
+      'Authorization': `Bearer ${this.secretKey}`,
+      'Content-Type': 'application/json'
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: method.toUpperCase(),
+        headers,
+        body: data ? JSON.stringify(data) : undefined
+      });
+
+      if (!response.ok) {
+        throw new Error(`Paystack API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Direct Paystack API call failed:', error);
+      throw error;
+    }
   }
 
   /**
    * Initialize a payment transaction with retry mechanism
+   * Now tries direct Paystack API first, falls back to backend
    */
   async initializePayment(config: PaystackConfig): Promise<PaymentResponse> {
     console.log('[PaystackService] Initializing payment with config:', config);
@@ -82,20 +118,58 @@ class PaystackService {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`[PaystackService] Payment initialization attempt ${attempt}/${maxRetries}`);
-      const response = await api.post('/payment/initialize-payment', {
-        email: config.email,
-        amount: config.amount,
-        currency: config.currency,
-        reference: config.reference,
-        callback_url: config.callback_url,
-        plan_id: config.metadata?.plan_id,
-        metadata: config.metadata
-      });
+      try {
+        console.log(`[PaystackService] Payment initialization attempt ${attempt}/${maxRetries}`);
+        
+        // Try direct Paystack API first (if secret key is available)
+        if (this.secretKey) {
+          console.log('[PaystackService] Attempting direct Paystack API call');
+          const paystackData = {
+            email: config.email,
+            amount: config.amount,
+            reference: config.reference,
+            callback_url: config.callback_url,
+            metadata: config.metadata
+          };
 
-      console.log('[PaystackService] Payment initialization successful:', response);
-      return response;
+          const result = await this.makeDirectPaystackCall('/transaction/initialize', 'POST', paystackData);
+          
+          if (result.status) {
+            console.log('[PaystackService] Direct Paystack API call successful:', result);
+            
+            // Save transaction to backend database (non-blocking)
+            this.saveTransactionToBackend(config, result.data).catch(error => {
+              console.warn('[PaystackService] Failed to save transaction to backend:', error);
+            });
+            
+            return {
+              status: 'success',
+              message: 'Payment initialized successfully',
+              data: {
+                authorization_url: result.data.authorization_url,
+                reference: result.data.reference,
+                access_code: result.data.access_code
+              }
+            };
+          } else {
+            throw new Error(result.message || 'Paystack API returned error');
+          }
+        } else {
+          // Fallback to backend API
+          console.log('[PaystackService] Using backend API fallback');
+          const response = await api.post('/payment/initialize-payment', {
+            email: config.email,
+            amount: config.amount,
+            currency: config.currency,
+            reference: config.reference,
+            callback_url: config.callback_url,
+            plan_id: config.metadata?.plan_id,
+            metadata: config.metadata
+          });
+
+          console.log('[PaystackService] Backend API call successful:', response);
+          return response;
+        }
       } catch (error: any) {
         lastError = error;
         console.warn(`Payment initialization attempt ${attempt} failed:`, error.message);
@@ -112,6 +186,26 @@ class PaystackService {
 
     console.error('All payment initialization attempts failed');
     throw new Error('Failed to initialize payment after multiple attempts');
+  }
+
+  /**
+   * Save transaction to backend database (non-blocking)
+   */
+  private async saveTransactionToBackend(config: PaystackConfig, paystackData: any): Promise<void> {
+    try {
+      await api.post('/payment/save-transaction', {
+        paystack_transaction_id: paystackData.id,
+        reference: paystackData.reference,
+        amount: config.amount,
+        currency: config.currency,
+        plan_id: config.metadata?.plan_id,
+        user_id: config.metadata?.user_id,
+        status: 'pending'
+      });
+    } catch (error) {
+      console.warn('[PaystackService] Failed to save transaction to backend:', error);
+      // Don't throw - this is non-blocking
+    }
   }
 
   /**
@@ -137,16 +231,61 @@ class PaystackService {
 
   /**
    * Verify a payment transaction
+   * Now tries direct Paystack API first, falls back to backend
    */
   async verifyPayment(reference: string): Promise<any> {
     console.log('[PaystackService] Verifying payment with reference:', reference);
+    
     try {
-      const response = await api.get(`/payment/verify-payment/${reference}`);
-      console.log('[PaystackService] Payment verification successful:', response);
-      return response;
+      // Try direct Paystack API first (if secret key is available)
+      if (this.secretKey) {
+        console.log('[PaystackService] Attempting direct Paystack API verification');
+        const result = await this.makeDirectPaystackCall(`/transaction/verify/${reference}`);
+        
+        if (result.status) {
+          console.log('[PaystackService] Direct Paystack verification successful:', result);
+          
+          // Update backend with verification result (non-blocking)
+          this.updateBackendWithVerification(reference, result.data).catch(error => {
+            console.warn('[PaystackService] Failed to update backend with verification:', error);
+          });
+          
+          return {
+            status: 'success',
+            message: 'Payment verified successfully',
+            data: result.data
+          };
+        } else {
+          throw new Error(result.message || 'Paystack verification failed');
+        }
+      } else {
+        // Fallback to backend API
+        console.log('[PaystackService] Using backend API verification fallback');
+        const response = await api.get(`/payment/verify-payment/${reference}`);
+        console.log('[PaystackService] Backend verification successful:', response);
+        return response;
+      }
     } catch (error) {
       console.error('[PaystackService] Error verifying payment:', error);
       throw new Error('Failed to verify payment');
+    }
+  }
+
+  /**
+   * Update backend with verification result (non-blocking)
+   */
+  private async updateBackendWithVerification(reference: string, paystackData: any): Promise<void> {
+    try {
+      await api.post('/payment/update-verification', {
+        reference: reference,
+        paystack_data: paystackData,
+        status: paystackData.status,
+        amount: paystackData.amount,
+        currency: paystackData.currency
+      });
+    } catch (error) {
+      console.warn('[PaystackService] Failed to update backend with verification:', error);
+      // Don't throw - this is non-blocking
     }
   }
 

@@ -114,6 +114,11 @@ interface Profile {
   sickness_type: string
   created_at: string
   updated_at: string
+  date_of_birth: string
+  weight: number
+  height: number
+  has_illness: boolean
+  illness_name: string
 }
 
 export default function ProfilePage() {
@@ -204,6 +209,9 @@ export default function ProfilePage() {
         setSicknessType(response.profile.sickness_type || "")
         setHasIllness(response.profile.has_sickness || false)
         setIllnessName(response.profile.sickness_type || "")
+        setDateOfBirth(response.profile.date_of_birth || "")
+        setWeight(response.profile.weight || 0)
+        setHeight(response.profile.height || 0)
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
@@ -239,13 +247,11 @@ export default function ProfilePage() {
         dietary_preferences: dietaryPreferences,
         medical_history: medicalHistory,
         emergency_contact: emergencyContact,
-        has_sickness: hasSickness,
-        sickness_type: sicknessType,
+        has_sickness: hasIllness,
+        sickness_type: illnessName,
         date_of_birth: dateOfBirth,
         weight: weight,
-        height: height,
-        has_illness: hasIllness,
-        illness_name: illnessName
+        height: height
       }
 
       const response = await api.updateUserProfile(profileData)
@@ -434,7 +440,7 @@ export default function ProfilePage() {
                         <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2">Age</label>
                         <input
                           type="number"
-                          value={calculateAge()}
+                          value={calculateAge(dateOfBirth)}
                           disabled
                           className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 text-sm sm:text-base"
                         />
@@ -470,37 +476,32 @@ export default function ProfilePage() {
                       <div>
                         <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2">Country</label>
                         <select
-                          value={profile?.country || ''}
-                          onChange={(e) => setProfile({ ...profile, country: e.target.value })}
+                          value={country}
+                          onChange={(e) => setCountry(e.target.value)}
                           disabled={!isEditing}
                           className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B6B] focus:border-transparent disabled:bg-gray-50 text-sm sm:text-base"
                         >
                           <option value="">Select Country</option>
-                          {/* Assuming countries is defined elsewhere or passed as a prop */}
-                          {/* For now, a placeholder or a list of countries */}
-                          <option value="USA">USA</option>
-                          <option value="Canada">Canada</option>
-                          <option value="UK">UK</option>
-                          <option value="Germany">Germany</option>
-                          <option value="France">France</option>
-                          <option value="Japan">Japan</option>
-                          <option value="Australia">Australia</option>
-                          <option value="India">India</option>
-                          <option value="Nigeria">Nigeria</option>
+                          {countries.map(countryName => (
+                            <option key={countryName} value={countryName}>
+                              {countryName}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div>
                         <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2">Currency</label>
                         <select
-                          value={profile?.currency || 'USD'}
-                          onChange={(e) => setProfile({ ...profile, currency: e.target.value })}
+                          value={currency}
+                          onChange={(e) => setCurrency(e.target.value)}
                           disabled={!isEditing}
                           className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B6B] focus:border-transparent disabled:bg-gray-50 text-sm sm:text-base"
                         >
-                          <option value="USD">USD ($)</option>
-                          <option value="EUR">EUR (€)</option>
-                          <option value="GBP">GBP (£)</option>
-                          <option value="NGN">NGN (₦)</option>
+                          {currencies.map(currencyOption => (
+                            <option key={currencyOption.code} value={currencyOption.code}>
+                              {currencyOption.code} ({currencyOption.symbol}) - {currencyOption.name}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>

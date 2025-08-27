@@ -32,6 +32,7 @@ from routes.session_routes import session_bp
 from routes.settings_routes import settings_bp
 from routes.server_time_routes import server_time_routes
 from routes.health_routes import health_bp
+from routes.admin_routes import admin_bp
 
 # Payment routes import
 try:
@@ -91,6 +92,11 @@ def create_app():
 
     if not supabase_url or not supabase_service_role_key:
         raise ValueError("Missing required Supabase credentials in .env file")
+
+    # Configure admin settings
+    admin_emails = os.environ.get("ADMIN_EMAILS", "").split(",")
+    admin_emails = [email.strip() for email in admin_emails if email.strip()]
+    app.config['ADMIN_EMAILS'] = admin_emails
 
     # Initialize database connection pool
     try:
@@ -167,6 +173,7 @@ def create_app():
     app.register_blueprint(settings_bp, url_prefix='/api')
     app.register_blueprint(server_time_routes, url_prefix='/api')
     app.register_blueprint(health_bp)  # Health routes don't need API prefix
+    app.register_blueprint(admin_bp, url_prefix='/api/admin')  # Admin routes
 
     # Register payment routes if enabled
     if PAYMENT_ROUTES_ENABLED:

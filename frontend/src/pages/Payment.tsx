@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/utils';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +10,7 @@ import { CheckCircle, Crown, Star, Zap, Shield, Clock, Users, ArrowRight, ArrowL
 import { paystackService } from '@/services/paystackService';
 import { useToast } from '@/hooks/use-toast';
 import LoadingScreen from '@/components/LoadingScreen';
-import { APP_CONFIG, getPlanPrice, getPlanDisplayName, getPlanDurationText, getPlanFeatures } from '@/lib/config';
+import { APP_CONFIG, getPlanPrice, getPlanDisplayName, getPlanDurationText, getPlanFeatures, convertCurrency, formatCurrency, getCurrencyInfo } from '@/lib/config';
 
 const Payment: React.FC = () => {
   const navigate = useNavigate();
@@ -35,9 +36,29 @@ const Payment: React.FC = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [userCurrency, setUserCurrency] = useState('USD');
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   // Get current plan
   const currentPlan = subscription?.plan;
+
+  // Fetch user profile to get currency preference
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await api.getUserProfile();
+        if (response.status === 'success' && response.profile) {
+          setUserProfile(response.profile);
+          setUserCurrency(response.profile.currency || 'USD');
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        setUserCurrency('USD'); // Default to USD
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   // Handle payment processing
   const handlePayment = async (plan: any) => {
@@ -67,31 +88,37 @@ const Payment: React.FC = () => {
       const reference = paystackService.generateReference();
       
       // Get the correct price based on plan billing cycle
-      let amount: number;
+      let usdAmount: number;
       switch (plan.billing_cycle) {
         case 'weekly':
-          amount = plan.price_weekly * 100; // Convert to cents
+          usdAmount = plan.price_weekly;
           break;
         case 'two_weeks':
-          amount = plan.price_two_weeks * 100; // Convert to cents
+          usdAmount = plan.price_two_weeks;
           break;
         case 'monthly':
-          amount = plan.price_monthly * 100; // Convert to cents
+          usdAmount = plan.price_monthly;
           break;
         default:
-          amount = plan.price_monthly * 100; // Default to monthly
+          usdAmount = plan.price_monthly; // Default to monthly
       }
+      
+      // Convert to user's currency
+      const convertedAmount = convertCurrency(usdAmount, 'USD', userCurrency);
+      const amountInCents = Math.round(convertedAmount * 100); // Convert to cents
       
       const paymentData = {
         email: user.email,
-        amount: amount,
-        currency: 'USD', // Add USD currency
+        amount: amountInCents,
+        currency: userCurrency,
         reference: reference,
         callback_url: `${window.location.origin}/payment-success`,
         metadata: {
           plan_id: plan.id,
           plan_name: plan.name,
-          user_id: user.id
+          user_id: user.id,
+          original_usd_amount: usdAmount,
+          converted_amount: convertedAmount
         }
       };
 
@@ -306,12 +333,24 @@ const Payment: React.FC = () => {
                               <div className="text-4xl font-bold text-gray-900 mb-2">Free</div>
                             ) : (
                               <div className="text-4xl font-bold text-orange-500 mb-2">
-                                ${plan.price_monthly.toFixed(2)}
+                                {formatCurrency(
+                                  convertCurrency(
+                                    getPlanPrice(plan.name, plan.billing_cycle), 
+                                    'USD', 
+                                    userCurrency
+                                  ), 
+                                  userCurrency
+                                )}
                               </div>
                             )}
                             <p className="text-sm text-gray-600">
                               {plan.name === 'free' ? 'No credit card required' : `${getPlanDurationText(plan.billing_cycle)}`}
                             </p>
+                            {userCurrency !== 'USD' && plan.name !== 'free' && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                ≈ ${getPlanPrice(plan.name, plan.billing_cycle).toFixed(2)} USD
+                              </p>
+                            )}
                           </div>
 
                           {/* Features */}

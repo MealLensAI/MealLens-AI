@@ -38,7 +38,7 @@ def get_payment_service() -> Optional[PaymentService]:
     """Get payment service instance. Use SimulatedPaymentService if real one is not available."""
     # First check if we have a payment service on the app
     if hasattr(current_app, 'payment_service') and current_app.payment_service is not None:
-    return current_app.payment_service
+        return current_app.payment_service
     
     # If no payment service on app, check if we have Paystack keys and create one
     paystack_secret = os.environ.get("PAYSTACK_SECRET_KEY")
@@ -322,86 +322,86 @@ def record_feature_usage(feature_name):
 def initialize_payment():
     """Initialize a Paystack payment."""
     try:
-    user_id = authenticate_user()
-    if not user_id:
-        return jsonify({
-            'status': 'error',
-            'message': 'Authentication required'
-        }), 401
-    
-    payment_service = get_payment_service()
-    if not payment_service:
-        return jsonify({
-            'status': 'error',
-            'message': 'Payment service not configured'
-        }), 500
-    
-    data = request.get_json()
-    if not data:
-        return jsonify({
-            'status': 'error',
-            'message': 'Request data required'
-        }), 400
-    
-    email = data.get('email')
+        user_id = authenticate_user()
+        if not user_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'Authentication required'
+            }), 401
+        
+        payment_service = get_payment_service()
+        if not payment_service:
+            return jsonify({
+                'status': 'error',
+                'message': 'Payment service not configured'
+            }), 500
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'status': 'error',
+                'message': 'Request data required'
+            }), 400
+        
+        email = data.get('email')
         amount = data.get('amount')  # Amount in cents
-    plan_id = data.get('plan_id')
-    callback_url = data.get('callback_url')
+        plan_id = data.get('plan_id')
+        callback_url = data.get('callback_url')
         
         print(f"[DEBUG] Payment initialization request: email={email}, amount={amount}, plan_id={plan_id}")
-    
-    if not all([email, amount, plan_id]):
-        return jsonify({
-            'status': 'error',
-            'message': 'Email, amount, and plan_id are required'
-        }), 400
-    
-    # Generate unique reference
-    reference = f"ML_{user_id}_{uuid.uuid4().hex[:8]}"
-    
-    # Convert amount to kobo (Paystack uses smallest currency unit)
+        
+        if not all([email, amount, plan_id]):
+            return jsonify({
+                'status': 'error',
+                'message': 'Email, amount, and plan_id are required'
+            }), 400
+        
+        # Generate unique reference
+        reference = f"ML_{user_id}_{uuid.uuid4().hex[:8]}"
+        
+        # Convert amount to kobo (Paystack uses smallest currency unit)
         # Frontend sends amount in cents, but Paystack expects kobo (NGN) or smallest USD unit
         amount_kobo = int(amount)  # Keep as cents since it's already in smallest USD unit
         
         print(f"[DEBUG] Converting amount: {amount} cents -> {amount_kobo} kobo")
-    
-    # Initialize transaction
-    result = payment_service.initialize_transaction(
-        email=email,
-        amount=amount_kobo,
-        reference=reference,
-        callback_url=callback_url,
-        metadata={
-            'user_id': user_id,
-            'plan_id': plan_id,
+        
+        # Initialize transaction
+        result = payment_service.initialize_transaction(
+            email=email,
+            amount=amount_kobo,
+            reference=reference,
+            callback_url=callback_url,
+            metadata={
+                'user_id': user_id,
+                'plan_id': plan_id,
                 'amount_usd': amount / 100  # Convert back to USD for reference
-        }
-    )
+            }
+        )
         
         print(f"[DEBUG] Paystack response: {result}")
-    
-    if result.get('status'):
-        # Save transaction record
-        transaction_data = {
-            'id': result['data']['id'],
-            'reference': reference,
-            'amount': amount_kobo,
-            'currency': 'USD',
-            'status': 'pending',
-            'description': f'Subscription payment for plan {plan_id}'
-        }
         
-        payment_service.save_payment_transaction(user_id, transaction_data)
-        
-        return jsonify({
-            'status': 'success',
-            'data': {
-                'authorization_url': result['data']['authorization_url'],
+        if result.get('status'):
+            # Save transaction record
+            transaction_data = {
+                'id': result['data']['id'],
                 'reference': reference,
-                'access_code': result['data']['access_code']
+                'amount': amount_kobo,
+                'currency': 'USD',
+                'status': 'pending',
+                'description': f'Subscription payment for plan {plan_id}'
             }
-        }), 200
-    else:
+            
+            payment_service.save_payment_transaction(user_id, transaction_data)
+            
+            return jsonify({
+                'status': 'success',
+                'data': {
+                    'authorization_url': result['data']['authorization_url'],
+                    'reference': reference,
+                    'access_code': result['data']['access_code']
+                }
+            }), 200
+        else:
             error_msg = result.get('message', 'Failed to initialize payment')
             print(f"[ERROR] Paystack initialization failed: {error_msg}")
             return jsonify({
@@ -790,6 +790,130 @@ def debug_payment_service():
             'status': 'error',
             'message': f'Debug failed: {str(e)}'
         }), 500 
+
+@payment_bp.route('/save-transaction', methods=['POST'])
+def save_transaction():
+    """Save transaction from frontend direct Paystack API calls."""
+    try:
+        user_id = authenticate_user()
+        if not user_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'Authentication required'
+            }), 401
+        
+        payment_service = get_payment_service()
+        if not payment_service:
+            return jsonify({
+                'status': 'error',
+                'message': 'Payment service not configured'
+            }), 500
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'status': 'error',
+                'message': 'Request data required'
+            }), 400
+        
+        # Save transaction to database
+        transaction_data = {
+            'id': data.get('paystack_transaction_id'),
+            'reference': data.get('reference'),
+            'amount': data.get('amount'),
+            'currency': data.get('currency', 'USD'),
+            'status': data.get('status', 'pending'),
+            'description': f'Subscription payment for plan {data.get("plan_id")}'
+        }
+        
+        success = payment_service.save_payment_transaction(user_id, transaction_data)
+        
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': 'Transaction saved successfully'
+            }), 200
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to save transaction'
+            }), 500
+            
+    except Exception as e:
+        print(f"[ERROR] Exception in save_transaction: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Internal server error: {str(e)}'
+        }), 500
+
+@payment_bp.route('/update-verification', methods=['POST'])
+def update_verification():
+    """Update transaction verification from frontend direct Paystack API calls."""
+    try:
+        user_id = authenticate_user()
+        if not user_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'Authentication required'
+            }), 401
+        
+        payment_service = get_payment_service()
+        if not payment_service:
+            return jsonify({
+                'status': 'error',
+                'message': 'Payment service not configured'
+            }), 500
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'status': 'error',
+                'message': 'Request data required'
+            }), 400
+        
+        reference = data.get('reference')
+        paystack_data = data.get('paystack_data', {})
+        
+        # Update transaction status in database
+        success = payment_service.update_transaction_status(
+            reference=reference,
+            status=data.get('status', 'success'),
+            paystack_data=paystack_data
+        )
+        
+        if success and data.get('status') == 'success':
+            # Activate subscription if payment was successful
+            plan_id = paystack_data.get('metadata', {}).get('plan_id')
+            if plan_id:
+                subscription_result = payment_service.create_user_subscription(
+                    user_id=user_id,
+                    plan_id=plan_id,
+                    paystack_data={
+                        'transaction_id': paystack_data.id,
+                        'reference': reference,
+                        'amount': data.get('amount'),
+                        'currency': data.get('currency', 'USD')
+                    }
+                )
+                
+                if subscription_result['success']:
+                    return jsonify({
+                        'status': 'success',
+                        'message': 'Payment verified and subscription activated',
+                        'subscription': subscription_result['data']
+                    }), 200
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Verification updated successfully'
+        }), 200
+            
+    except Exception as e:
+        print(f"[ERROR] Exception in update_verification: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Internal server error: {str(e)}'
+        }), 500
 
 @payment_bp.route('/health', methods=['GET'])
 def payment_health():

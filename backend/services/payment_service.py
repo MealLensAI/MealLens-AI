@@ -204,6 +204,23 @@ class PaymentService:
             return {'success': True, 'data': result.data[0] if result.data else None}
         except Exception as e:
             return {'success': False, 'error': str(e)}
+
+    def update_transaction_status(self, reference: str, status: str, paystack_data: Dict = None) -> bool:
+        """Update transaction status."""
+        try:
+            update_data = {
+                'status': status,
+                'updated_at': datetime.now().isoformat()
+            }
+            
+            if paystack_data:
+                update_data['metadata'] = paystack_data
+            
+            result = self.supabase.table('payment_transactions').update(update_data).eq('paystack_reference', reference).execute()
+            return True
+        except Exception as e:
+            print(f"Error updating transaction status: {str(e)}")
+            return False
     
     def verify_webhook_signature(self, payload: str, signature: str) -> bool:
         """Verify Paystack webhook signature."""

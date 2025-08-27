@@ -281,7 +281,7 @@ const InAppPayment: React.FC<InAppPaymentProps> = ({
       <CheckCircle className="h-12 w-12 mx-auto text-green-500" />
       <h3 className="text-lg font-semibold text-green-600">Payment Successful!</h3>
       <p className="text-gray-600">Your subscription has been activated successfully.</p>
-      <p className="text-sm text-gray-500">Redirecting to dashboard...</p>
+      <p className="text-sm text-gray-500">Redirecting to AI Kitchen...</p>
     </div>
   );
 

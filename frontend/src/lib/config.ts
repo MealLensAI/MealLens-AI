@@ -144,7 +144,21 @@ export const APP_CONFIG = {
   paystack: {
     public_key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_...',
     currency: 'USD'
-  }
+  },
+
+  // Currency Configuration
+  currencies: [
+    { code: 'USD', symbol: '$', name: 'US Dollar', exchange_rate: 1.0 },
+    { code: 'EUR', symbol: '€', name: 'Euro', exchange_rate: 0.85 },
+    { code: 'GBP', symbol: '£', name: 'British Pound', exchange_rate: 0.73 },
+    { code: 'NGN', symbol: '₦', name: 'Nigerian Naira', exchange_rate: 410.0 },
+    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar', exchange_rate: 1.25 },
+    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', exchange_rate: 1.35 },
+    { code: 'JPY', symbol: '¥', name: 'Japanese Yen', exchange_rate: 110.0 },
+    { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc', exchange_rate: 0.92 },
+    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', exchange_rate: 6.45 },
+    { code: 'INR', symbol: '₹', name: 'Indian Rupee', exchange_rate: 75.0 }
+  ]
 };
 
 // Helper functions
@@ -185,4 +199,27 @@ export const getPlanDurationText = (billingCycle: string): string => {
 export const getPlanFeatures = (planId: string): string[] => {
   const plan = APP_CONFIG.subscriptionPlans.find(p => p.id === planId);
   return plan?.features || [];
+};
+
+// Currency conversion helpers
+export const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string): number => {
+  if (fromCurrency === toCurrency) return amount;
+  
+  const fromRate = APP_CONFIG.currencies.find(c => c.code === fromCurrency)?.exchange_rate || 1.0;
+  const toRate = APP_CONFIG.currencies.find(c => c.code === toCurrency)?.exchange_rate || 1.0;
+  
+  // Convert to USD first, then to target currency
+  const usdAmount = amount / fromRate;
+  return usdAmount * toRate;
+};
+
+export const formatCurrency = (amount: number, currency: string): string => {
+  const currencyInfo = APP_CONFIG.currencies.find(c => c.code === currency);
+  if (!currencyInfo) return `${amount} USD`;
+  
+  return `${currencyInfo.symbol}${amount.toFixed(2)}`;
+};
+
+export const getCurrencyInfo = (currencyCode: string) => {
+  return APP_CONFIG.currencies.find(c => c.code === currencyCode) || APP_CONFIG.currencies[0];
 };

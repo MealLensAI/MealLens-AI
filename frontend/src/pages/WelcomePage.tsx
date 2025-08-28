@@ -90,12 +90,8 @@ const WelcomePage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Redirect authenticated users to app only if on root route (not /landing)
-  useEffect(() => {
-    if (user && location.pathname === '/') {
-      navigate('/ai-kitchen');
-    }
-  }, [user, navigate, location.pathname]);
+  // Don't redirect authenticated users - let them see the landing page
+  // They can navigate to the app using the "Get Started" or "Try MealLens AI" buttons
 
   const handleTryMealLensAI = () => {
     if (!user) {
@@ -110,7 +106,11 @@ const WelcomePage: React.FC = () => {
   };
 
   const handleGetStarted = () => {
-    navigate('/signup');
+    if (!user) {
+      navigate('/signup');
+    } else {
+      navigate('/ai-kitchen');
+    }
   };
 
   const handleLogin = () => {
@@ -232,7 +232,7 @@ const WelcomePage: React.FC = () => {
                 <a href="#home" className="text-gray-700 hover:text-[#FF6B6B] transition-colors font-medium">Home</a>
                 <a href="#features" className="text-gray-700 hover:text-[#FF6B6B] transition-colors font-medium">Features</a>
                 <a href="#pricing" className="text-gray-700 hover:text-[#FF6B6B] transition-colors font-medium">Pricing</a>
-                {!user && (
+                {!user ? (
                   <Button 
                     variant="outline"
                     onClick={handleLogin}
@@ -240,6 +240,17 @@ const WelcomePage: React.FC = () => {
                   >
                     Sign In
                   </Button>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="text-gray-700 text-sm truncate">{user.email}</div>
+                    <Button 
+                      variant="outline"
+                      onClick={signOut}
+                      className="border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors w-full"
+                    >
+                      Sign Out
+                    </Button>
+                  </div>
                 )}
               </nav>
             </div>

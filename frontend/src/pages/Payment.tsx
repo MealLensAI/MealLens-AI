@@ -1,64 +1,76 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/lib/utils';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Crown, Star, Zap, Shield, Clock, Users, ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, Check, CreditCard, Sparkles, Loader2, XCircle } from 'lucide-react';
-import { paystackService } from '@/services/paystackService';
-import { useToast } from '@/hooks/use-toast';
-import LoadingScreen from '@/components/LoadingScreen';
-import { APP_CONFIG, getPlanPrice, getPlanDisplayName, getPlanDurationText, getPlanFeatures, convertCurrency, formatCurrency, getCurrencyInfo } from '@/lib/config';
+import { Separator } from '@/components/ui/separator';
+import { ArrowLeft, ChevronLeft, ChevronRight, Check, CreditCard, Sparkles, Loader2, XCircle, Smartphone, Globe, Phone, Shield } from 'lucide-react';
+import { api } from '@/lib/api';
+import { 
+  APP_CONFIG, 
+  convertCurrency, 
+  formatCurrency, 
+  getCurrencyInfo,
+  getAvailableProviders,
+  getProvidersForCurrency,
+  getBestProviderForCurrency,
+  getPlanPrice,
+  getPlanDurationText,
+  getPlanFeatures
+} from '@/lib/config';
 
 const Payment: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { subscription } = useSubscription();
   const { user } = useAuth();
-  const { 
-    subscription, 
-    plans, 
-    loading, 
-    refreshSubscription,
-    getPlanDisplayName,
-    getPlanDurationText,
-    getDaysUntilFreeTierReset,
-    isFreeTierReset,
-    getFreeTrialEndDate,
-    getDaysUntilExpiry,
-    isSubscriptionExpired
-  } = useSubscription();
+  const { toast } = useToast();
   
-  // Local state
-  const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [userCurrency, setUserCurrency] = useState('USD');
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+  const [availableProviders, setAvailableProviders] = useState<any>({});
+  const [currentPlanIndex, setCurrentPlanIndex] = useState(0);
 
   // Get current plan
   const currentPlan = subscription?.plan;
 
-  // Fetch user profile to get currency preference
+  // Fetch user profile and available payment providers
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.getUserProfile();
-        if (response.status === 'success' && response.profile) {
-          setUserProfile(response.profile);
-          setUserCurrency(response.profile.currency || 'USD');
+        // Fetch user profile
+        const profileResponse = await api.getUserProfile();
+        if (profileResponse.status === 'success' && profileResponse.profile) {
+          setUserProfile(profileResponse.profile);
+          setUserCurrency(profileResponse.profile.currency || 'USD');
+        }
+
+        // Fetch available payment providers from backend
+        const providersResponse = await api.get('/payment/providers');
+        if (providersResponse.status === 'success') {
+          setAvailableProviders(providersResponse.providers);
         }
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('Error fetching data:', error);
         setUserCurrency('USD'); // Default to USD
       }
     };
 
-    fetchUserProfile();
+    fetchData();
   }, []);
+
+  // Set best provider for user's currency
+  useEffect(() => {
+    if (userCurrency && availableProviders) {
+      const bestProvider = getBestProviderForCurrency(userCurrency);
+      setSelectedProvider(bestProvider);
+    }
+  }, [userCurrency, availableProviders]);
 
   // Handle payment processing
   const handlePayment = async (plan: any) => {
@@ -81,12 +93,20 @@ const Payment: React.FC = () => {
       return;
     }
 
+    // Check if provider is selected
+    if (!selectedProvider) {
+      toast({
+        title: "No Payment Method",
+        description: "No payment method available for your currency. Please contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProcessing(true);
     setErrorMessage('');
 
     try {
-      const reference = paystackService.generateReference();
-      
       // Get the correct price based on plan billing cycle
       let usdAmount: number;
       switch (plan.billing_cycle) {
@@ -105,51 +125,62 @@ const Payment: React.FC = () => {
       
       // Convert to user's currency
       const convertedAmount = convertCurrency(usdAmount, 'USD', userCurrency);
-      const amountInCents = Math.round(convertedAmount * 100); // Convert to cents
       
+      // Prepare payment data
       const paymentData = {
         email: user.email,
-        amount: amountInCents,
+        amount: convertedAmount,
         currency: userCurrency,
-        reference: reference,
-        callback_url: `${window.location.origin}/payment-success`,
+        plan_id: plan.name,
+        provider: selectedProvider,
         metadata: {
-          plan_id: plan.id,
-          plan_name: plan.name,
-          user_id: user.id,
           original_usd_amount: usdAmount,
-          converted_amount: convertedAmount
+          converted_amount: convertedAmount,
+          user_currency: userCurrency,
+          plan_name: plan.display_name,
+          billing_cycle: plan.billing_cycle
         }
       };
 
-      const response = await paystackService.initializePayment(paymentData);
+      // Initialize payment
+      const response = await api.post('/payment/initialize-payment', paymentData);
       
-      if (response.status) {
-        window.location.href = response.data.authorization_url;
+      if (response.status === 'success') {
+        // Handle different providers
+        if (selectedProvider === 'mpesa') {
+          // For M-Pesa, show instructions
+          toast({
+            title: "M-Pesa Payment",
+            description: "Check your phone for M-Pesa prompt. Enter your PIN to complete payment.",
+            variant: "default",
+          });
+          
+          // Redirect to success page after a delay
+          setTimeout(() => {
+            navigate('/payment/success');
+          }, 3000);
+        } else {
+          // For other providers (Paystack, Stripe), redirect to payment URL
+          if (response.data?.authorization_url) {
+            window.location.href = response.data.authorization_url;
+          } else {
+            navigate('/payment/success');
+          }
+        }
       } else {
-        throw new Error(response.message || 'Payment initialization failed');
+        setErrorMessage(response.message || 'Payment initialization failed');
+        toast({
+          title: "Payment Error",
+          description: response.message || 'Payment initialization failed',
+          variant: "destructive",
+        });
       }
     } catch (error: any) {
       console.error('Payment error:', error);
-      
-      // Provide more specific error messages
-      let errorMessage = 'Payment failed. Please try again.';
-      if (error.message?.includes('timeout')) {
-        errorMessage = 'Payment request timed out. Please check your connection and try again.';
-      } else if (error.message?.includes('500') || error.message?.includes('Internal Server Error')) {
-        errorMessage = 'Server error. Please try again in a few moments.';
-      } else if (error.message?.includes('currency')) {
-        errorMessage = 'Currency configuration error. Please contact support.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      setErrorMessage(errorMessage);
-      setShowError(true);
-      
+      setErrorMessage(error.message || 'Payment failed');
       toast({
         title: "Payment Error",
-        description: errorMessage,
+        description: error.message || 'Payment failed',
         variant: "destructive",
       });
     } finally {
@@ -157,294 +188,350 @@ const Payment: React.FC = () => {
     }
   };
 
-  const getLocalPlanFeatures = (planName: string) => {
-    return getPlanFeatures(planName);
-  };
+  // Get available plans (exclude free plan for payment page)
+  const paidPlans = APP_CONFIG.subscriptionPlans.filter(plan => plan.name !== 'free');
 
-  const getPlanStyle = (planName: string) => {
-    switch (planName) {
-      case 'free':
-        return { icon: <Star className="w-6 h-6" />, color: 'text-gray-600 bg-gray-100' };
-      case 'weekly':
-        return { icon: <Zap className="w-6 h-6" />, color: 'text-orange-600 bg-orange-100' };
-      case 'two_weeks':
-        return { icon: <Crown className="w-6 h-6" />, color: 'text-orange-600 bg-orange-100' };
-      case 'monthly':
-        return { icon: <Sparkles className="w-6 h-6" />, color: 'text-orange-600 bg-orange-100' };
+  // Get providers for current currency
+  const providersForCurrency = getProvidersForCurrency(userCurrency);
+
+  const getProviderIcon = (providerName: string) => {
+    switch (providerName) {
+      case 'mpesa':
+        return <Smartphone className="w-5 h-5" />;
+      case 'paystack':
+        return <CreditCard className="w-5 h-5" />;
+      case 'stripe':
+        return <Globe className="w-5 h-5" />;
       default:
-        return { icon: <Star className="w-6 h-6" />, color: 'text-gray-600 bg-gray-100' };
+        return <CreditCard className="w-5 h-5" />;
     }
   };
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % plans.length);
+  const getProviderName = (providerName: string) => {
+    switch (providerName) {
+      case 'mpesa':
+        return 'M-Pesa';
+      case 'paystack':
+        return 'Paystack';
+      case 'stripe':
+        return 'Stripe';
+      default:
+        return providerName;
+    }
   };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + plans.length) % plans.length);
-  };
-
-  const goToSlide = (index: number) => {
-    setCurrentSlide(index);
-  };
-
-  if (loading) {
-    return <LoadingScreen size="lg" />;
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 p-4">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-gray-600 hover:text-gray-900">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Back
-            </Button>
-          </div>
+        <div className="flex items-center justify-between mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+          
           <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Choose Your Plan</h1>
-            <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">
-              Unlock the full potential of MealLensAI with our flexible subscription plans. 
-              All plans are billed in USD.
-            </p>
+            <h1 className="text-3xl font-bold text-gray-900">Choose Your Plan</h1>
+            <p className="text-gray-600 mt-2">Unlock unlimited access to all features</p>
           </div>
+          
+          <div className="w-20"></div> {/* Spacer for centering */}
         </div>
 
-        {/* Subscription Status Section */}
-        <div className="mb-6 sm:mb-8">
-          {currentPlan && currentPlan.name !== 'free' ? (
-            // Paid subscription status
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <span className="text-sm font-medium text-green-800">
-                  Current Plan: {getPlanDisplayName(currentPlan.name)}
-                </span>
+        {/* Current Plan Badge */}
+        {currentPlan && currentPlan !== 'free' && (
+          <div className="mb-6 text-center">
+            <Badge variant="secondary" className="text-sm">
+              Current Plan: {APP_CONFIG.subscriptionPlans.find(p => p.name === currentPlan)?.display_name}
+            </Badge>
+          </div>
+        )}
+
+        {/* Payment Provider Selection */}
+        {Object.keys(providersForCurrency).length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                Payment Method
+              </CardTitle>
+              <CardDescription>
+                Select your preferred payment method for {userCurrency}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {Object.entries(providersForCurrency).map(([providerKey, provider]: [string, any]) => (
+                  <div key={providerKey} className="space-y-3">
+                    <Button
+                      variant={selectedProvider === providerKey ? "default" : "outline"}
+                      className={`h-auto p-4 flex flex-col items-center gap-2 w-full ${
+                        selectedProvider === providerKey ? 'bg-orange-500 text-white' : ''
+                      }`}
+                      onClick={() => setSelectedProvider(providerKey)}
+                    >
+                      {getProviderIcon(providerKey)}
+                      <span className="font-medium">{getProviderName(providerKey)}</span>
+                      <span className="text-xs opacity-75">
+                        {provider.features?.slice(0, 2).join(', ')}
+                      </span>
+                    </Button>
+                    
+                    {/* Show available payment methods for selected provider */}
+                    {selectedProvider === providerKey && providerKey === 'paystack' && (
+                      <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                        <h4 className="text-sm font-medium mb-2">Available Payment Methods:</h4>
+                        <div className="space-y-2">
+                          {userCurrency === 'KES' && (
+                            <>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Smartphone className="w-4 h-4 text-green-600" />
+                                <span>M-Pesa Mobile Money</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <CreditCard className="w-4 h-4 text-blue-600" />
+                                <span>Card Payment (Visa/Mastercard)</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Globe className="w-4 h-4 text-purple-600" />
+                                <span>Bank Transfer</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Phone className="w-4 h-4 text-orange-600" />
+                                <span>USSD (*996#)</span>
+                              </div>
+                            </>
+                          )}
+                          {userCurrency === 'NGN' && (
+                            <>
+                              <div className="flex items-center gap-2 text-sm">
+                                <CreditCard className="w-4 h-4 text-blue-600" />
+                                <span>Card Payment (Visa/Mastercard/Verve)</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Globe className="w-4 h-4 text-purple-600" />
+                                <span>Bank Transfer</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Phone className="w-4 h-4 text-orange-600" />
+                                <span>USSD (*996#)</span>
+                              </div>
+                            </>
+                          )}
+                          {userCurrency === 'GHS' && (
+                            <>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Smartphone className="w-4 h-4 text-green-600" />
+                                <span>Mobile Money (MTN/Vodafone)</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <CreditCard className="w-4 h-4 text-blue-600" />
+                                <span>Card Payment</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Globe className="w-4 h-4 text-purple-600" />
+                                <span>Bank Transfer</span>
+                              </div>
+                            </>
+                          )}
+                          {!['KES', 'NGN', 'GHS'].includes(userCurrency) && (
+                            <>
+                              <div className="flex items-center gap-2 text-sm">
+                                <CreditCard className="w-4 h-4 text-blue-600" />
+                                <span>Card Payment</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Globe className="w-4 h-4 text-purple-600" />
+                                <span>Bank Transfer</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Show M-Pesa specific info */}
+                    {selectedProvider === providerKey && providerKey === 'mpesa' && (
+                      <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                        <h4 className="text-sm font-medium mb-2 text-green-800">M-Pesa Direct Integration:</h4>
+                        <div className="space-y-2 text-sm text-green-700">
+                          <div className="flex items-center gap-2">
+                            <Smartphone className="w-4 h-4" />
+                            <span>Direct STK Push to your phone</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Check className="w-4 h-4" />
+                            <span>No redirect to external page</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Shield className="w-4 h-4" />
+                            <span>Direct Safaricom integration</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div className="text-center space-y-1">
-                <p className="text-xs text-green-700">
-                  {isSubscriptionExpired() ? (
-                    <span className="text-red-600 font-medium">Subscription expired</span>
-                  ) : (
-                    <span>Active until {getDaysUntilExpiry()} days remaining</span>
-                  )}
-                </p>
-                <p className="text-xs text-green-600">
-                  Duration: {getPlanDurationText(currentPlan.name)}
-                </p>
+              
+              {/* Provider comparison info */}
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="text-sm font-medium mb-2 text-blue-800">💡 Payment Provider Comparison:</h4>
+                <div className="text-sm text-blue-700 space-y-1">
+                  <p><strong>Paystack:</strong> Unified platform with M-Pesa, cards, bank transfers, and USSD - recommended for most users</p>
+                  <p><strong>M-Pesa Direct:</strong> Direct Safaricom integration - best for M-Pesa-only users</p>
+                  <p><strong>Stripe:</strong> Global payment processing - best for international users</p>
+                </div>
               </div>
-            </div>
-          ) : (
-            // Free tier status
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Star className="w-5 h-5 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">Free Plan Status</span>
-              </div>
-              <div className="text-center space-y-1">
-                <p className="text-xs text-blue-700">
-                  {getFreeTrialEndDate() && new Date() < getFreeTrialEndDate()! ? (
-                    <span>Free trial active - {getDaysUntilExpiry()} days left</span>
-                  ) : (
-                    <span>Free tier - {getDaysUntilFreeTierReset()} days until reset</span>
-                  )}
-                </p>
-                <p className="text-xs text-blue-600">
-                  3 detections per week • Resets monthly
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-        
+            </CardContent>
+          </Card>
+        )}
+
         {/* Plans Carousel */}
-        <div className="max-w-4xl mx-auto mb-8">
-          {/* Carousel Container */}
-          <div className="relative">
-            {/* Navigation Arrows */}
-            <Button
-              onClick={prevSlide}
-              variant="ghost"
-              size="sm"
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white shadow-md rounded-full w-10 h-10 p-0"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            
-            <Button
-              onClick={nextSlide}
-              variant="ghost"
-              size="sm"
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white shadow-md rounded-full w-10 h-10 p-0"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
+        <div className="relative">
+          {/* Navigation Buttons */}
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-lg"
+            onClick={() => setCurrentPlanIndex(Math.max(0, currentPlanIndex - 1))}
+            disabled={currentPlanIndex === 0}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-lg"
+            onClick={() => setCurrentPlanIndex(Math.min(paidPlans.length - 1, currentPlanIndex + 1))}
+            disabled={currentPlanIndex === paidPlans.length - 1}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
 
-            {/* Plans Container */}
-            <div className="overflow-hidden">
-              <div 
-                className="flex transition-transform duration-300 ease-in-out"
-                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-              >
-                {plans.map((plan) => {
-                  const isCurrentPlan = currentPlan?.id === plan.id;
-                  const isPopular = plan.name.toLowerCase() === 'two_weeks';
-                  const planStyle = getPlanStyle(plan.name);
-                  const features = getLocalPlanFeatures(plan.name);
-                  
-                  return (
-                    <div key={plan.id} className="w-full flex-shrink-0 px-4">
-                      <Card
-                        className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl ${
-                          isCurrentPlan ? 'ring-2 ring-green-500 bg-green-50' : 'hover:-translate-y-2'
-                        } ${isPopular ? 'ring-2 ring-orange-500' : ''}`}
-                      >
-                        {isPopular && (
-                          <div className="absolute top-0 left-0 right-0 bg-orange-500 text-white text-xs font-medium py-2 text-center">
-                            Most Popular
-                          </div>
-                        )}
-                        
-                        {isCurrentPlan && (
-                          <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-medium py-1 px-2 rounded-bl-lg">
-                            Current
-                          </div>
-                        )}
-
-                        <CardHeader className="text-center pb-4">
-                          <div className="flex justify-center mb-4">
-                            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${planStyle.color}`}>
-                              {planStyle.icon}
-                            </div>
-                          </div>
-                          <CardTitle className="text-2xl font-bold text-gray-900">
-                            {getPlanDisplayName(plan.name)}
-                          </CardTitle>
-                          <CardDescription className="text-gray-600">
-                            {getPlanDurationText(plan.name)}
-                          </CardDescription>
-                        </CardHeader>
-
-                        <CardContent className="space-y-6">
-                          {/* Price */}
-                          <div className="text-center">
-                            {plan.name === 'free' ? (
-                              <div className="text-4xl font-bold text-gray-900 mb-2">Free</div>
-                            ) : (
-                              <div className="text-4xl font-bold text-orange-500 mb-2">
-                                {formatCurrency(
-                                  convertCurrency(
-                                    getPlanPrice(plan.name, plan.billing_cycle), 
-                                    'USD', 
-                                    userCurrency
-                                  ), 
-                                  userCurrency
-                                )}
-                              </div>
-                            )}
-                            <p className="text-sm text-gray-600">
-                              {plan.name === 'free' ? 'No credit card required' : `${getPlanDurationText(plan.billing_cycle)}`}
-                            </p>
-                            {userCurrency !== 'USD' && plan.name !== 'free' && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                ≈ ${getPlanPrice(plan.name, plan.billing_cycle).toFixed(2)} USD
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Features */}
-                          <div className="space-y-3">
-                            {features.map((feature, index) => (
-                              <div key={index} className="flex items-center gap-3">
-                                <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                                <span className="text-sm text-gray-700">{feature}</span>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* CTA Button */}
-                          <Button
-                            onClick={() => handlePayment(plan)}
-                            disabled={isProcessing || isCurrentPlan}
-                            className={`w-full py-3 text-base font-semibold ${
-                              isCurrentPlan 
-                                ? 'bg-green-500 hover:bg-green-600 text-white' 
-                                : 'bg-orange-500 hover:bg-orange-600 text-white'
-                            }`}
-                          >
-                            {isProcessing ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Processing...
-                              </>
-                            ) : isCurrentPlan ? (
-                              <>
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Current Plan
-                              </>
-                            ) : plan.name === 'free' ? (
-                              <>
-                                <Star className="h-4 w-4 mr-2" />
-                                Continue with Free
-                              </>
-                            ) : (
-                              <>
-                                <CreditCard className="h-4 w-4 mr-2" />
-                                Subscribe Now
-                              </>
-                            )}
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Carousel Indicators */}
-          <div className="flex justify-center mt-6 space-x-2">
-            {plans.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goToSlide(index)}
-                className={`w-3 h-3 rounded-full transition-colors ${
-                  index === currentSlide ? 'bg-orange-500' : 'bg-gray-300 hover:bg-gray-400'
+          {/* Plans */}
+          <div className="flex gap-6 overflow-x-auto pb-4 px-12">
+            {paidPlans.map((plan, index) => (
+              <Card
+                key={plan.name}
+                className={`min-w-[300px] transition-all duration-300 ${
+                  index === currentPlanIndex ? 'scale-105 shadow-xl' : 'opacity-75'
                 }`}
-              />
+              >
+                <CardHeader className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    {plan.name === 'monthly' && <Sparkles className="w-5 h-5 text-orange-500 mr-2" />}
+                    <CardTitle className="text-xl">{plan.display_name}</CardTitle>
+                  </div>
+                  <CardDescription>{getPlanDurationText(plan.billing_cycle)}</CardDescription>
+                </CardHeader>
+                
+                <CardContent className="text-center">
+                  {/* Price */}
+                  <div className="mb-6">
+                    <div className="text-4xl font-bold text-orange-500 mb-2">
+                      {formatCurrency(
+                        convertCurrency(
+                          getPlanPrice(plan.name, plan.billing_cycle),
+                          'USD',
+                          userCurrency
+                        ),
+                        userCurrency
+                      )}
+                    </div>
+                    {userCurrency !== 'USD' && plan.name !== 'free' && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        ≈ ${getPlanPrice(plan.name, plan.billing_cycle).toFixed(2)} USD
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Features */}
+                  <div className="space-y-3 mb-6">
+                    {plan.features.map((feature, featureIndex) => (
+                      <div key={featureIndex} className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        <span className="text-sm">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Separator className="my-4" />
+
+                  {/* Payment Button */}
+                  <Button
+                    onClick={() => handlePayment(plan)}
+                    disabled={isProcessing || !selectedProvider}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        {selectedProvider ? `Pay with ${getProviderName(selectedProvider)}` : 'Select Payment Method'}
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Provider Info */}
+                  {selectedProvider && (
+                    <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-500">
+                      {getProviderIcon(selectedProvider)}
+                      <span>{getProviderName(selectedProvider)}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
 
-        {/* Error Modal */}
-        {showError && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <XCircle className="h-6 w-6 text-red-500" />
-                <h3 className="text-lg font-semibold text-gray-900">Payment Error</h3>
-              </div>
-              <p className="text-gray-600 mb-6">{errorMessage}</p>
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => setShowError(false)}
-                  className="flex-1"
-                >
-                  Try Again
-                </Button>
-                <Button
-                  onClick={() => setShowError(false)}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center gap-2 text-red-600">
+              <XCircle className="w-4 h-4" />
+              <span>{errorMessage}</span>
             </div>
           </div>
         )}
+
+        {/* Payment Instructions */}
+        {selectedProvider === 'mpesa' && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Smartphone className="w-5 h-5" />
+                M-Pesa Payment Instructions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 text-sm">
+                <p>1. Click "Pay with M-Pesa" to initiate payment</p>
+                <p>2. You'll receive an M-Pesa prompt on your phone</p>
+                <p>3. Enter your M-Pesa PIN to complete the transaction</p>
+                <p>4. You'll receive a confirmation SMS from M-Pesa</p>
+                <p className="text-orange-600 font-medium">
+                  Make sure your phone number is registered with M-Pesa
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Security Notice */}
+        <div className="mt-8 text-center text-sm text-gray-500">
+          <p>🔒 All payments are secured with bank-level encryption</p>
+          <p>💳 We support multiple payment methods for your convenience</p>
+        </div>
       </div>
     </div>
   );

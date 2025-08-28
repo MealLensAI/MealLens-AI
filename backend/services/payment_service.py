@@ -6,490 +6,393 @@ from datetime import datetime, timedelta
 from supabase import Client
 import hashlib
 import hmac
+from .payment_providers import PaymentProviderFactory, PaymentProvider
 
 class PaymentService:
     """
-    Service for handling Paystack payments, subscriptions, and usage tracking.
+    Service for handling multiple payment providers, subscriptions, and usage tracking.
     """
     
     def __init__(self, supabase_client: Client):
         self.supabase = supabase_client
-        self.paystack_secret_key = os.environ.get('PAYSTACK_SECRET_KEY')
-        self.paystack_public_key = os.environ.get('PAYSTACK_PUBLIC_KEY')
-        self.paystack_base_url = 'https://api.paystack.co'
-        
-        if not self.paystack_secret_key:
-            raise ValueError("PAYSTACK_SECRET_KEY environment variable is required")
+        self.providers = {}
+        self._initialize_providers()
     
-    def _make_paystack_request(self, endpoint: str, method: str = 'GET', data: Dict = None) -> Dict:
-        """Make a request to Paystack API."""
-        url = f"{self.paystack_base_url}{endpoint}"
-        headers = {
-            'Authorization': f'Bearer {self.paystack_secret_key}',
-            'Content-Type': 'application/json'
-        }
+    def _initialize_providers(self):
+        """Initialize available payment providers"""
+        try:
+            # Initialize Paystack if credentials are available
+            if os.environ.get('PAYSTACK_SECRET_KEY'):
+                self.providers['paystack'] = PaymentProviderFactory.create_provider('paystack')
+                print("[PaymentService] Paystack provider initialized")
+        except Exception as e:
+            print(f"[PaymentService] Failed to initialize Paystack: {e}")
         
         try:
-            if method.upper() == 'GET':
-                response = requests.get(url, headers=headers)
-            elif method.upper() == 'POST':
-                response = requests.post(url, headers=headers, json=data)
-            else:
-                raise ValueError(f"Unsupported HTTP method: {method}")
-            
-            print(f"[DEBUG] Paystack API request to {url}")
-            print(f"[DEBUG] Request data: {data}")
-            print(f"[DEBUG] Response status: {response.status_code}")
-            
-            # Always try to get JSON response, even for error status codes
+            # Initialize M-Pesa if credentials are available
+            if os.environ.get('MPESA_CONSUMER_KEY'):
+                self.providers['mpesa'] = PaymentProviderFactory.create_provider('mpesa')
+                print("[PaymentService] M-Pesa provider initialized")
+        except Exception as e:
+            print(f"[PaymentService] Failed to initialize M-Pesa: {e}")
+        
+        try:
+            # Initialize Stripe if credentials are available
+            if os.environ.get('STRIPE_SECRET_KEY'):
+                self.providers['stripe'] = PaymentProviderFactory.create_provider('stripe')
+                print("[PaymentService] Stripe provider initialized")
+        except Exception as e:
+            print(f"[PaymentService] Failed to initialize Stripe: {e}")
+        
+        if not self.providers:
+            print("[PaymentService] No payment providers initialized")
+    
+    def get_available_providers(self) -> Dict[str, Dict]:
+        """Get list of available payment providers"""
+        available = {}
+        for provider_name, provider in self.providers.items():
             try:
-                response_data = response.json()
-                print(f"[DEBUG] Response data: {response_data}")
-            except Exception as e:
-                print(f"[DEBUG] Could not parse JSON response: {e}")
-                response_data = {'status': False, 'message': f'Invalid JSON response: {response.text}'}
-            
-            # If it's an error status code, return error response
-            if response.status_code >= 400:
-                return {
-                    'status': False, 
-                    'message': response_data.get('message', f'HTTP {response.status_code} error'),
-                    'data': response_data
+                available[provider_name] = {
+                    'name': provider.get_provider_name(),
+                    'currencies': provider.get_supported_currencies(),
+                    'capabilities': PaymentProviderFactory.get_available_providers().get(provider_name, {})
                 }
+            except Exception as e:
+                print(f"[PaymentService] Error getting provider info for {provider_name}: {e}")
+        
+        return available
+    
+    def get_best_provider_for_currency(self, currency: str) -> Optional[str]:
+        """Get the best payment provider for a given currency"""
+        for provider_name, provider in self.providers.items():
+            if currency in provider.get_supported_currencies():
+                return provider_name
+        return None
+    
+    def initialize_payment(self, email: str, amount: float, currency: str, reference: str, 
+                          callback_url: str, provider: str = None, metadata: Dict = None) -> Dict:
+        """Initialize a payment with the specified or best available provider"""
+        
+        # If no provider specified, choose the best one for the currency
+        if not provider:
+            provider = self.get_best_provider_for_currency(currency)
+            if not provider:
+                return {
+                    'status': False,
+                    'message': f'No payment provider available for currency: {currency}'
+                }
+        
+        # Check if provider is available
+        if provider not in self.providers:
+            return {
+                'status': False,
+                'message': f'Payment provider not available: {provider}'
+            }
+        
+        # Check if provider supports the currency
+        provider_instance = self.providers[provider]
+        if currency not in provider_instance.get_supported_currencies():
+            return {
+                'status': False,
+                'message': f'Provider {provider} does not support currency: {currency}'
+            }
+        
+        try:
+            # Initialize payment with the provider
+            result = provider_instance.initialize_payment(
+                amount=amount,
+                currency=currency,
+                email=email,
+                reference=reference,
+                callback_url=callback_url,
+                metadata=metadata or {}
+            )
             
-            return response_data
-        except requests.exceptions.RequestException as e:
-            print(f"Paystack API request failed: {str(e)}")
-            return {'status': False, 'message': str(e)}
+            # Add provider information to result
+            if result.get('status'):
+                result['provider'] = provider
+                result['supported_currencies'] = provider_instance.get_supported_currencies()
+            
+            return result
+            
+        except Exception as e:
+            return {
+                'status': False,
+                'message': f'Payment initialization failed: {str(e)}',
+                'provider': provider
+            }
+    
+    def verify_payment(self, reference: str, provider: str = None) -> Dict:
+        """Verify a payment with the specified provider"""
+        
+        # If no provider specified, try to determine from transaction record
+        if not provider:
+            # Try to get provider from transaction record in database
+            try:
+                transaction = self.supabase.table('transactions').select('provider').eq('reference', reference).execute()
+                if transaction.data:
+                    provider = transaction.data[0].get('provider', 'paystack')  # Default to paystack
+                else:
+                    provider = 'paystack'  # Default fallback
+            except Exception:
+                provider = 'paystack'  # Default fallback
+        
+        # Check if provider is available
+        if provider not in self.providers:
+            return {
+                'status': False,
+                'message': f'Payment provider not available: {provider}'
+            }
+        
+        try:
+            # Verify payment with the provider
+            result = self.providers[provider].verify_payment(reference)
+            
+            # Add provider information to result
+            if result.get('status'):
+                result['provider'] = provider
+            
+            return result
+            
+        except Exception as e:
+            return {
+                'status': False,
+                'message': f'Payment verification failed: {str(e)}',
+                'provider': provider
+            }
     
     def create_customer(self, email: str, first_name: str = None, last_name: str = None) -> Dict:
-        """Create a Paystack customer."""
-        data = {
-            'email': email,
-            'first_name': first_name or '',
-            'last_name': last_name or ''
-        }
+        """Create a customer (Paystack-specific, kept for backward compatibility)"""
+        if 'paystack' not in self.providers:
+            return {
+                'status': False,
+                'message': 'Paystack provider not available'
+            }
         
-        return self._make_paystack_request('/customer', 'POST', data)
-    
-    def initialize_transaction(self, email: str, amount: int, reference: str, 
-                             callback_url: str = None, metadata: Dict = None) -> Dict:
-        """Initialize a Paystack transaction."""
-        data = {
-            'email': email,
-            'amount': amount,  # Amount in kobo (smallest currency unit)
-            'reference': reference,
-            'callback_url': callback_url,
-            'metadata': metadata or {}
+        # Use Paystack's customer creation
+        provider = self.providers['paystack']
+        # This would need to be implemented in the PaystackProvider class
+        return {
+            'status': False,
+            'message': 'Customer creation not implemented for multi-provider system'
         }
-        
-        return self._make_paystack_request('/transaction/initialize', 'POST', data)
-    
-    def verify_transaction(self, reference: str) -> Dict:
-        """Verify a Paystack transaction."""
-        return self._make_paystack_request(f'/transaction/verify/{reference}')
     
     def create_subscription(self, customer_email: str, plan_code: str, 
                           start_date: str = None) -> Dict:
-        """Create a Paystack subscription."""
-        data = {
-            'customer': customer_email,
-            'plan': plan_code,
-            'start_date': start_date or datetime.now().strftime('%Y-%m-%d')
-        }
+        """Create a subscription (Paystack-specific, kept for backward compatibility)"""
+        if 'paystack' not in self.providers:
+            return {
+                'status': False,
+                'message': 'Paystack provider not available'
+            }
         
-        return self._make_paystack_request('/subscription', 'POST', data)
-    
-    def get_user_subscription(self, user_id: str) -> Dict:
-        """Get user's current subscription."""
-        try:
-            result = self.supabase.rpc('get_user_subscription', {'p_user_id': user_id}).execute()
-            return result.data if result.data else {}
-        except Exception as e:
-            print(f"Error getting user subscription: {str(e)}")
-            return {}
+        # Use Paystack's subscription creation
+        provider = self.providers['paystack']
+        # This would need to be implemented in the PaystackProvider class
+        return {
+            'status': False,
+            'message': 'Subscription creation not implemented for multi-provider system'
+        }
     
     def can_use_feature(self, user_id: str, feature_name: str) -> Dict:
-        """Check if user can use a specific feature."""
+        """Check if user can use a specific feature based on their subscription and usage"""
         try:
-            # First check if user has any usage recorded (to determine if trial started)
-            usage_result = self.supabase.table('usage_tracking').select('created_at').eq('user_id', user_id).order('created_at', desc=False).limit(1).execute()
+            # Get user's subscription
+            subscription_result = self.supabase.table('subscriptions').select('*').eq('user_id', user_id).execute()
             
-            if not usage_result.data:
-                # No usage recorded yet - user is new, allow first usage
-                return {'can_use': True, 'current_usage': 0, 'limit': -1, 'remaining': -1, 'message': 'New user - trial not started'}
+            if not subscription_result.data:
+                # No subscription found, check trial status
+                return self._check_trial_status(user_id, feature_name)
             
-            # User has usage recorded, check trial period
-            first_usage_date = usage_result.data[0]['created_at']
-            trial_start = first_usage_date
-            trial_end = trial_start + timedelta(days=3)  # 3-day trial
-            now = datetime.now()
+            subscription = subscription_result.data[0]
+            plan_name = subscription.get('plan_name', 'free')
             
-            # If still in trial period, allow usage
-            if now < trial_end:
-                return {'can_use': True, 'current_usage': 0, 'limit': -1, 'remaining': -1, 'message': 'In trial period'}
+            # Get usage for this month
+            current_month = datetime.now().strftime('%Y-%m')
+            usage_result = self.supabase.table('usage_tracking').select('*').eq('user_id', user_id).eq('feature_name', feature_name).eq('month', current_month).execute()
             
-            # Trial expired, check subscription and limits
-            result = self.supabase.rpc('can_use_feature', {
-                'p_user_id': user_id,
-                'p_feature_name': feature_name
-            }).execute()
-            return result.data if result.data else {'can_use': False}
-        except Exception as e:
-            print(f"Error checking feature usage: {str(e)}")
-            return {'can_use': False, 'error': str(e)}
-    
-    def record_usage(self, user_id: str, feature_name: str, count: int = 1) -> bool:
-        """Record usage of a feature."""
-        try:
-            result = self.supabase.rpc('record_usage', {
-                'p_user_id': user_id,
-                'p_feature_name': feature_name,
-                'p_count': count
-            }).execute()
-            return True
-        except Exception as e:
-            print(f"Error recording usage: {str(e)}")
-            return False
-    
-    def create_subscription_plan(self, plan_data: Dict) -> Dict:
-        """Create a subscription plan in the database."""
-        try:
-            result = self.supabase.table('subscription_plans').insert(plan_data).execute()
-            return {'success': True, 'data': result.data[0] if result.data else None}
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
-    
-    def get_subscription_plans(self) -> Dict:
-        """Get all available subscription plans."""
-        try:
-            result = self.supabase.table('subscription_plans').select('*').eq('is_active', True).execute()
-            return {'success': True, 'data': result.data}
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
-    
-    def create_user_subscription(self, user_id: str, plan_id: str, 
-                               paystack_data: Dict = None) -> Dict:
-        """Create a user subscription."""
-        try:
-            # Get plan details
-            plan_result = self.supabase.table('subscription_plans').select('*').eq('id', plan_id).single().execute()
-            if not plan_result.data:
-                return {'success': False, 'error': 'Plan not found'}
+            current_usage = len(usage_result.data) if usage_result.data else 0
             
-            plan = plan_result.data
+            # Get plan limits
+            plan_limits = self._get_plan_limits(plan_name)
+            limit = plan_limits.get(feature_name, 0)
             
-            # Calculate subscription period
-            now = datetime.now()
-            period_start = now
-            period_end = now + timedelta(days=30)  # Default to monthly
+            can_use = limit == -1 or current_usage < limit  # -1 means unlimited
             
-            subscription_data = {
-                'user_id': user_id,
-                'plan_id': plan_id,
-                'status': 'active',
-                'current_period_start': period_start.isoformat(),
-                'current_period_end': period_end.isoformat(),
-                'cancel_at_period_end': False,
-                'metadata': paystack_data or {}
+            return {
+                'can_use': can_use,
+                'current_usage': current_usage,
+                'limit': limit,
+                'remaining': -1 if limit == -1 else max(0, limit - current_usage),
+                'plan_name': plan_name
             }
             
-            # Add Paystack references if available
-            if paystack_data:
-                subscription_data['paystack_subscription_id'] = paystack_data.get('subscription_id')
-                subscription_data['paystack_customer_id'] = paystack_data.get('customer_id')
-            
-            result = self.supabase.table('user_subscriptions').insert(subscription_data).execute()
-            return {'success': True, 'data': result.data[0] if result.data else None}
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            print(f"Error checking feature usage: {e}")
+            return {
+                'can_use': True,  # Allow usage on error
+                'current_usage': 0,
+                'limit': -1,
+                'remaining': -1,
+                'plan_name': 'free'
+            }
     
-    def save_payment_transaction(self, user_id: str, transaction_data: Dict) -> Dict:
-        """Save a payment transaction."""
+    def _check_trial_status(self, user_id: str, feature_name: str) -> Dict:
+        """Check if user is still in trial period"""
         try:
-            payment_data = {
+            # Get first usage date
+            first_usage_result = self.supabase.table('usage_tracking').select('created_at').eq('user_id', user_id).order('created_at', desc=False).limit(1).execute()
+            
+            if not first_usage_result.data:
+                # No usage recorded yet, allow trial
+                return {
+                    'can_use': True,
+                    'current_usage': 0,
+                    'limit': -1,
+                    'remaining': -1,
+                    'plan_name': 'trial'
+                }
+            
+            first_usage_date = datetime.fromisoformat(first_usage_result.data[0]['created_at'].replace('Z', '+00:00'))
+            trial_end_date = first_usage_date + timedelta(days=3)  # 3-day trial
+            
+            if datetime.now() < trial_end_date:
+                return {
+                    'can_use': True,
+                    'current_usage': 0,
+                    'limit': -1,
+                    'remaining': -1,
+                    'plan_name': 'trial'
+                }
+            else:
+                return {
+                    'can_use': False,
+                    'current_usage': 0,
+                    'limit': 0,
+                    'remaining': 0,
+                    'plan_name': 'trial_expired'
+                }
+                
+        except Exception as e:
+            print(f"Error checking trial status: {e}")
+            return {
+                'can_use': True,
+                'current_usage': 0,
+                'limit': -1,
+                'remaining': -1,
+                'plan_name': 'trial'
+            }
+    
+    def _get_plan_limits(self, plan_name: str) -> Dict:
+        """Get feature limits for a plan"""
+        limits = {
+            'free': {
+                'food_detection': 5,
+                'ingredient_detection': 5,
+                'meal_planning': 3
+            },
+            'weekly': {
+                'food_detection': -1,
+                'ingredient_detection': -1,
+                'meal_planning': -1
+            },
+            'two_weeks': {
+                'food_detection': -1,
+                'ingredient_detection': -1,
+                'meal_planning': -1
+            },
+            'monthly': {
+                'food_detection': -1,
+                'ingredient_detection': -1,
+                'meal_planning': -1
+            }
+        }
+        
+        return limits.get(plan_name, limits['free'])
+    
+    def record_usage(self, user_id: str, feature_name: str) -> Dict:
+        """Record usage of a feature"""
+        try:
+            current_month = datetime.now().strftime('%Y-%m')
+            
+            # Insert usage record
+            usage_data = {
                 'user_id': user_id,
-                'paystack_transaction_id': transaction_data.get('id'),
-                'paystack_reference': transaction_data.get('reference'),
-                'amount': float(transaction_data.get('amount', 0)) / 100,  # Convert from kobo to naira
-                'currency': transaction_data.get('currency', 'NGN'),
-                'status': transaction_data.get('status', 'pending'),
-                'payment_method': transaction_data.get('channel'),
-                'description': transaction_data.get('description', ''),
-                'metadata': transaction_data
+                'feature_name': feature_name,
+                'month': current_month,
+                'created_at': datetime.now().isoformat()
             }
             
-            result = self.supabase.table('payment_transactions').insert(payment_data).execute()
-            return {'success': True, 'data': result.data[0] if result.data else None}
+            result = self.supabase.table('usage_tracking').insert(usage_data).execute()
+            
+            return {
+                'status': 'success',
+                'message': 'Usage recorded successfully',
+                'data': result.data[0] if result.data else None
+            }
+            
         except Exception as e:
-            return {'success': False, 'error': str(e)}
-
-    def update_transaction_status(self, reference: str, status: str, paystack_data: Dict = None) -> bool:
-        """Update transaction status."""
+            print(f"Error recording usage: {e}")
+            return {
+                'status': 'error',
+                'message': f'Failed to record usage: {str(e)}'
+            }
+    
+    def update_transaction_status(self, reference: str, status: str, provider: str = None) -> Dict:
+        """Update transaction status in database"""
         try:
             update_data = {
                 'status': status,
                 'updated_at': datetime.now().isoformat()
             }
             
-            if paystack_data:
-                update_data['metadata'] = paystack_data
+            if provider:
+                update_data['provider'] = provider
             
-            result = self.supabase.table('payment_transactions').update(update_data).eq('paystack_reference', reference).execute()
-            return True
-        except Exception as e:
-            print(f"Error updating transaction status: {str(e)}")
-            return False
-    
-    def verify_webhook_signature(self, payload: str, signature: str) -> bool:
-        """Verify Paystack webhook signature."""
-        try:
-            expected_signature = hmac.new(
-                self.paystack_secret_key.encode('utf-8'),
-                payload.encode('utf-8'),
-                hashlib.sha512
-            ).hexdigest()
+            result = self.supabase.table('transactions').update(update_data).eq('reference', reference).execute()
             
-            return hmac.compare_digest(expected_signature, signature)
-        except Exception as e:
-            print(f"Error verifying webhook signature: {str(e)}")
-            return False
-    
-    def process_webhook(self, event_data: Dict) -> Dict:
-        """Process Paystack webhook events."""
-        try:
-            # Save webhook event
-            webhook_data = {
-                'event_type': event_data.get('event'),
-                'paystack_event_id': event_data.get('id'),
-                'paystack_reference': event_data.get('data', {}).get('reference'),
-                'event_data': event_data
+            return {
+                'status': 'success',
+                'message': 'Transaction status updated successfully',
+                'data': result.data[0] if result.data else None
             }
             
-            self.supabase.table('paystack_webhooks').insert(webhook_data).execute()
-            
-            # Process based on event type
-            event_type = event_data.get('event')
-            data = event_data.get('data', {})
-            
-            if event_type == 'charge.success':
-                return self._handle_successful_charge(data)
-            elif event_type == 'subscription.create':
-                return self._handle_subscription_created(data)
-            elif event_type == 'subscription.disable':
-                return self._handle_subscription_disabled(data)
-            else:
-                return {'success': True, 'message': f'Event {event_type} processed'}
-                
         except Exception as e:
-            return {'success': False, 'error': str(e)}
-    
-    def _handle_successful_charge(self, data: Dict) -> Dict:
-        """Handle successful charge event."""
-        try:
-            # Update transaction status
-            reference = data.get('reference')
-            if reference:
-                self.supabase.table('payment_transactions').update({
-                    'status': 'success',
-                    'updated_at': datetime.now().isoformat()
-                }).eq('paystack_reference', reference).execute()
-            
-            return {'success': True, 'message': 'Charge processed successfully'}
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
-    
-    def _handle_subscription_created(self, data: Dict) -> Dict:
-        """Handle subscription created event."""
-        try:
-            # Update subscription status
-            subscription_id = data.get('id')
-            if subscription_id:
-                self.supabase.table('user_subscriptions').update({
-                    'status': 'active',
-                    'updated_at': datetime.now().isoformat()
-                }).eq('paystack_subscription_id', subscription_id).execute()
-            
-            return {'success': True, 'message': 'Subscription activated'}
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
-    
-    def _handle_subscription_disabled(self, data: Dict) -> Dict:
-        """Handle subscription disabled event."""
-        try:
-            # Update subscription status
-            subscription_id = data.get('id')
-            if subscription_id:
-                self.supabase.table('user_subscriptions').update({
-                    'status': 'cancelled',
-                    'updated_at': datetime.now().isoformat()
-                }).eq('paystack_subscription_id', subscription_id).execute()
-            
-            return {'success': True, 'message': 'Subscription cancelled'}
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
-    
-    def get_user_usage_summary(self, user_id: str) -> Dict:
-        """Get user's usage summary for current month."""
-        try:
-            # Get current month usage
-            current_month = datetime.now().strftime('%Y-%m')
-            
-            result = self.supabase.table('usage_tracking').select(
-                'feature_name, usage_count'
-            ).eq('user_id', user_id).gte('usage_date', f'{current_month}-01').execute()
-            
-            usage_summary = {}
-            for record in result.data:
-                feature = record['feature_name']
-                if feature not in usage_summary:
-                    usage_summary[feature] = 0
-                usage_summary[feature] += record['usage_count']
-            
-            return {'success': True, 'data': usage_summary}
-        except Exception as e:
-            return {'success': False, 'error': str(e)} 
+            print(f"Error updating transaction status: {e}")
+            return {
+                'status': 'error',
+                'message': f'Failed to update transaction status: {str(e)}'
+            }
 
-class SimulatedPaymentService:
-    """
-    Simulated payment service for local development/testing without Paystack.
-    All methods return dummy data or success responses.
-    """
-    def __init__(self, supabase_client=None):
-        self.supabase = supabase_client
-
-    def create_customer(self, email, first_name=None, last_name=None):
-        return {'status': True, 'message': 'Simulated customer created', 'data': {}}
-
-    def initialize_transaction(self, email, amount, reference, callback_url=None, metadata=None):
+# Keep the SimulatedPaymentService for backward compatibility
+class SimulatedPaymentService(PaymentService):
+    """Simulated payment service for testing"""
+    
+    def __init__(self, supabase_client: Client):
+        super().__init__(supabase_client)
+        print("[SimulatedPaymentService] Using simulated payment service for testing")
+    
+    def initialize_payment(self, email: str, amount: float, currency: str, reference: str, 
+                          callback_url: str, provider: str = None, metadata: Dict = None) -> Dict:
+        """Simulate payment initialization"""
         return {
             'status': True,
+            'message': 'Payment initialized successfully (simulated)',
             'data': {
-                'authorization_url': 'https://paystack.com/simulated/authorization',
+                'authorization_url': f'{callback_url}?reference={reference}&status=success',
                 'reference': reference,
-                'access_code': 'SIMULATED_ACCESS_CODE',
-                'id': 'simulated_txn_id'
+                'provider': provider or 'simulated'
             }
         }
-
-    def verify_transaction(self, reference):
+    
+    def verify_payment(self, reference: str, provider: str = None) -> Dict:
+        """Simulate payment verification"""
         return {
             'status': True,
+            'message': 'Payment verified successfully (simulated)',
             'data': {
                 'status': 'success',
                 'reference': reference,
-                'id': 'simulated_txn_id',
-                'metadata': {}
+                'provider': provider or 'simulated'
             }
-        }
-
-    def create_subscription(self, customer_email, plan_code, start_date=None):
-        return {'status': True, 'message': 'Simulated subscription created', 'data': {}}
-
-    def get_user_subscription(self, user_id):
-        return {'plan': 'basic', 'status': 'active', 'current_period_start': '2024-01-01', 'current_period_end': '2024-12-31'}
-
-    def can_use_feature(self, user_id, feature_name):
-        return {'can_use': True, 'current_usage': 0, 'limit': 100, 'remaining': 100, 'message': ''}
-
-    def record_usage(self, user_id, feature_name, count=1):
-        return True
-
-    def create_subscription_plan(self, plan_data):
-        return {'success': True, 'data': plan_data}
-
-    def get_subscription_plans(self):
-        # Return USD-based subscription plans with correct pricing
-        return {'success': True, 'data': [
-            {
-                'id': 'weekly',
-                'name': 'weekly',
-                'display_name': 'Weekly',
-                'price_weekly': 2.50,
-                'price_two_weeks': 5.00,
-                'price_monthly': 10.00,
-                'currency': 'USD',
-                'features': [
-                    'Unlimited Food Detection',
-                    'Unlimited AI Kitchen Assistant',
-                    'Unlimited Meal Planning',
-                    'Full History Access',
-                    'Priority Support'
-                ],
-                'limits': {
-                    'food_detection': -1,  # Unlimited
-                    'meal_planning': -1,   # Unlimited
-                    'recipe_generation': -1  # Unlimited
-                },
-                'is_active': True,
-                'duration_days': 7,
-                'billing_cycle': 'weekly'
-            },
-            {
-                'id': 'two_weeks',
-                'name': 'two_weeks',
-                'display_name': 'Two Weeks',
-                'price_weekly': 2.50,
-                'price_two_weeks': 5.00,
-                'price_monthly': 10.00,
-                'currency': 'USD',
-                'features': [
-                    'Unlimited Food Detection',
-                    'Unlimited AI Kitchen Assistant',
-                    'Unlimited Meal Planning',
-                    'Full History Access',
-                    'Priority Support'
-                ],
-                'limits': {
-                    'food_detection': -1,  # Unlimited
-                    'meal_planning': -1,   # Unlimited
-                    'recipe_generation': -1  # Unlimited
-                },
-                'is_active': True,
-                'duration_days': 14,
-                'billing_cycle': 'two_weeks'
-            },
-            {
-                'id': 'monthly',
-                'name': 'monthly',
-                'display_name': 'Monthly',
-                'price_weekly': 2.50,
-                'price_two_weeks': 5.00,
-                'price_monthly': 10.00,
-                'currency': 'USD',
-                'features': [
-                    'Unlimited Food Detection',
-                    'Unlimited AI Kitchen Assistant',
-                    'Unlimited Meal Planning',
-                    'Full History Access',
-                    'Priority Support'
-                ],
-                'limits': {
-                    'food_detection': -1,  # Unlimited
-                    'meal_planning': -1,   # Unlimited
-                    'recipe_generation': -1  # Unlimited
-                },
-                'is_active': True,
-                'duration_days': 30,
-                'billing_cycle': 'monthly'
-            }
-        ]}
-
-    def create_user_subscription(self, user_id, plan_id, paystack_data=None):
-        return {'success': True, 'data': {'user_id': user_id, 'plan_id': plan_id, 'status': 'active'}}
-
-    def save_payment_transaction(self, user_id, transaction_data):
-        return {'success': True, 'data': transaction_data}
-
-    def verify_webhook_signature(self, payload, signature):
-        return True
-
-    def process_webhook(self, event_data):
-        return {'success': True, 'message': 'Simulated webhook processed'}
-
-    def get_user_usage_summary(self, user_id):
-        return {'success': True, 'data': {'feature_name': 0}}
-
-# For simulation mode, allow import as PaymentService
-if os.environ.get('SIMULATE_PAYMENTS', 'false').lower() == 'true':
-    PaymentService = SimulatedPaymentService 
+        } 

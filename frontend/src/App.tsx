@@ -77,6 +77,10 @@ const router = createBrowserRouter([
     element: <WelcomePage />
   },
   {
+    path: "/landing",
+    element: <WelcomePage />
+  },
+  {
     path: "/home",
     element: (
       <ProtectedRoute>

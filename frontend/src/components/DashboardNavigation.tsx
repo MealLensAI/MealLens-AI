@@ -19,7 +19,8 @@ import {
   LogOut,
   Menu,
   X,
-  History
+  History,
+  Globe
 } from 'lucide-react';
 import { useAuth } from '@/lib/utils';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -126,6 +127,10 @@ const DashboardNavigation: React.FC<DashboardNavigationProps> = ({ className = '
           <DropdownMenuItem onClick={() => navigate('/payment')}>
             <CreditCard className="mr-2 h-4 w-4" />
             <span>Subscription</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/landing')}>
+            <Globe className="mr-2 h-4 w-4" />
+            <span>View Landing Page</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />

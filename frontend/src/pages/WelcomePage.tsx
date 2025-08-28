@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/utils';
 import Logo from '@/components/Logo';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,7 @@ import { APP_CONFIG, getPlanPrice, getPlanDisplayName, getPlanDurationText, getP
 
 const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userCount, setUserCount] = useState(1000); // Default fallback
@@ -89,12 +90,12 @@ const WelcomePage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Redirect authenticated users to app
+  // Redirect authenticated users to app only if on root route (not /landing)
   useEffect(() => {
-    if (user) {
+    if (user && location.pathname === '/') {
       navigate('/ai-kitchen');
     }
-  }, [user, navigate]);
+  }, [user, navigate, location.pathname]);
 
   const handleTryMealLensAI = () => {
     if (!user) {

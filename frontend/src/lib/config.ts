@@ -2,34 +2,47 @@
 export const APP_CONFIG = {
   // App Information
   name: 'MealLens AI',
-  description: 'Your AI-powered food detection and meal planning assistant',
+  description: 'Your AI-powered kitchen assistant',
   version: '1.0.0',
-  
+
   // Brand Colors
   colors: {
     primary: '#FF6B35', // Orange
     secondary: '#1A1A1A', // Black
-    white: '#FFFFFF',
-    gray: {
-      50: '#F9FAFB',
-      100: '#F3F4F6',
-      200: '#E5E7EB',
-      300: '#D1D5DB',
-      400: '#9CA3AF',
-      500: '#6B7280',
-      600: '#4B5563',
-      700: '#374151',
-      800: '#1F2937',
-      900: '#111827'
-    }
+    accent: '#FFFFFF', // White
+    success: '#10B981',
+    warning: '#F59E0B',
+    error: '#EF4444'
   },
 
-  // Subscription Plans - Centralized pricing
+  // Subscription Plans
   subscriptionPlans: [
+    {
+      id: 'free',
+      name: 'free',
+      display_name: 'Free Plan',
+      price_weekly: 0,
+      price_two_weeks: 0,
+      price_monthly: 0,
+      currency: 'USD',
+      features: [
+        '5 Food Detections',
+        '3 Meal Plans',
+        'Basic Support'
+      ],
+      limits: {
+        detections_per_day: 5,
+        meal_plans_per_month: 3,
+        ai_kitchen_requests: 5
+      },
+      is_active: true,
+      duration_days: 30,
+      billing_cycle: 'monthly'
+    },
     {
       id: 'weekly',
       name: 'weekly',
-      display_name: 'Weekly',
+      display_name: 'Weekly Plan',
       price_weekly: 2.50,
       price_two_weeks: 5.00,
       price_monthly: 10.00,
@@ -38,13 +51,12 @@ export const APP_CONFIG = {
         'Unlimited Food Detection',
         'Unlimited AI Kitchen Assistant',
         'Unlimited Meal Planning',
-        'Full History Access',
-        'Priority Support'
+        'Full History Access'
       ],
       limits: {
-        detections_per_day: -1, // Unlimited
-        meal_plans_per_month: -1, // Unlimited
-        ai_kitchen_requests: -1 // Unlimited
+        detections_per_day: -1,
+        meal_plans_per_month: -1,
+        ai_kitchen_requests: -1
       },
       is_active: true,
       duration_days: 7,
@@ -53,7 +65,7 @@ export const APP_CONFIG = {
     {
       id: 'two_weeks',
       name: 'two_weeks',
-      display_name: 'Two Weeks',
+      display_name: 'Two Weeks Plan',
       price_weekly: 2.50,
       price_two_weeks: 5.00,
       price_monthly: 10.00,
@@ -62,13 +74,12 @@ export const APP_CONFIG = {
         'Unlimited Food Detection',
         'Unlimited AI Kitchen Assistant',
         'Unlimited Meal Planning',
-        'Full History Access',
-        'Priority Support'
+        'Full History Access'
       ],
       limits: {
-        detections_per_day: -1, // Unlimited
-        meal_plans_per_month: -1, // Unlimited
-        ai_kitchen_requests: -1 // Unlimited
+        detections_per_day: -1,
+        meal_plans_per_month: -1,
+        ai_kitchen_requests: -1
       },
       is_active: true,
       duration_days: 14,
@@ -77,7 +88,7 @@ export const APP_CONFIG = {
     {
       id: 'monthly',
       name: 'monthly',
-      display_name: 'Monthly',
+      display_name: 'Monthly Plan',
       price_weekly: 2.50,
       price_two_weeks: 5.00,
       price_monthly: 10.00,
@@ -90,9 +101,9 @@ export const APP_CONFIG = {
         'Priority Support'
       ],
       limits: {
-        detections_per_day: -1, // Unlimited
-        meal_plans_per_month: -1, // Unlimited
-        ai_kitchen_requests: -1 // Unlimited
+        detections_per_day: -1,
+        meal_plans_per_month: -1,
+        ai_kitchen_requests: -1
       },
       is_active: true,
       duration_days: 30,
@@ -140,7 +151,99 @@ export const APP_CONFIG = {
     timeout: 30000
   },
 
-  // Paystack Configuration
+  // Payment Providers Configuration
+  paymentProviders: {
+    paystack: {
+      name: 'Paystack',
+      public_key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_...',
+      currencies: ['NGN', 'USD', 'GHS', 'ZAR', 'KES', 'UGX', 'TZS', 'XOF', 'XAF', 'EGP'],
+      regions: ['Nigeria', 'Ghana', 'South Africa', 'Kenya', 'Uganda', 'Tanzania', 'West Africa', 'Central Africa', 'Egypt'],
+      features: ['Card Payments', 'Bank Transfers', 'Mobile Money (M-Pesa)', 'USSD', 'QR Payments'],
+      icon: 'CreditCard',
+      is_available: true,
+      description: 'Unified payment platform with M-Pesa and mobile money support',
+      payment_methods: {
+        KES: {
+          mobile_money: {
+            name: 'M-Pesa',
+            description: 'Pay with M-Pesa mobile money',
+            icon: 'Smartphone',
+            instructions: 'You will receive an M-Pesa prompt on your phone'
+          },
+          card: {
+            name: 'Card Payment',
+            description: 'Pay with Visa, Mastercard, or Verve',
+            icon: 'CreditCard'
+          },
+          bank: {
+            name: 'Bank Transfer',
+            description: 'Pay directly from your bank account',
+            icon: 'Building'
+          },
+          ussd: {
+            name: 'USSD',
+            description: 'Pay using USSD code *996#',
+            icon: 'Phone'
+          }
+        },
+        NGN: {
+          card: {
+            name: 'Card Payment',
+            description: 'Pay with Visa, Mastercard, or Verve',
+            icon: 'CreditCard'
+          },
+          bank: {
+            name: 'Bank Transfer',
+            description: 'Pay directly from your bank account',
+            icon: 'Building'
+          },
+          ussd: {
+            name: 'USSD',
+            description: 'Pay using USSD code *996#',
+            icon: 'Phone'
+          }
+        },
+        GHS: {
+          mobile_money: {
+            name: 'Mobile Money',
+            description: 'Pay with MTN Mobile Money or Vodafone Cash',
+            icon: 'Smartphone'
+          },
+          card: {
+            name: 'Card Payment',
+            description: 'Pay with Visa or Mastercard',
+            icon: 'CreditCard'
+          },
+          bank: {
+            name: 'Bank Transfer',
+            description: 'Pay directly from your bank account',
+            icon: 'Building'
+          }
+        }
+      }
+    },
+    mpesa: {
+      name: 'M-Pesa (Direct)',
+      currencies: ['KES'],
+      regions: ['Kenya', 'Tanzania', 'Uganda', 'Mozambique', 'Lesotho', 'Ghana', 'Egypt'],
+      features: ['Mobile Money', 'SMS Payments', 'USSD'],
+      icon: 'Smartphone',
+      is_available: true,
+      description: 'Direct Safaricom M-Pesa integration'
+    },
+    stripe: {
+      name: 'Stripe',
+      public_key: import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_...',
+      currencies: ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'SEK', 'NOK', 'DKK'],
+      regions: ['Global'],
+      features: ['Card Payments', 'Digital Wallets', 'Bank Transfers', 'Buy Now Pay Later'],
+      icon: 'CreditCard',
+      is_available: true,
+      description: 'Global payment processing'
+    }
+  },
+
+  // Paystack Configuration (for backward compatibility)
   paystack: {
     public_key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_...',
     currency: 'USD'
@@ -151,19 +254,28 @@ export const APP_CONFIG = {
     { code: 'USD', symbol: '$', name: 'US Dollar', exchange_rate: 1.0 },
     { code: 'EUR', symbol: '€', name: 'Euro', exchange_rate: 0.85 },
     { code: 'GBP', symbol: '£', name: 'British Pound', exchange_rate: 0.73 },
-    { code: 'NGN', symbol: '₦', name: 'Nigerian Naira', exchange_rate: 410.0 },
-    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar', exchange_rate: 1.25 },
-    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', exchange_rate: 1.35 },
-    { code: 'JPY', symbol: '¥', name: 'Japanese Yen', exchange_rate: 110.0 },
-    { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc', exchange_rate: 0.92 },
-    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', exchange_rate: 6.45 },
-    { code: 'INR', symbol: '₹', name: 'Indian Rupee', exchange_rate: 75.0 }
+    { code: 'NGN', symbol: '₦', name: 'Nigerian Naira', exchange_rate: 1500.0 },
+    { code: 'GHS', symbol: '₵', name: 'Ghanaian Cedi', exchange_rate: 12.0 },
+    { code: 'ZAR', symbol: 'R', name: 'South African Rand', exchange_rate: 18.0 },
+    { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling', exchange_rate: 150.0 },
+    { code: 'UGX', symbol: 'USh', name: 'Ugandan Shilling', exchange_rate: 3700.0 },
+    { code: 'TZS', symbol: 'TSh', name: 'Tanzanian Shilling', exchange_rate: 2500.0 },
+    { code: 'XOF', symbol: 'CFA', name: 'West African CFA Franc', exchange_rate: 600.0 },
+    { code: 'XAF', symbol: 'CFA', name: 'Central African CFA Franc', exchange_rate: 600.0 },
+    { code: 'EGP', symbol: 'E£', name: 'Egyptian Pound', exchange_rate: 30.0 },
+    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar', exchange_rate: 1.35 },
+    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', exchange_rate: 1.50 },
+    { code: 'JPY', symbol: '¥', name: 'Japanese Yen', exchange_rate: 150.0 },
+    { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc', exchange_rate: 0.88 },
+    { code: 'SEK', symbol: 'kr', name: 'Swedish Krona', exchange_rate: 10.5 },
+    { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone', exchange_rate: 10.8 },
+    { code: 'DKK', symbol: 'kr', name: 'Danish Krone', exchange_rate: 6.9 }
   ]
 };
 
-// Helper functions
-export const getPlanPrice = (planId: string, billingCycle: string): number => {
-  const plan = APP_CONFIG.subscriptionPlans.find(p => p.id === planId);
+// Helper Functions
+export const getPlanPrice = (planName: string, billingCycle: string): number => {
+  const plan = APP_CONFIG.subscriptionPlans.find(p => p.name === planName);
   if (!plan) return 0;
   
   switch (billingCycle) {
@@ -174,13 +286,13 @@ export const getPlanPrice = (planId: string, billingCycle: string): number => {
     case 'monthly':
       return plan.price_monthly;
     default:
-      return plan.price_weekly;
+      return plan.price_monthly;
   }
 };
 
-export const getPlanDisplayName = (planId: string): string => {
-  const plan = APP_CONFIG.subscriptionPlans.find(p => p.id === planId);
-  return plan?.display_name || planId;
+export const getPlanDisplayName = (planName: string): string => {
+  const plan = APP_CONFIG.subscriptionPlans.find(p => p.name === planName);
+  return plan?.display_name || planName;
 };
 
 export const getPlanDurationText = (billingCycle: string): string => {
@@ -192,34 +304,67 @@ export const getPlanDurationText = (billingCycle: string): string => {
     case 'monthly':
       return 'per month';
     default:
-      return 'per week';
+      return 'per month';
   }
 };
 
-export const getPlanFeatures = (planId: string): string[] => {
-  const plan = APP_CONFIG.subscriptionPlans.find(p => p.id === planId);
+export const getPlanFeatures = (planName: string): string[] => {
+  const plan = APP_CONFIG.subscriptionPlans.find(p => p.name === planName);
   return plan?.features || [];
 };
 
-// Currency conversion helpers
 export const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string): number => {
   if (fromCurrency === toCurrency) return amount;
   
-  const fromRate = APP_CONFIG.currencies.find(c => c.code === fromCurrency)?.exchange_rate || 1.0;
-  const toRate = APP_CONFIG.currencies.find(c => c.code === toCurrency)?.exchange_rate || 1.0;
+  const fromRate = APP_CONFIG.currencies.find(c => c.code === fromCurrency)?.exchange_rate || 1;
+  const toRate = APP_CONFIG.currencies.find(c => c.code === toCurrency)?.exchange_rate || 1;
   
-  // Convert to USD first, then to target currency
-  const usdAmount = amount / fromRate;
-  return usdAmount * toRate;
+  return (amount / fromRate) * toRate;
 };
 
 export const formatCurrency = (amount: number, currency: string): string => {
   const currencyInfo = APP_CONFIG.currencies.find(c => c.code === currency);
-  if (!currencyInfo) return `${amount} USD`;
+  if (!currencyInfo) return `${amount.toFixed(2)} ${currency}`;
   
   return `${currencyInfo.symbol}${amount.toFixed(2)}`;
 };
 
-export const getCurrencyInfo = (currencyCode: string) => {
-  return APP_CONFIG.currencies.find(c => c.code === currencyCode) || APP_CONFIG.currencies[0];
+export const getCurrencyInfo = (currency: string) => {
+  return APP_CONFIG.currencies.find(c => c.code === currency);
+};
+
+// Payment Provider Helpers
+export const getAvailableProviders = () => {
+  return Object.entries(APP_CONFIG.paymentProviders)
+    .filter(([_, provider]) => provider.is_available)
+    .reduce((acc, [key, provider]) => {
+      acc[key] = provider;
+      return acc;
+    }, {} as Record<string, any>);
+};
+
+export const getProvidersForCurrency = (currency: string) => {
+  const availableProviders = getAvailableProviders();
+  return Object.entries(availableProviders)
+    .filter(([_, provider]) => provider.currencies.includes(currency))
+    .reduce((acc, [key, provider]) => {
+      acc[key] = provider;
+      return acc;
+    }, {} as Record<string, any>);
+};
+
+export const getBestProviderForCurrency = (currency: string): string | null => {
+  const providers = getProvidersForCurrency(currency);
+  const providerKeys = Object.keys(providers);
+  
+  // Priority order: Paystack > M-Pesa > Stripe
+  const priority = ['paystack', 'mpesa', 'stripe'];
+  
+  for (const provider of priority) {
+    if (providerKeys.includes(provider)) {
+      return provider;
+    }
+  }
+  
+  return providerKeys[0] || null;
 };

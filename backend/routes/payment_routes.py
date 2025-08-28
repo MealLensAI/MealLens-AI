@@ -36,7 +36,7 @@ def authenticate_user():
         
         token = auth_header.split(' ')[1]
         auth_service = AuthService(current_app.supabase_service.supabase)
-        user_id = auth_service.verify_token(token)
+        user_id, auth_type = auth_service.get_supabase_user_id_from_token(token)
         return user_id
     except Exception as e:
         print(f"Authentication error: {e}")

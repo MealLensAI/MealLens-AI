@@ -70,7 +70,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
             setAvailableProviders(providersResponse.providers);
           }
         } catch (providerError) {
-          console.warn('Could not fetch payment providers:', providerError);
+          console.warn('Could not fetch payment providers, using fallback:', providerError);
           // Use default providers if API fails
           setAvailableProviders({
             paystack: {
@@ -179,37 +179,52 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
       };
 
       // Initialize payment
-      const response = await api.post('/payment/initialize-payment', paymentData);
-      
-      if (response.status === 'success') {
-        // Handle different providers
-        if (selectedProvider === 'mpesa') {
-          // For M-Pesa, show instructions
-          toast({
-            title: "M-Pesa Payment",
-            description: "Check your phone for M-Pesa prompt. Enter your PIN to complete payment.",
-            variant: "default",
-          });
-          
-          // Show success after a delay
-          setTimeout(() => {
-            setCurrentStep('success');
-          }, 3000);
-        } else {
-          // For other providers (Paystack, Stripe), redirect to payment URL
-          if (response.data?.authorization_url) {
-            window.location.href = response.data.authorization_url;
+      try {
+        const response = await api.post('/payment/initialize-payment', paymentData);
+        
+        if (response.status === 'success') {
+          // Handle different providers
+          if (selectedProvider === 'mpesa') {
+            // For M-Pesa, show instructions
+            toast({
+              title: "M-Pesa Payment",
+              description: "Check your phone for M-Pesa prompt. Enter your PIN to complete payment.",
+              variant: "default",
+            });
+            
+            // Show success after a delay
+            setTimeout(() => {
+              setCurrentStep('success');
+            }, 3000);
           } else {
+            // For other providers (Paystack, Stripe), redirect to payment URL
+            if (response.authorization_url) {
+              window.open(response.authorization_url, '_blank');
+            }
+            
+            // Show success message
+            toast({
+              title: "Payment Initiated",
+              description: "Please complete your payment in the new window.",
+              variant: "default",
+            });
+            
             setCurrentStep('success');
           }
+        } else {
+          throw new Error(response.message || 'Payment initialization failed');
         }
-      } else {
-        setErrorMessage(response.message || 'Payment initialization failed');
+      } catch (paymentError) {
+        console.error('Payment initialization failed:', paymentError);
+        
+        // Show fallback message for development/testing
         toast({
-          title: "Payment Error",
-          description: response.message || 'Payment initialization failed',
+          title: "Payment System Unavailable",
+          description: "Payment system is currently being updated. Please try again later or contact support.",
           variant: "destructive",
         });
+        
+        setErrorMessage('Payment system is currently unavailable. Please try again later.');
         setCurrentStep('payment');
       }
     } catch (error: any) {

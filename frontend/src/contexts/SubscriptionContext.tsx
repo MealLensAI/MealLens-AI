@@ -89,10 +89,25 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     
     try {
       setLoading(true);
-      const [subscriptionData, plansData] = await Promise.all([
-        paystackService.getUserSubscription(),
-        paystackService.getSubscriptionPlans()
-      ]);
+      
+      // Try to load subscription data, but don't fail if payment endpoints are not available
+      let subscriptionData = null;
+      let plansData = [];
+      
+      try {
+        const [subResponse, plansResponse] = await Promise.all([
+          paystackService.getUserSubscription(),
+          paystackService.getSubscriptionPlans()
+        ]);
+        
+        subscriptionData = subResponse;
+        plansData = plansResponse;
+      } catch (paymentError) {
+        console.warn('Payment endpoints not available, using fallback:', paymentError);
+        // Use fallback data
+        subscriptionData = null;
+        plansData = APP_CONFIG.subscriptionPlans;
+      }
       
       setSubscription(subscriptionData);
       setPlans(plansData);

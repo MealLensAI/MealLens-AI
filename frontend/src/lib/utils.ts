@@ -66,12 +66,17 @@ export function useProvideAuth(): AuthContextType {
 
   // Refresh authentication state
   const refreshAuth = useCallback(async () => {
+    console.log('[AUTH] Starting refreshAuth...')
     setLoading(true)
     try {
       // Check if we have a stored token (from backend login)
       const storedToken = localStorage.getItem(TOKEN_KEY)
       const storedUserData = localStorage.getItem(USER_KEY)
       const refreshToken = localStorage.getItem('supabase_refresh_token')
+      
+      console.log('[AUTH] Stored token exists:', !!storedToken)
+      console.log('[AUTH] Stored user data exists:', !!storedUserData)
+      console.log('[AUTH] Refresh token exists:', !!refreshToken)
       
       if (storedToken && storedUserData) {
         try {
@@ -124,6 +129,7 @@ export function useProvideAuth(): AuthContextType {
                       email: profile.email,
                       displayName: profile.display_name,
                       photoURL: undefined,
+                      role: profile.role || 'user',
                       created_at: profile.created_at || undefined
                     }
                     setUser(updatedUser)

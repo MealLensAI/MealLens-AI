@@ -49,6 +49,8 @@ const Login = () => {
       const result = await api.login({ email, password })
       
       if (result.status === 'success' && result.access_token) {
+        console.log('[LOGIN] Storing authentication data...')
+        
         // Store the token and user data
         localStorage.setItem('access_token', result.access_token)
         localStorage.setItem('supabase_refresh_token', result.refresh_token || '')
@@ -60,12 +62,17 @@ const Login = () => {
           uid: result.user_id || '',
           email: email,
           displayName: result.name || email.split('@')[0],
-          photoURL: null
+          photoURL: null,
+          role: result.user_role || 'user'
         }
         localStorage.setItem('user_data', JSON.stringify(userData))
         
+        console.log('[LOGIN] Authentication data stored, refreshing auth context...')
+        
         // Update auth context
         await refreshAuth()
+        
+        console.log('[LOGIN] Auth context refreshed successfully')
         
         toast({
           title: "Welcome back!",

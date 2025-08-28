@@ -17,6 +17,20 @@ services:
         sync: false
       - key: PAYSTACK_PUBLIC_KEY
         sync: false
+      - key: MPESA_CONSUMER_KEY
+        sync: false
+      - key: MPESA_CONSUMER_SECRET
+        sync: false
+      - key: MPESA_PASSKEY
+        sync: false
+      - key: MPESA_BUSINESS_SHORTCODE
+        sync: false
+      - key: MPESA_ENVIRONMENT
+        value: "sandbox"
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLIC_KEY
+        sync: false
       - key: JWT_SECRET
         sync: false
       - key: DATABASE_URL

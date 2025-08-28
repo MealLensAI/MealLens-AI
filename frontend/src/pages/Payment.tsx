@@ -162,7 +162,7 @@ const Payment: React.FC = () => {
         } else {
           // For other providers (Paystack, Stripe), redirect to payment URL
           if (response.data?.authorization_url) {
-            window.location.href = response.data.authorization_url;
+        window.location.href = response.data.authorization_url;
           } else {
             navigate('/payment/success');
           }
@@ -232,7 +232,7 @@ const Payment: React.FC = () => {
           >
             <ArrowLeft className="w-4 h-4" />
             Back
-          </Button>
+            </Button>
           
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900">Choose Your Plan</h1>
@@ -278,7 +278,7 @@ const Payment: React.FC = () => {
                       <span className="font-medium">{getProviderName(providerKey)}</span>
                       <span className="text-xs opacity-75">
                         {provider.features?.slice(0, 2).join(', ')}
-                      </span>
+                </span>
                     </Button>
                     
                     {/* Show available payment methods for selected provider */}
@@ -347,11 +347,11 @@ const Payment: React.FC = () => {
                               <div className="flex items-center gap-2 text-sm">
                                 <Globe className="w-4 h-4 text-purple-600" />
                                 <span>Bank Transfer</span>
-                              </div>
+              </div>
                             </>
                           )}
-                        </div>
-                      </div>
+              </div>
+            </div>
                     )}
                     
                     {/* Show M-Pesa specific info */}
@@ -370,11 +370,11 @@ const Payment: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <Shield className="w-4 h-4" />
                             <span>Direct Safaricom integration</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+              </div>
+              </div>
+            </div>
+          )}
+        </div>
                 ))}
               </div>
               
@@ -390,11 +390,11 @@ const Payment: React.FC = () => {
             </CardContent>
           </Card>
         )}
-
+        
         {/* Plans Carousel */}
-        <div className="relative">
+          <div className="relative">
           {/* Navigation Buttons */}
-          <Button
+            <Button
             variant="outline"
             size="icon"
             className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-lg"
@@ -402,9 +402,9 @@ const Payment: React.FC = () => {
             disabled={currentPlanIndex === 0}
           >
             <ChevronLeft className="w-4 h-4" />
-          </Button>
-          
-          <Button
+            </Button>
+            
+            <Button
             variant="outline"
             size="icon"
             className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white shadow-lg"
@@ -412,7 +412,7 @@ const Payment: React.FC = () => {
             disabled={currentPlanIndex === paidPlans.length - 1}
           >
             <ChevronRight className="w-4 h-4" />
-          </Button>
+            </Button>
 
           {/* Plans */}
           <div className="flex gap-6 overflow-x-auto pb-4 px-12">
@@ -427,14 +427,14 @@ const Payment: React.FC = () => {
                   <div className="flex items-center justify-center mb-2">
                     {plan.name === 'monthly' && <Sparkles className="w-5 h-5 text-orange-500 mr-2" />}
                     <CardTitle className="text-xl">{plan.display_name}</CardTitle>
-                  </div>
+                          </div>
                   <CardDescription>{getPlanDurationText(plan.billing_cycle)}</CardDescription>
-                </CardHeader>
-                
+                        </CardHeader>
+
                 <CardContent className="text-center">
-                  {/* Price */}
+                          {/* Price */}
                   <div className="mb-6">
-                    <div className="text-4xl font-bold text-orange-500 mb-2">
+                              <div className="text-4xl font-bold text-orange-500 mb-2">
                       {formatCurrency(
                         convertCurrency(
                           getPlanPrice(plan.name, plan.billing_cycle),
@@ -443,43 +443,43 @@ const Payment: React.FC = () => {
                         ),
                         userCurrency
                       )}
-                    </div>
+                              </div>
                     {userCurrency !== 'USD' && plan.name !== 'free' && (
                       <p className="text-xs text-gray-500 mt-1">
                         ≈ ${getPlanPrice(plan.name, plan.billing_cycle).toFixed(2)} USD
                       </p>
-                    )}
-                  </div>
+                            )}
+                          </div>
 
-                  {/* Features */}
+                          {/* Features */}
                   <div className="space-y-3 mb-6">
                     {plan.features.map((feature, featureIndex) => (
                       <div key={featureIndex} className="flex items-center gap-2">
                         <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span className="text-sm">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
+                              </div>
+                            ))}
+                          </div>
 
                   <Separator className="my-4" />
 
                   {/* Payment Button */}
-                  <Button
-                    onClick={() => handlePayment(plan)}
+                          <Button
+                            onClick={() => handlePayment(plan)}
                     disabled={isProcessing || !selectedProvider}
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                  >
-                    {isProcessing ? (
-                      <>
+                          >
+                            {isProcessing ? (
+                              <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
+                                Processing...
+                              </>
+                            ) : (
+                              <>
                         {selectedProvider ? `Pay with ${getProviderName(selectedProvider)}` : 'Select Payment Method'}
-                      </>
-                    )}
-                  </Button>
+                              </>
+                            )}
+                          </Button>
 
                   {/* Provider Info */}
                   {selectedProvider && (

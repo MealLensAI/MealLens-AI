@@ -27,16 +27,18 @@ class AuthService:
             Tuple[Optional[str], str]: (user_id, auth_type) or (None, '') if verification fails
         """
         try:
+            print(f"[AUTH] Verifying Supabase token: {token[:20]}...")
             # Use Supabase admin client to verify the token
             user = self.supabase_admin.auth.get_user(token)
             if user and user.user:
+                print(f"[AUTH] Token verification successful for user: {user.user.id}")
                 # Return the user ID directly - profile fetch is optional
                 return user.user.id, 'supabase'
             else:
-                print("Invalid Supabase token")
+                print("[AUTH] Invalid Supabase token - no user found")
                 return None, ''
         except Exception as e:
-            print(f"Error verifying Supabase token: {str(e)}")
+            print(f"[AUTH] Error verifying Supabase token: {str(e)}")
             return None, ''
 
     def get_supabase_user_id_from_token(self, token: str) -> Tuple[Optional[str], str]:

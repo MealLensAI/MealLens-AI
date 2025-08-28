@@ -145,7 +145,7 @@ export const APP_CONFIG = {
     features_unlocked: true
   },
 
-  // API Configuration
+// API Configuration
   api: {
     base_url: import.meta.env.VITE_API_URL || 'https://meallens-ai-cmps.onrender.com',
     timeout: 30000

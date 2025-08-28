@@ -157,18 +157,18 @@ class PaystackService {
         } else {
           // Fallback to backend API
           console.log('[PaystackService] Using backend API fallback');
-          const response = await api.post('/payment/initialize-payment', {
-            email: config.email,
-            amount: config.amount,
-            currency: config.currency,
-            reference: config.reference,
-            callback_url: config.callback_url,
-            plan_id: config.metadata?.plan_id,
-            metadata: config.metadata
-          });
+      const response = await api.post('/payment/initialize-payment', {
+        email: config.email,
+        amount: config.amount,
+        currency: config.currency,
+        reference: config.reference,
+        callback_url: config.callback_url,
+        plan_id: config.metadata?.plan_id,
+        metadata: config.metadata
+      });
 
           console.log('[PaystackService] Backend API call successful:', response);
-          return response;
+      return response;
         }
       } catch (error: any) {
         lastError = error;
@@ -261,9 +261,9 @@ class PaystackService {
       } else {
         // Fallback to backend API
         console.log('[PaystackService] Using backend API verification fallback');
-        const response = await api.get(`/payment/verify-payment/${reference}`);
+      const response = await api.get(`/payment/verify-payment/${reference}`);
         console.log('[PaystackService] Backend verification successful:', response);
-        return response;
+      return response;
       }
     } catch (error) {
       console.error('[PaystackService] Error verifying payment:', error);

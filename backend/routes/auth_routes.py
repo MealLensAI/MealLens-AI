@@ -827,7 +827,10 @@ def refresh_token():
         data = request.get_json() or {}
         refresh_token = data.get('refresh_token')
         
+        print(f"[AUTH] Refresh token request received: {refresh_token[:20] if refresh_token else 'None'}...")
+        
         if not refresh_token:
+            print("[AUTH] No refresh token provided")
             return jsonify({
                 'status': 'error',
                 'message': 'Refresh token is required'
@@ -836,6 +839,7 @@ def refresh_token():
         # Get Supabase client
         supabase = get_supabase_client()
         if not supabase:
+            print("[AUTH] Supabase client not available")
             return jsonify({
                 'status': 'error',
                 'message': 'Authentication service not available'
@@ -843,13 +847,16 @@ def refresh_token():
 
         # Use Supabase to refresh the token
         try:
+            print("[AUTH] Attempting to refresh token with Supabase...")
             response = supabase.auth.refresh_session(refresh_token)
             if not response.session:
+                print("[AUTH] Invalid refresh token - no session returned")
                 return jsonify({
                     'status': 'error',
                     'message': 'Invalid refresh token'
                 }), 401
 
+            print(f"[AUTH] Token refresh successful for user: {response.user.id if response.user else 'Unknown'}")
             return jsonify({
                 'status': 'success',
                 'message': 'Token refreshed successfully',
@@ -860,6 +867,7 @@ def refresh_token():
 
         except Exception as e:
             current_app.logger.error(f"Token refresh error: {str(e)}")
+            print(f"[AUTH] Token refresh error: {str(e)}")
             return jsonify({
                 'status': 'error',
                 'message': 'Failed to refresh token'
@@ -867,6 +875,7 @@ def refresh_token():
 
     except Exception as e:
         current_app.logger.error(f"Refresh token endpoint error: {str(e)}")
+        print(f"[AUTH] Refresh token endpoint error: {str(e)}")
         return jsonify({
             'status': 'error',
             'message': 'Token refresh failed'

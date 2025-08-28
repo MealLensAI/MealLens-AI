@@ -40,14 +40,14 @@ def get_payment_service() -> Optional[PaymentService]:
     # First check if we have a payment service on the app
     if hasattr(current_app, 'payment_service') and current_app.payment_service is not None:
         return current_app.payment_service
-    
+
     # Fallback to simulated service for testing
     try:
         return SimulatedPaymentService(current_app.supabase_service.supabase)
     except Exception as e:
         print(f"Failed to create simulated payment service: {e}")
         return None
-
+    
 def authenticate_user():
     """Authenticate user and return user_id"""
     try:
@@ -202,7 +202,7 @@ def get_subscription_plans():
                 'plans': default_plans
             }), 200
         
-        return jsonify({
+            return jsonify({
             'status': 'success',
             'plans': plans_result.data
         }), 200
@@ -216,13 +216,13 @@ def get_subscription_plans():
 @payment_bp.route('/subscription', methods=['GET'])
 def get_user_subscription():
     """Get user's current subscription"""
-    user_id = authenticate_user()
-    if not user_id:
-        return jsonify({
-            'status': 'error',
-            'message': 'Authentication required'
-        }), 401
-    
+        user_id = authenticate_user()
+        if not user_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'Authentication required'
+            }), 401
+        
     try:
         # Get user's subscription
         subscription_result = current_app.supabase_service.supabase.table('subscriptions').select('*').eq('user_id', user_id).eq('is_active', True).execute()
@@ -274,7 +274,7 @@ def initialize_payment():
         metadata = data.get('metadata', {})
         
         if not email or not amount or not plan_id:
-            return jsonify({
+        return jsonify({
                 'status': 'error',
                 'message': 'Email, amount, and plan_id are required'
             }), 400
@@ -353,7 +353,7 @@ def verify_payment(reference):
         transaction_result = current_app.supabase_service.supabase.table('transactions').select('*').eq('reference', reference).execute()
         
         if not transaction_result.data:
-            return jsonify({
+    return jsonify({
                 'status': 'error',
                 'message': 'Transaction not found'
             }), 404
@@ -402,7 +402,7 @@ def verify_payment(reference):
             'status': 'error',
             'message': f'Payment verification failed: {str(e)}'
         }), 500
-
+    
 @payment_bp.route('/webhook/<provider>', methods=['POST'])
 def payment_webhook(provider):
     """Handle payment webhooks from different providers"""
@@ -608,11 +608,11 @@ def record_feature_usage(feature_name):
     result = payment_service.record_usage(user_id, feature_name)
     
     if result.get('status') == 'success':
-        return jsonify({
-            'status': 'success',
+            return jsonify({
+                'status': 'success',
             'message': 'Usage recorded successfully'
-        }), 200
-    else:
+            }), 200
+        else:
         return jsonify({
             'status': 'error',
             'message': result.get('message', 'Failed to record usage')
@@ -644,17 +644,17 @@ def save_transaction():
         
         result = current_app.supabase_service.supabase.table('transactions').insert(transaction_data).execute()
         
-        return jsonify({
-            'status': 'success',
+                return jsonify({
+                    'status': 'success',
             'message': 'Transaction saved successfully',
             'data': result.data[0] if result.data else None
-        }), 200
+                }), 200
         
     except Exception as e:
         return jsonify({
             'status': 'error',
             'message': f'Failed to save transaction: {str(e)}'
-        }), 500
+        }), 500 
 
 @payment_bp.route('/update-verification', methods=['POST'])
 def update_verification():
@@ -713,7 +713,7 @@ def update_verification():
                         
                         if existing_sub.data:
                             current_app.supabase_service.supabase.table('subscriptions').update(subscription_data).eq('user_id', user_id).execute()
-                        else:
+            else:
                             current_app.supabase_service.supabase.table('subscriptions').insert(subscription_data).execute()
                     except Exception as e:
                         print(f"Failed to update subscription: {e}")
@@ -721,16 +721,16 @@ def update_verification():
         return jsonify(result), 200 if result.get('status') == 'success' else 400
         
     except Exception as e:
-        return jsonify({
-            'status': 'error',
+                return jsonify({
+                    'status': 'error',
             'message': f'Failed to update verification: {str(e)}'
-        }), 500
+                }), 500
 
 @payment_bp.route('/health', methods=['GET'])
 def payment_health():
     """Simple health check for payment routes."""
     try:
-        return jsonify({
+            return jsonify({
             'status': 'success',
             'message': 'Payment routes are working',
             'timestamp': datetime.now().isoformat(),

@@ -77,13 +77,7 @@ class APIService {
     if (!skipAuth) {
       const token = this.getAuthToken()
       if (!token) {
-        // Clear any stale data and redirect to login
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('user_data')
-        localStorage.removeItem('supabase_refresh_token')
-        localStorage.removeItem('supabase_session_id')
-        localStorage.removeItem('supabase_user_id')
-        window.location.href = '/login'
+        // Don't redirect immediately, let the auth context handle it
         throw new APIError('No authentication token found. Please log in again.', 401)
       }
       headers['Authorization'] = `Bearer ${token}`
@@ -135,20 +129,8 @@ class APIService {
       if (!response.ok) {
         // Handle 401 Unauthorized
         if (response.status === 401) {
-          // Clear invalid token and all session data
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('user_data')
-          localStorage.removeItem('supabase_refresh_token')
-          localStorage.removeItem('supabase_session_id')
-          localStorage.removeItem('supabase_user_id')
-          
-          // For profile requests, throw error instead of immediate redirect to allow auth hook to handle
-          if (endpoint === '/profile') {
-            throw new APIError('Authentication required. Please log in again.', 401)
-          }
-          
-          // For other requests, redirect immediately
-          window.location.href = '/login'
+          // Don't clear session data immediately, let the auth context handle token refresh
+          console.log('[API] 401 Unauthorized - letting auth context handle refresh')
           throw new APIError('Authentication required. Please log in again.', 401)
         }
 

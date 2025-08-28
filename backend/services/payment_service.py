@@ -95,7 +95,7 @@ class PaymentService:
             return {
                 'status': False,
                 'message': f'Provider {provider} does not support currency: {currency}'
-            }
+        }
         
         try:
             # Initialize payment with the provider
@@ -343,7 +343,7 @@ class PaymentService:
         try:
             update_data = {
                 'status': status,
-                'updated_at': datetime.now().isoformat()
+                    'updated_at': datetime.now().isoformat()
             }
             
             if provider:
@@ -384,7 +384,7 @@ class SimulatedPaymentService(PaymentService):
                 'provider': provider or 'simulated'
             }
         }
-    
+
     def verify_payment(self, reference: str, provider: str = None) -> Dict:
         """Simulate payment verification"""
         return {

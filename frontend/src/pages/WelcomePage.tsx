@@ -49,20 +49,25 @@ const WelcomePage: React.FC = () => {
     seconds: 0
   });
 
-  // Launch date - set to Aug 27, 2025 at 23:59
-  const launchDate = new Date('2025-08-27T23:59:00Z');
+  // Launch date - set to Aug 29, 2025 at 23:59
+  const launchDate = new Date('2025-08-29T23:59:00Z');
 
-  // Fetch user count
+  // Fetch user count - start from 1000 and fetch actual count if available
   useEffect(() => {
     const fetchUserCount = async () => {
       try {
-        const response = await api.get('/user-count');
-        if (response.status === 'success' && response.user_count) {
-          setUserCount(response.user_count);
+        // Try to fetch actual user count from public endpoint
+        const base = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '' : 'https://meallens-ai-cmps.onrender.com');
+        const response = await fetch(`${base}/api/public/user-count`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.status === 'success' && data.user_count) {
+            setUserCount(Math.max(1000, data.user_count)); // Ensure minimum of 1000
+          }
         }
       } catch (error) {
         console.error('Error fetching user count:', error);
-        // Keep default fallback count
+        // Keep default fallback count of 1000
       }
     };
 

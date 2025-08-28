@@ -33,6 +33,7 @@ from routes.settings_routes import settings_bp
 from routes.server_time_routes import server_time_routes
 from routes.health_routes import health_bp
 from routes.admin_routes import admin_bp
+from routes.public_routes import public_bp
 
 # Payment routes import
 try:
@@ -174,6 +175,7 @@ def create_app():
     app.register_blueprint(server_time_routes, url_prefix='/api')
     app.register_blueprint(health_bp)  # Health routes don't need API prefix
     app.register_blueprint(admin_bp, url_prefix='/api/admin')  # Admin routes
+    app.register_blueprint(public_bp, url_prefix='/api/public')  # Public routes
 
     # Register payment routes if enabled
     if PAYMENT_ROUTES_ENABLED:

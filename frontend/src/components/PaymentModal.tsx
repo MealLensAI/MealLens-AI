@@ -182,7 +182,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
       try {
         const response = await api.post('/payment/initialize-payment', paymentData);
         
-        if (response.status === 'success') {
+        if (response.status === 'success' || response.status === true) {
           // Handle different providers
           if (selectedProvider === 'mpesa') {
             // For M-Pesa, show instructions

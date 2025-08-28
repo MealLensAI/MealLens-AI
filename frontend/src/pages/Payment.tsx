@@ -83,11 +83,16 @@ const Payment: React.FC = () => {
                   onMouseLeave={() => setHoveredPlan(null)}
                       >
                         {isPopular && (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
-                      <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 text-sm font-bold shadow-xl border-2 border-white animate-pulse">
-                        <Star className="w-4 h-4 mr-2 animate-spin" style={{ animationDuration: '3s' }} />
-                            Most Popular
-                      </Badge>
+                          <div className="absolute -top-2 -right-2 z-20">
+                            {/* Ribbon */}
+                            <div className="relative">
+                              <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold px-3 py-1 shadow-lg transform rotate-12">
+                                <Star className="w-3 h-3 inline mr-1" />
+                                Most Popular
+                              </div>
+                              {/* Ribbon tail */}
+                              <div className="absolute -bottom-1 -right-1 w-0 h-0 border-l-4 border-l-orange-600 border-t-4 border-t-transparent border-b-4 border-b-transparent transform rotate-12"></div>
+                            </div>
                           </div>
                         )}
                         

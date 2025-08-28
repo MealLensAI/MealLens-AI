@@ -17,6 +17,7 @@ const Payment: React.FC = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
 
   // Get current plan
   const currentPlan = subscription?.plan;
@@ -35,14 +36,14 @@ const Payment: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
+      <div className="container mx-auto px-4 py-12 max-w-7xl">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+        <div className="text-center mb-16">
+          <h1 className="text-5xl font-bold text-gray-900 mb-6">
             Choose Your Plan
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Unlock the full potential of MealLens AI with our flexible subscription plans. 
             Start your journey to better nutrition today.
           </p>
@@ -50,131 +51,159 @@ const Payment: React.FC = () => {
 
         {/* Current Plan Badge */}
         {currentPlan && typeof currentPlan === 'string' && currentPlan !== 'free' && (
-          <div className="mb-6 text-center">
-            <Badge variant="secondary" className="text-sm">
+          <div className="mb-8 text-center">
+            <Badge variant="secondary" className="text-sm px-4 py-2">
               Current Plan: {APP_CONFIG.subscriptionPlans.find(p => p.name === currentPlan)?.display_name}
             </Badge>
           </div>
         )}
 
         {/* Plans Grid */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {paidPlans.map((plan, index) => (
-            <Card
-              key={plan.name}
-              className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 ${
-                index === 1 ? 'ring-2 ring-orange-500 relative' : ''
-              }`}
-              onClick={() => handlePlanSelect(plan)}
-            >
-              {index === 1 && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-orange-500 text-white px-3 py-1">
-                    <Star className="w-3 h-3 mr-1" />
-                    Most Popular
-                  </Badge>
-                </div>
-              )}
+        <div className="flex justify-center mb-16">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl">
+            {paidPlans.map((plan, index) => {
+              const isPopular = index === 1;
+              const isHovered = hoveredPlan === plan.name;
+              const isActive = hoveredPlan === plan.name;
               
-              <CardHeader className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  {plan.name === 'monthly' && <Sparkles className="w-6 h-6 text-orange-500 mr-2" />}
-                  <CardTitle className="text-xl">{plan.display_name}</CardTitle>
-                </div>
-                <CardDescription className="text-gray-600">
-                  {getPlanDurationText(plan.billing_cycle)}
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-                {/* Price */}
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-orange-500">
-                    {formatCurrency(
-                      convertCurrency(
-                        getPlanPrice(plan.name, plan.billing_cycle),
-                        'USD',
-                        'USD'
-                      ),
-                      'USD'
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500">
-                    per {plan.billing_cycle === 'weekly' ? 'week' : plan.billing_cycle === 'two_weeks' ? '2 weeks' : 'month'}
-                  </p>
-                </div>
-
-                <Separator />
-
-                {/* Features */}
-                <div className="space-y-3">
-                  {getPlanFeatures(plan.name).map((feature, featureIndex) => (
-                    <div key={featureIndex} className="flex items-center gap-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                      <span className="text-sm text-gray-700">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* CTA Button */}
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePlanSelect(plan);
-                  }}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+              return (
+                <Card
+                  key={plan.name}
+                  className={`cursor-pointer transition-all duration-500 ${
+                    isActive 
+                      ? 'scale-110 ring-4 ring-orange-500 shadow-2xl z-10' 
+                      : isHovered 
+                        ? 'scale-105 shadow-xl' 
+                        : 'hover:scale-105 hover:shadow-lg'
+                  } ${
+                    isPopular ? 'relative' : ''
+                  }`}
+                  onClick={() => handlePlanSelect(plan)}
+                  onMouseEnter={() => setHoveredPlan(plan.name)}
+                  onMouseLeave={() => setHoveredPlan(null)}
                 >
-                  Get Started
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                  {isPopular && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
+                      <Badge className="bg-orange-500 text-white px-4 py-2 text-sm font-semibold shadow-lg">
+                        <Star className="w-4 h-4 mr-2" />
+                        Most Popular
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  <CardHeader className="text-center pb-6">
+                    <div className="flex items-center justify-center mb-4">
+                      {plan.name === 'monthly' && <Sparkles className="w-8 h-8 text-orange-500 mr-3" />}
+                      <CardTitle className={`text-2xl font-bold ${isActive ? 'text-orange-600' : 'text-gray-900'}`}>
+                        {plan.display_name}
+                      </CardTitle>
+                    </div>
+                    <CardDescription className="text-gray-600 text-base">
+                      {getPlanDurationText(plan.billing_cycle)}
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent className="space-y-8">
+                    {/* Price */}
+                    <div className="text-center">
+                      <div className={`text-4xl font-bold ${isActive ? 'text-orange-600' : 'text-orange-500'}`}>
+                        {formatCurrency(
+                          convertCurrency(
+                            getPlanPrice(plan.name, plan.billing_cycle),
+                            'USD',
+                            'USD'
+                          ),
+                          'USD'
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500 mt-2">
+                        per {plan.billing_cycle === 'weekly' ? 'week' : plan.billing_cycle === 'two_weeks' ? '2 weeks' : 'month'}
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    {/* Features */}
+                    <div className="space-y-4">
+                      {getPlanFeatures(plan.name).map((feature, featureIndex) => (
+                        <div key={featureIndex} className="flex items-center gap-3">
+                          <Check className={`w-5 h-5 ${isActive ? 'text-orange-500' : 'text-green-500'} flex-shrink-0`} />
+                          <span className="text-sm text-gray-700">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* CTA Button */}
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePlanSelect(plan);
+                      }}
+                      className={`w-full py-3 text-base font-semibold ${
+                        isActive 
+                          ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg' 
+                          : 'bg-orange-500 hover:bg-orange-600 text-white'
+                      }`}
+                    >
+                      Get Started
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
 
         {/* Features Comparison */}
-        <div className="mt-16 max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-center mb-8">What's Included</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">AI-Powered Features</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" />
-                  Unlimited food detection and analysis
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">What's Included</h2>
+          <div className="grid md:grid-cols-2 gap-12">
+            <div className="space-y-6">
+              <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-3">
+                <Sparkles className="w-6 h-6 text-orange-500" />
+                AI-Powered Features
+              </h3>
+              <ul className="space-y-4 text-gray-600">
+                <li className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span>Unlimited food detection and analysis</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" />
-                  Personalized meal planning
+                <li className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span>Personalized meal planning</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" />
-                  Nutritional insights and recommendations
+                <li className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span>Nutritional insights and recommendations</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" />
-                  Recipe suggestions based on your preferences
+                <li className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span>Recipe suggestions based on your preferences</span>
                 </li>
               </ul>
             </div>
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Premium Support</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" />
-                  Priority customer support
+            <div className="space-y-6">
+              <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-3">
+                <Star className="w-6 h-6 text-orange-500" />
+                Premium Support
+              </h3>
+              <ul className="space-y-4 text-gray-600">
+                <li className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span>Priority customer support</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" />
-                  Advanced analytics and insights
+                <li className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span>Advanced analytics and insights</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" />
-                  Export and share meal plans
+                <li className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span>Export and share meal plans</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" />
-                  Early access to new features
+                <li className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span>Early access to new features</span>
                 </li>
               </ul>
             </div>

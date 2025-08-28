@@ -262,57 +262,57 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-100">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-8 border-b border-gray-100">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Upgrade to Pro</h2>
-            <p className="text-sm text-gray-600">Unlock unlimited access</p>
+            <h2 className="text-2xl font-bold text-gray-900">Upgrade to Pro</h2>
+            <p className="text-sm text-gray-600 mt-1">Unlock unlimited access</p>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="h-8 w-8"
+            className="h-10 w-10 rounded-full hover:bg-gray-100"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-8">
           {currentStep === 'plan' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Current Plan Badge */}
               {currentPlan && typeof currentPlan === 'string' && currentPlan !== 'free' && (
                 <div className="text-center">
-                  <Badge variant="secondary" className="text-sm">
+                  <Badge variant="secondary" className="text-sm px-4 py-2">
                     Current: {APP_CONFIG.subscriptionPlans.find(p => p.name === currentPlan)?.display_name}
                   </Badge>
                 </div>
               )}
 
               {/* Plans */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {paidPlans.map((plan) => (
                   <Card
                     key={plan.name}
-                    className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      selectedPlan?.name === plan.name ? 'ring-2 ring-orange-500' : ''
+                    className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 ${
+                      selectedPlan?.name === plan.name ? 'ring-2 ring-orange-500 bg-orange-50' : ''
                     }`}
                     onClick={() => setSelectedPlan(plan)}
                   >
-                    <CardContent className="p-4">
+                    <CardContent className="p-6">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {plan.name === 'monthly' && <Sparkles className="w-5 h-5 text-orange-500" />}
+                        <div className="flex items-center gap-4">
+                          {plan.name === 'monthly' && <Sparkles className="w-6 h-6 text-orange-500" />}
                           <div>
-                            <h3 className="font-semibold">{plan.display_name}</h3>
+                            <h3 className="font-semibold text-lg">{plan.display_name}</h3>
                             <p className="text-sm text-gray-600">{getPlanDurationText(plan.billing_cycle)}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-orange-500">
+                          <div className="text-xl font-bold text-orange-500">
                             {formatCurrency(
                               convertCurrency(
                                 getPlanPrice(plan.name, plan.billing_cycle),
@@ -338,26 +338,26 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
               <Button
                 onClick={() => setCurrentStep('payment')}
                 disabled={!selectedPlan}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-base font-semibold"
               >
                 Continue to Payment
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
           )}
 
           {currentStep === 'payment' && selectedPlan && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Plan Summary */}
-              <Card className="bg-gray-50">
-                <CardContent className="p-4">
+              <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
+                <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-semibold">{selectedPlan.display_name}</h3>
+                      <h3 className="font-semibold text-lg text-gray-900">{selectedPlan.display_name}</h3>
                       <p className="text-sm text-gray-600">{getPlanDurationText(selectedPlan.billing_cycle)}</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-bold text-orange-500">
+                      <div className="text-2xl font-bold text-orange-600">
                         {formatCurrency(
                           convertCurrency(
                             getPlanPrice(selectedPlan.name, selectedPlan.billing_cycle),
@@ -374,23 +374,27 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
 
               {/* Payment Provider Selection */}
               {Object.keys(providersForCurrency).length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="font-medium">Payment Method</h4>
-                  <div className="space-y-2">
+                <div className="space-y-4">
+                  <h4 className="font-medium text-lg text-gray-900">Payment Method</h4>
+                  <div className="space-y-3">
                     {Object.entries(providersForCurrency).map(([providerKey, provider]: [string, any]) => (
                       <Button
                         key={providerKey}
                         variant={selectedProvider === providerKey ? "default" : "outline"}
-                        className={`w-full justify-start h-auto p-3 ${
-                          selectedProvider === providerKey ? 'bg-orange-500 text-white' : ''
+                        className={`w-full justify-start h-auto p-4 text-left transition-all duration-200 ${
+                          selectedProvider === providerKey 
+                            ? 'bg-orange-500 text-white border-orange-500 shadow-lg' 
+                            : 'hover:border-orange-300 hover:bg-orange-50'
                         }`}
                         onClick={() => setSelectedProvider(providerKey)}
                       >
-                        <div className="flex items-center gap-3">
-                          {getProviderIcon(providerKey)}
-                          <div className="text-left">
+                        <div className="flex items-center gap-4">
+                          <div className={`p-2 rounded-lg ${selectedProvider === providerKey ? 'bg-white bg-opacity-20' : 'bg-orange-100'}`}>
+                            {getProviderIcon(providerKey)}
+                          </div>
+                          <div>
                             <div className="font-medium">{getProviderName(providerKey)}</div>
-                            <div className="text-xs opacity-75">
+                            <div className="text-sm opacity-75">
                               {provider.features?.slice(0, 2).join(', ')}
                             </div>
                           </div>
@@ -405,11 +409,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
               <Button
                 onClick={() => handlePayment(selectedPlan)}
                 disabled={isProcessing || !selectedProvider}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 text-base font-semibold shadow-lg"
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                     Processing...
                   </>
                 ) : (
@@ -430,7 +434,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
               <Button
                 variant="outline"
                 onClick={() => setCurrentStep('plan')}
-                className="w-full"
+                className="w-full py-3"
               >
                 Back to Plans
               </Button>
@@ -438,31 +442,33 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
           )}
 
           {currentStep === 'processing' && (
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-6 py-8">
               <div className="flex justify-center">
-                <Loader2 className="h-12 w-12 text-orange-500 animate-spin" />
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
+                </div>
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Processing Payment...</h3>
-                <p className="text-sm text-gray-600">Please wait while we process your payment</p>
+                <h3 className="text-xl font-semibold text-gray-900">Processing Payment...</h3>
+                <p className="text-sm text-gray-600 mt-2">Please wait while we process your payment</p>
               </div>
             </div>
           )}
 
           {currentStep === 'success' && (
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-6 py-8">
               <div className="flex justify-center">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
                   <Check className="h-8 w-8 text-green-600" />
                 </div>
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Payment Successful!</h3>
-                <p className="text-sm text-gray-600">Welcome to MealLens Pro!</p>
+                <h3 className="text-xl font-semibold text-gray-900">Payment Successful!</h3>
+                <p className="text-sm text-gray-600 mt-2">Welcome to MealLens Pro!</p>
               </div>
               <Button
                 onClick={onClose}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 text-base font-semibold"
               >
                 Start Using Pro Features
               </Button>
@@ -471,9 +477,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
 
           {/* Error Message */}
           {errorMessage && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center gap-2 text-red-600">
-                <XCircle className="w-4 h-4" />
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+              <div className="flex items-center gap-3 text-red-600">
+                <XCircle className="w-5 h-5 flex-shrink-0" />
                 <span className="text-sm">{errorMessage}</span>
               </div>
             </div>

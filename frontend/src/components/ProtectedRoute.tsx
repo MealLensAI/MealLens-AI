@@ -8,9 +8,10 @@ import { useAuth } from "@/lib/utils"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
+  fallback?: React.ReactNode
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallback }) => {
   const { isAuthenticated, loading } = useAuth()
   const location = useLocation()
 
@@ -19,6 +20,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!isAuthenticated) {
+    // If fallback is provided, show it instead of redirecting
+    if (fallback) {
+      return <>{fallback}</>
+    }
     // Redirect to login with the current location as the intended destination
     return <Navigate to="/login" state={{ from: location }} replace />
   }

@@ -74,7 +74,11 @@ const LaunchCountdownWrapper: React.FC<{ children: React.ReactNode }> = ({ child
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <WelcomePage />
+    element: (
+      <ProtectedRoute fallback={<WelcomePage />}>
+        <Navigate to="/ai-kitchen" replace />
+      </ProtectedRoute>
+    )
   },
   {
     path: "/landing",

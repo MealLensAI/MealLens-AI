@@ -83,7 +83,7 @@ const PaymentSuccess: React.FC = () => {
         <Card className="w-full max-w-md text-center">
           <CardContent className="p-8">
             <div className="flex justify-center mb-6">
-              <Loader2 className="h-12 w-12 text-[#FF6B6B] animate-spin" />
+              <Loader2 className="h-12 w-12 text-orange-500 animate-spin" />
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Verifying Payment...</h2>
             <p className="text-gray-600">
@@ -111,18 +111,18 @@ const PaymentSuccess: React.FC = () => {
             </p>
             <div className="space-y-3">
               <Button 
-                onClick={() => navigate('/payment')}
+                onClick={() => navigate('/ai-kitchen')}
                 className="w-full bg-orange-500 hover:bg-orange-600"
               >
-                Try Again
+                Go to AI Kitchen
               </Button>
               <Button 
-                onClick={() => navigate('/ai-kitchen')}
+                onClick={() => navigate('/')}
                 variant="outline"
                 className="w-full"
               >
                 <Home className="h-4 w-4 mr-2" />
-                Go to AI Kitchen
+                Go Home
               </Button>
             </div>
           </CardContent>

@@ -43,12 +43,13 @@ class PaymentService:
             }
 
             # Make request to Paystack
-            headers = {
-                'Authorization': f'Bearer {self.paystack_secret_key}',
-                'Content-Type': 'application/json'
-            }
-
-            response = requests.post(
+            try:
+                headers = {
+                    'Authorization': f'Bearer {self.paystack_secret_key}',
+                    'Content-Type': 'application/json'
+                }
+                
+                response = requests.post(
                 'https://api.paystack.co/transaction/initialize',
                 json=payment_data,
                 headers=headers
@@ -186,7 +187,7 @@ class PaymentService:
                     'subscription': None,
                     'plan': 'free'
                 }
-
+            
         except Exception as e:
             print(f"Subscription status error: {e}")
             return {
@@ -229,7 +230,7 @@ class PaymentService:
 
         except Exception as e:
             print(f"Feature check error: {e}")
-            return {
+        return {
                 'can_use': False,
                 'current_usage': 0,
                 'limit': 0,
@@ -281,7 +282,7 @@ class PaymentService:
 
         except Exception as e:
             print(f"Trial status check error: {e}")
-            return {
+        return {
                 'can_use': False,
                 'current_usage': 0,
                 'limit': 0,
@@ -293,8 +294,8 @@ class PaymentService:
         """Get feature limits for a plan"""
         limits = {
             'free': {
-                'food_detection': 5,
-                'meal_planning': 3,
+                    'food_detection': 5,
+                    'meal_planning': 3,
                 'ai_kitchen': 5
             },
             'weekly': {

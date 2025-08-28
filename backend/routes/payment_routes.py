@@ -33,12 +33,12 @@ def authenticate_user():
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return None
-        
-        token = auth_header.split(' ')[1]
-        auth_service = AuthService(current_app.supabase_service.supabase)
-        user_id = auth_service.verify_token(token)
-        return user_id
-    except Exception as e:
+    
+    token = auth_header.split(' ')[1]
+    auth_service = AuthService(current_app.supabase_service.supabase)
+    user_id = auth_service.verify_token(token)
+    return user_id
+except Exception as e:
         print(f"Authentication error: {e}")
         return None
 
@@ -49,7 +49,7 @@ def initialize_payment():
         data = request.get_json()
         if not data:
             return jsonify({'error': 'No data provided'}), 400
-
+        
         email = data.get('email')
         amount = data.get('amount')
         currency = data.get('currency', 'USD')
@@ -75,7 +75,7 @@ def initialize_payment():
             user_id=user_id,
             metadata=metadata
         )
-
+        
         if result.get('status'):
             return jsonify(result), 200
         else:
@@ -96,7 +96,7 @@ def verify_payment(reference):
         user_id = authenticate_user()
         if not user_id:
             return jsonify({'error': 'Authentication required'}), 401
-
+        
         # Verify payment
         payment_service = get_payment_service()
         result = payment_service.verify_payment(reference)
@@ -118,7 +118,7 @@ def record_usage(feature_name):
         user_id = authenticate_user()
         if not user_id:
             return jsonify({'error': 'Authentication required'}), 401
-
+        
         # Record usage
         payment_service = get_payment_service()
         result = payment_service.record_usage(user_id, feature_name)
@@ -162,7 +162,7 @@ def can_use_feature(feature_name):
         result = payment_service.can_use_feature(user_id, feature_name)
 
         return jsonify(result), 200
-
+            
     except Exception as e:
         print(f"Feature check error: {e}")
         return jsonify({'error': 'Failed to check feature usage'}), 500 

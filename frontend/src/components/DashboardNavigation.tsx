@@ -128,10 +128,7 @@ const DashboardNavigation: React.FC<DashboardNavigationProps> = ({ className = '
             <CreditCard className="mr-2 h-4 w-4" />
             <span>Subscription</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/landing')}>
-            <Globe className="mr-2 h-4 w-4" />
-            <span>View Landing Page</span>
-          </DropdownMenuItem>
+
 
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut}>

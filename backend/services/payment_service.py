@@ -37,8 +37,27 @@ class PaymentService:
             else:
                 raise ValueError(f"Unsupported HTTP method: {method}")
             
-            response.raise_for_status()
-            return response.json()
+            print(f"[DEBUG] Paystack API request to {url}")
+            print(f"[DEBUG] Request data: {data}")
+            print(f"[DEBUG] Response status: {response.status_code}")
+            
+            # Always try to get JSON response, even for error status codes
+            try:
+                response_data = response.json()
+                print(f"[DEBUG] Response data: {response_data}")
+            except Exception as e:
+                print(f"[DEBUG] Could not parse JSON response: {e}")
+                response_data = {'status': False, 'message': f'Invalid JSON response: {response.text}'}
+            
+            # If it's an error status code, return error response
+            if response.status_code >= 400:
+                return {
+                    'status': False, 
+                    'message': response_data.get('message', f'HTTP {response.status_code} error'),
+                    'data': response_data
+                }
+            
+            return response_data
         except requests.exceptions.RequestException as e:
             print(f"Paystack API request failed: {str(e)}")
             return {'status': False, 'message': str(e)}

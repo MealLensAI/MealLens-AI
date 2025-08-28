@@ -380,10 +380,22 @@ def initialize_payment():
         
         print(f"[DEBUG] Paystack response: {result}")
         
+        # Check if the response indicates success
         if result.get('status') and result.get('data'):
+            # Validate that we have the required fields
+            data = result.get('data', {})
+            if not data.get('authorization_url'):
+                error_msg = "Paystack response missing authorization_url"
+                print(f"[ERROR] {error_msg}")
+                print(f"[ERROR] Full response: {result}")
+                return jsonify({
+                    'status': 'error',
+                    'message': error_msg
+                }), 500
+            
             # Save transaction record
             transaction_data = {
-                'id': result['data'].get('id', reference),  # Use reference as fallback if no id
+                'id': data.get('id', reference),  # Use reference as fallback if no id
                 'reference': reference,
                 'amount': amount_kobo,
                 'currency': 'USD',
@@ -400,9 +412,9 @@ def initialize_payment():
             return jsonify({
                 'status': 'success',
                 'data': {
-                    'authorization_url': result['data'].get('authorization_url'),
+                    'authorization_url': data.get('authorization_url'),
                     'reference': reference,
-                    'access_code': result['data'].get('access_code')
+                    'access_code': data.get('access_code')
                 }
             }), 200
         else:

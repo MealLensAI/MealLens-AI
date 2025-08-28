@@ -1,12 +1,11 @@
 import { useAuth } from './utils'
 
-// API base URL - uses environment variable or falls back to proxy
-const API_BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : (import.meta.env.DEV ? '/api' : 'https://meallens-ai-cmps.onrender.com/api')
+// API base URL - always use remote backend for launch
+const API_BASE_URL = 'https://meallens-ai-cmps.onrender.com/api'
 
 // Debug logging
 console.log('[API] Environment:', import.meta.env.MODE)
-console.log('[API] VITE_API_URL:', import.meta.env.VITE_API_URL)
-console.log('[API] Final API_BASE_URL:', API_BASE_URL)
+console.log('[API] Using remote backend for launch:', API_BASE_URL)
 
 // Custom error class for API errors
 export class APIError extends Error {
@@ -325,7 +324,7 @@ class APIService {
   }
 
   async getPaymentSubscription(): Promise<APIResponse> {
-    return this.get('/payment/subscription')
+    return this.get('/payment/subscription-status')
   }
 
   async getPaymentUsage(): Promise<APIResponse> {

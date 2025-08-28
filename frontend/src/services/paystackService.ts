@@ -516,7 +516,7 @@ class PaystackService {
    */
   async getUserSubscription(): Promise<UserSubscription | null> {
     try {
-      const response = await api.get('/payment/subscription');
+      const response = await api.get('/payment/subscription-status');
       if (response.status === 'success') {
         return response.subscription;
       }
@@ -532,7 +532,7 @@ class PaystackService {
    */
   async checkFeatureUsage(featureName: string): Promise<any> {
     try {
-      const response = await api.get(`/payment/check-usage/${featureName}`);
+      const response = await api.get(`/payment/can-use-feature/${featureName}`);
       return response;
     } catch (error) {
       console.error('Error checking feature usage:', error);

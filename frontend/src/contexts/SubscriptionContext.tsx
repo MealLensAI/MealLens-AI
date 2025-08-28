@@ -418,4 +418,6 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       {children}
     </SubscriptionContext.Provider>
   );
-}; 
+};
+
+export default SubscriptionProvider; 

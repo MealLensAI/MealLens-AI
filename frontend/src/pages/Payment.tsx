@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Check, CreditCard, Sparkles, ArrowRight, Star } from 'lucide-react';
+import { Check, Sparkles, ArrowRight, Star } from 'lucide-react';
 import { APP_CONFIG, convertCurrency, formatCurrency, getPlanPrice, getPlanDurationText, getPlanFeatures } from '@/lib/config';
 import PaymentModal from '@/components/PaymentModal';
 
@@ -55,8 +55,8 @@ const Payment: React.FC = () => {
             <Badge variant="secondary" className="text-sm px-4 py-2">
               Current Plan: {APP_CONFIG.subscriptionPlans.find(p => p.name === currentPlan)?.display_name}
             </Badge>
-          </div>
-        )}
+            </div>
+          )}
 
         {/* Plans Grid */}
         <div className="flex justify-center mb-16">
@@ -65,9 +65,9 @@ const Payment: React.FC = () => {
               const isPopular = index === 1;
               const isHovered = hoveredPlan === plan.name;
               const isActive = hoveredPlan === plan.name;
-              
-              return (
-                <Card
+                  
+                  return (
+                      <Card
                   key={plan.name}
                   className={`cursor-pointer transition-all duration-500 ${
                     isActive 
@@ -81,31 +81,31 @@ const Payment: React.FC = () => {
                   onClick={() => handlePlanSelect(plan)}
                   onMouseEnter={() => setHoveredPlan(plan.name)}
                   onMouseLeave={() => setHoveredPlan(null)}
-                >
-                  {isPopular && (
+                      >
+                        {isPopular && (
                     <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
-                      <Badge className="bg-orange-500 text-white px-4 py-2 text-sm font-semibold shadow-lg">
-                        <Star className="w-4 h-4 mr-2" />
-                        Most Popular
+                      <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 text-sm font-bold shadow-xl border-2 border-white animate-pulse">
+                        <Star className="w-4 h-4 mr-2 animate-spin" style={{ animationDuration: '3s' }} />
+                            Most Popular
                       </Badge>
-                    </div>
-                  )}
-                  
+                          </div>
+                        )}
+                        
                   <CardHeader className="text-center pb-6">
                     <div className="flex items-center justify-center mb-4">
                       {plan.name === 'monthly' && <Sparkles className="w-8 h-8 text-orange-500 mr-3" />}
                       <CardTitle className={`text-2xl font-bold ${isActive ? 'text-orange-600' : 'text-gray-900'}`}>
                         {plan.display_name}
                       </CardTitle>
-                    </div>
+                          </div>
                     <CardDescription className="text-gray-600 text-base">
                       {getPlanDurationText(plan.billing_cycle)}
-                    </CardDescription>
-                  </CardHeader>
+                          </CardDescription>
+                        </CardHeader>
 
                   <CardContent className="space-y-8">
-                    {/* Price */}
-                    <div className="text-center">
+                          {/* Price */}
+                          <div className="text-center">
                       <div className={`text-4xl font-bold ${isActive ? 'text-orange-600' : 'text-orange-500'}`}>
                         {formatCurrency(
                           convertCurrency(
@@ -115,43 +115,43 @@ const Payment: React.FC = () => {
                           ),
                           'USD'
                         )}
-                      </div>
+                              </div>
                       <p className="text-sm text-gray-500 mt-2">
                         per {plan.billing_cycle === 'weekly' ? 'week' : plan.billing_cycle === 'two_weeks' ? '2 weeks' : 'month'}
-                      </p>
-                    </div>
+                            </p>
+                          </div>
 
                     <Separator />
 
-                    {/* Features */}
+                          {/* Features */}
                     <div className="space-y-4">
                       {getPlanFeatures(plan.name).map((feature, featureIndex) => (
                         <div key={featureIndex} className="flex items-center gap-3">
                           <Check className={`w-5 h-5 ${isActive ? 'text-orange-500' : 'text-green-500'} flex-shrink-0`} />
-                          <span className="text-sm text-gray-700">{feature}</span>
-                        </div>
-                      ))}
-                    </div>
+                                <span className="text-sm text-gray-700">{feature}</span>
+                              </div>
+                            ))}
+                          </div>
 
-                    {/* CTA Button */}
-                    <Button
+                          {/* CTA Button */}
+                          <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         handlePlanSelect(plan);
                       }}
-                      className={`w-full py-3 text-base font-semibold ${
+                            className={`w-full py-3 text-base font-semibold ${
                         isActive 
                           ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg' 
-                          : 'bg-orange-500 hover:bg-orange-600 text-white'
-                      }`}
-                    >
+                                : 'bg-orange-500 hover:bg-orange-600 text-white'
+                            }`}
+                          >
                       Get Started
                       <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                  );
+                })}
           </div>
         </div>
 
@@ -182,7 +182,7 @@ const Payment: React.FC = () => {
                   <span>Recipe suggestions based on your preferences</span>
                 </li>
               </ul>
-            </div>
+              </div>
             <div className="space-y-6">
               <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-3">
                 <Star className="w-6 h-6 text-orange-500" />

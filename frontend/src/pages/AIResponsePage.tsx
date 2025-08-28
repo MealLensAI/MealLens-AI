@@ -434,7 +434,7 @@ const AIResponsePage: FC = () => {
             <div className="text-center">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
                 AI Kitchen Assistant
-              </h1>
+          </h1>
               <p className="text-gray-600 text-sm sm:text-base">
                 Get personalized recipe suggestions based on your available ingredients
               </p>
@@ -829,10 +829,10 @@ const AIResponsePage: FC = () => {
                 >
                   Cancel
                 </Button>
-              </div>
+                </div>
             </div>
-          </div>
-        )}
+            </div>
+          )}
 
         {/* Hidden camera input */}
         <input

@@ -387,12 +387,12 @@ const DetectFoodPage = () => {
                   >
                     <X className="h-4 w-4" />
                   </Button>
-                </div>
-              )}
+              </div>
+            )}
 
-              {/* Submit Button */}
+          {/* Submit Button */}
               <Button
-                onClick={handleSubmit}
+            onClick={handleSubmit}
                 disabled={!imagePreview || isProcessing}
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-base sm:text-lg font-semibold loading-button"
               >
@@ -430,12 +430,12 @@ const DetectFoodPage = () => {
                   <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
                   <p className="text-gray-700">Get detailed nutritional information and recipe suggestions</p>
                 </div>
-              </div>
+            </div>
             </CardContent>
           </Card>
 
-          {/* Instructions Section */}
-            {instructions && (
+              {/* Instructions Section */}
+              {instructions && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -474,7 +474,7 @@ const DetectFoodPage = () => {
                               {food}
                             </Badge>
                           ))}
-                        </div>
+                </div>
                       </div>
                     )}
                     
@@ -682,10 +682,10 @@ const DetectFoodPage = () => {
                     </div>
                 </CardContent>
               </Card>
-            )}
-        </div>
-      </div>
-
+                      )}
+                    </div>
+                  </div>
+                  
       {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -693,8 +693,8 @@ const DetectFoodPage = () => {
             <div className="text-center mb-6">
               <h3 className="text-xl font-bold text-gray-900 mb-2">Upload Food Image</h3>
               <p className="text-gray-600">Choose how you'd like to upload your food photo</p>
-            </div>
-            
+                    </div>
+                    
             <div className="space-y-4">
               <Button 
                 onClick={() => {

@@ -19,6 +19,149 @@ import {
   CheckCircle
 } from 'lucide-react';
 
+// Countries list
+const countries = [
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda', 'Argentina', 'Armenia', 'Australia', 'Austria',
+  'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan',
+  'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cabo Verde', 'Cambodia',
+  'Cameroon', 'Canada', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 'Costa Rica',
+  'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Democratic Republic of the Congo', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'Ecuador',
+  'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia', 'Fiji', 'Finland', 'France',
+  'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau',
+  'Guyana', 'Haiti', 'Honduras', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland',
+  'Israel', 'Italy', 'Ivory Coast', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kiribati', 'Kuwait',
+  'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania', 'Luxembourg',
+  'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico',
+  'Micronesia', 'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia', 'Nauru',
+  'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Korea', 'North Macedonia', 'Norway', 'Oman',
+  'Pakistan', 'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal',
+  'Qatar', 'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino', 'Sao Tome and Principe',
+  'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia',
+  'South Africa', 'South Korea', 'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria',
+  'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey',
+  'Turkmenistan', 'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan', 'Vanuatu',
+  'Vatican City', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe'
+];
+
+// Currencies list
+const currencies = [
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
+  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+  { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
+  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+  { code: 'RUB', symbol: '₽', name: 'Russian Ruble' },
+  { code: 'KRW', symbol: '₩', name: 'South Korean Won' },
+  { code: 'MXN', symbol: '$', name: 'Mexican Peso' },
+  { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
+  { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
+  { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
+  { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
+  { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
+  { code: 'PLN', symbol: 'zł', name: 'Polish Złoty' },
+  { code: 'CZK', symbol: 'Kč', name: 'Czech Koruna' },
+  { code: 'HUF', symbol: 'Ft', name: 'Hungarian Forint' },
+  { code: 'RON', symbol: 'lei', name: 'Romanian Leu' },
+  { code: 'BGN', symbol: 'лв', name: 'Bulgarian Lev' },
+  { code: 'HRK', symbol: 'kn', name: 'Croatian Kuna' },
+  { code: 'TRY', symbol: '₺', name: 'Turkish Lira' },
+  { code: 'ILS', symbol: '₪', name: 'Israeli Shekel' },
+  { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+  { code: 'THB', symbol: '฿', name: 'Thai Baht' },
+  { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit' },
+  { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah' },
+  { code: 'PHP', symbol: '₱', name: 'Philippine Peso' },
+  { code: 'VND', symbol: '₫', name: 'Vietnamese Dong' },
+  { code: 'EGP', symbol: 'E£', name: 'Egyptian Pound' },
+  { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling' },
+  { code: 'GHS', symbol: 'GH₵', name: 'Ghanaian Cedi' },
+  { code: 'UGX', symbol: 'USh', name: 'Ugandan Shilling' },
+  { code: 'TZS', symbol: 'TSh', name: 'Tanzanian Shilling' },
+  { code: 'ZMW', symbol: 'ZK', name: 'Zambian Kwacha' },
+  { code: 'BWP', symbol: 'P', name: 'Botswana Pula' },
+  { code: 'NAD', symbol: 'N$', name: 'Namibian Dollar' },
+  { code: 'MUR', symbol: '₨', name: 'Mauritian Rupee' },
+  { code: 'SCR', symbol: '₨', name: 'Seychellois Rupee' },
+  { code: 'MAD', symbol: 'د.م.', name: 'Moroccan Dirham' },
+  { code: 'TND', symbol: 'د.ت', name: 'Tunisian Dinar' },
+  { code: 'DZD', symbol: 'د.ج', name: 'Algerian Dinar' },
+  { code: 'LYD', symbol: 'ل.د', name: 'Libyan Dinar' },
+  { code: 'SDG', symbol: 'ج.س.', name: 'Sudanese Pound' },
+  { code: 'ETB', symbol: 'Br', name: 'Ethiopian Birr' },
+  { code: 'SOS', symbol: 'S', name: 'Somali Shilling' },
+  { code: 'DJF', symbol: 'Fdj', name: 'Djiboutian Franc' },
+  { code: 'KMF', symbol: 'CF', name: 'Comorian Franc' },
+  { code: 'XOF', symbol: 'CFA', name: 'West African CFA Franc' },
+  { code: 'XAF', symbol: 'FCFA', name: 'Central African CFA Franc' },
+  { code: 'XPF', symbol: 'CFP', name: 'CFP Franc' },
+  { code: 'CLP', symbol: '$', name: 'Chilean Peso' },
+  { code: 'COP', symbol: '$', name: 'Colombian Peso' },
+  { code: 'PEN', symbol: 'S/', name: 'Peruvian Sol' },
+  { code: 'ARS', symbol: '$', name: 'Argentine Peso' },
+  { code: 'UYU', symbol: '$', name: 'Uruguayan Peso' },
+  { code: 'PYG', symbol: '₲', name: 'Paraguayan Guaraní' },
+  { code: 'BOB', symbol: 'Bs.', name: 'Bolivian Boliviano' },
+  { code: 'GTQ', symbol: 'Q', name: 'Guatemalan Quetzal' },
+  { code: 'HNL', symbol: 'L', name: 'Honduran Lempira' },
+  { code: 'NIO', symbol: 'C$', name: 'Nicaraguan Córdoba' },
+  { code: 'CRC', symbol: '₡', name: 'Costa Rican Colón' },
+  { code: 'PAB', symbol: 'B/.', name: 'Panamanian Balboa' },
+  { code: 'JMD', symbol: '$', name: 'Jamaican Dollar' },
+  { code: 'TTD', symbol: '$', name: 'Trinidad and Tobago Dollar' },
+  { code: 'BBD', symbol: '$', name: 'Barbadian Dollar' },
+  { code: 'XCD', symbol: '$', name: 'East Caribbean Dollar' },
+  { code: 'GYD', symbol: '$', name: 'Guyanese Dollar' },
+  { code: 'SRD', symbol: '$', name: 'Surinamese Dollar' },
+  { code: 'BZD', symbol: '$', name: 'Belize Dollar' },
+  { code: 'FJD', symbol: '$', name: 'Fijian Dollar' },
+  { code: 'WST', symbol: 'T', name: 'Samoan Tālā' },
+  { code: 'TOP', symbol: 'T$', name: 'Tongan Paʻanga' },
+  { code: 'VUV', symbol: 'Vt', name: 'Vanuatu Vatu' },
+  { code: 'SBD', symbol: '$', name: 'Solomon Islands Dollar' },
+  { code: 'PGK', symbol: 'K', name: 'Papua New Guinean Kina' },
+  { code: 'KYD', symbol: '$', name: 'Cayman Islands Dollar' },
+  { code: 'BMD', symbol: '$', name: 'Bermudian Dollar' },
+  { code: 'BND', symbol: '$', name: 'Brunei Dollar' },
+  { code: 'KHR', symbol: '៛', name: 'Cambodian Riel' },
+  { code: 'LAK', symbol: '₭', name: 'Lao Kip' },
+  { code: 'MMK', symbol: 'K', name: 'Myanmar Kyat' },
+  { code: 'BDT', symbol: '৳', name: 'Bangladeshi Taka' },
+  { code: 'NPR', symbol: '₨', name: 'Nepalese Rupee' },
+  { code: 'BTN', symbol: 'Nu.', name: 'Bhutanese Ngultrum' },
+  { code: 'MVR', symbol: 'MVR', name: 'Maldivian Rufiyaa' },
+  { code: 'LKR', symbol: '₨', name: 'Sri Lankan Rupee' },
+  { code: 'PKR', symbol: '₨', name: 'Pakistani Rupee' },
+  { code: 'AFN', symbol: '؋', name: 'Afghan Afghani' },
+  { code: 'TJS', symbol: 'ЅM', name: 'Tajikistani Somoni' },
+  { code: 'TMT', symbol: 'T', name: 'Turkmenistan Manat' },
+  { code: 'UZS', symbol: 'so\'m', name: 'Uzbekistani Som' },
+  { code: 'KGS', symbol: 'с', name: 'Kyrgyzstani Som' },
+  { code: 'MNT', symbol: '₮', name: 'Mongolian Tögrög' },
+  { code: 'AMD', symbol: '֏', name: 'Armenian Dram' },
+  { code: 'GEL', symbol: '₾', name: 'Georgian Lari' },
+  { code: 'AZN', symbol: '₼', name: 'Azerbaijani Manat' },
+  { code: 'MDL', symbol: 'L', name: 'Moldovan Leu' },
+  { code: 'ALL', symbol: 'L', name: 'Albanian Lek' },
+  { code: 'MKD', symbol: 'ден', name: 'Macedonian Denar' },
+  { code: 'RSD', symbol: 'дин.', name: 'Serbian Dinar' },
+  { code: 'BAM', symbol: 'KM', name: 'Bosnia and Herzegovina Convertible Mark' },
+  { code: 'HRK', symbol: 'kn', name: 'Croatian Kuna' },
+  { code: 'SLL', symbol: 'Le', name: 'Sierra Leonean Leone' },
+  { code: 'GMD', symbol: 'D', name: 'Gambian Dalasi' },
+  { code: 'GNF', symbol: 'FG', name: 'Guinean Franc' },
+  { code: 'GWP', symbol: 'CFA', name: 'Guinea-Bissau Peso' },
+  { code: 'CVE', symbol: '$', name: 'Cape Verdean Escudo' },
+  { code: 'STN', symbol: 'Db', name: 'São Tomé and Príncipe Dobra' },
+  { code: 'AOA', symbol: 'Kz', name: 'Angolan Kwanza' },
+  { code: 'ZWL', symbol: '$', name: 'Zimbabwean Dollar' }
+];
+
 interface OnboardingData {
   firstName: string;
   lastName: string;
@@ -29,6 +172,7 @@ interface OnboardingData {
   sicknessType: string;
   dietaryPreferences: string[];
   allergies: string[];
+  healthConditions: string[];
 }
 
 const OnboardingPage: React.FC = () => {
@@ -47,7 +191,8 @@ const OnboardingPage: React.FC = () => {
     hasSickness: false,
     sicknessType: '',
     dietaryPreferences: [],
-    allergies: []
+    allergies: [],
+    healthConditions: []
   });
 
   const totalSteps = 3;
@@ -81,7 +226,7 @@ const OnboardingPage: React.FC = () => {
       }
     } catch {}
 
-    (async () => {
+            (async () => {
       try {
         const res: any = await api.getUserProfile();
         const profile = res?.profile || res?.data;
@@ -94,6 +239,8 @@ const OnboardingPage: React.FC = () => {
           const sicknessType = profile.sickness_type || '';
           const dietaryPreferences = Array.isArray(profile.dietary_preferences) ? profile.dietary_preferences : [];
           const allergies = Array.isArray(profile.allergies) ? profile.allergies : [];
+          const healthConditions = Array.isArray(profile.health_conditions) ? profile.health_conditions : [];
+          const dateOfBirth = profile.date_of_birth || '';
           if (fn || ln) {
             setFormData(prev => ({
               ...prev,
@@ -105,6 +252,8 @@ const OnboardingPage: React.FC = () => {
               sicknessType: prev.sicknessType || sicknessType,
               dietaryPreferences: prev.dietaryPreferences.length ? prev.dietaryPreferences : dietaryPreferences,
               allergies: prev.allergies.length ? prev.allergies : allergies,
+              healthConditions: prev.healthConditions.length ? prev.healthConditions : healthConditions,
+              dateOfBirth: prev.dateOfBirth || dateOfBirth,
             }));
           }
         }
@@ -153,6 +302,8 @@ const OnboardingPage: React.FC = () => {
         sickness_type: formData.sicknessType,
         dietary_preferences: formData.dietaryPreferences,
         allergies: formData.allergies,
+        health_conditions: formData.healthConditions,
+        date_of_birth: formData.dateOfBirth,
       };
       await api.updateUserProfile(payload);
 
@@ -234,12 +385,12 @@ const OnboardingPage: React.FC = () => {
               <SelectTrigger>
                 <SelectValue placeholder="Select country" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="United States">United States</SelectItem>
-                <SelectItem value="United Kingdom">United Kingdom</SelectItem>
-                <SelectItem value="Canada">Canada</SelectItem>
-                <SelectItem value="Nigeria">Nigeria</SelectItem>
-                <SelectItem value="Ghana">Ghana</SelectItem>
+              <SelectContent className="max-h-60">
+                {countries.map((country) => (
+                  <SelectItem key={country} value={country}>
+                    {country}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -247,7 +398,18 @@ const OnboardingPage: React.FC = () => {
 
         <div>
           <Label htmlFor="currency">Currency</Label>
-          <Input id="currency" value={formData.currency || 'USD'} disabled />
+          <Select value={formData.currency} onValueChange={(value) => updateFormData('currency', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select currency" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              {currencies.map((currency) => (
+                <SelectItem key={currency.code} value={currency.code}>
+                  {currency.code} ({currency.symbol}) - {currency.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </CardContent>
     </Card>
@@ -297,7 +459,7 @@ const OnboardingPage: React.FC = () => {
         </div>
         <CardTitle className="text-2xl">Preferences & Allergies</CardTitle>
         <CardDescription>
-          Choose any dietary preferences and allergies we should respect.
+          Choose any dietary preferences, allergies, and health conditions we should respect.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -344,51 +506,14 @@ const OnboardingPage: React.FC = () => {
             ))}
           </div>
         </div>
-      </CardContent>
-    </Card>
-  );
 
-  const renderStep4 = () => (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="text-center">
-        <div className="w-16 h-16 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Utensils className="h-8 w-8 text-white" />
-        </div>
-        <CardTitle className="text-2xl">Health & Allergies</CardTitle>
-        <CardDescription>
-          Let us know about any health conditions or allergies for safe recommendations.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <Label>Common Allergies</Label>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {['Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Soy', 'Wheat', 'Fish', 'Shellfish'].map((allergy) => (
-              <div key={allergy} className="flex items-center space-x-2">
-                <Checkbox
-                  id={allergy}
-                  checked={formData.allergies.includes(allergy.toLowerCase())}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      updateFormData('allergies', [...formData.allergies, allergy.toLowerCase()]);
-                    } else {
-                      updateFormData('allergies', formData.allergies.filter(a => a !== allergy.toLowerCase()));
-                    }
-                  }}
-                />
-                <Label htmlFor={allergy} className="text-sm">{allergy}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
-        
         <div>
           <Label>Health Conditions</Label>
           <div className="grid grid-cols-2 gap-2 mt-2">
             {['Diabetes', 'Hypertension', 'Heart Disease', 'Celiac Disease', 'Lactose Intolerance'].map((condition) => (
               <div key={condition} className="flex items-center space-x-2">
                 <Checkbox
-                  id={condition}
+                  id={`condition-${condition}`}
                   checked={formData.healthConditions.includes(condition.toLowerCase())}
                   onCheckedChange={(checked) => {
                     if (checked) {
@@ -398,7 +523,7 @@ const OnboardingPage: React.FC = () => {
                     }
                   }}
                 />
-                <Label htmlFor={condition} className="text-sm">{condition}</Label>
+                <Label htmlFor={`condition-${condition}`} className="text-sm">{condition}</Label>
               </div>
             ))}
           </div>
@@ -406,6 +531,8 @@ const OnboardingPage: React.FC = () => {
       </CardContent>
     </Card>
   );
+
+
 
   const renderStepContent = () => {
     switch (currentStep) {

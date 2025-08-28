@@ -64,7 +64,7 @@ def initialize_payment():
         user_id = authenticate_user()
         if not user_id:
             return jsonify({'error': 'Authentication required'}), 401
-
+        
         # Initialize payment
         payment_service = get_payment_service()
         result = payment_service.initialize_payment(
@@ -137,7 +137,7 @@ def get_subscription_status():
         user_id = authenticate_user()
         if not user_id:
             return jsonify({'error': 'Authentication required'}), 401
-
+    
         # Get subscription status
         payment_service = get_payment_service()
         result = payment_service.get_subscription_status(user_id)

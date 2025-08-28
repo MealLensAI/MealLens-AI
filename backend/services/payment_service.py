@@ -43,13 +43,12 @@ class PaymentService:
             }
 
             # Make request to Paystack
-            try:
-                headers = {
-                    'Authorization': f'Bearer {self.paystack_secret_key}',
-                    'Content-Type': 'application/json'
-                }
-                
-                response = requests.post(
+            headers = {
+                'Authorization': f'Bearer {self.paystack_secret_key}',
+                'Content-Type': 'application/json'
+            }
+            
+            response = requests.post(
                 'https://api.paystack.co/transaction/initialize',
                 json=payment_data,
                 headers=headers

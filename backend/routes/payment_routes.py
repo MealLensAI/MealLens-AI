@@ -33,12 +33,12 @@ def authenticate_user():
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return None
-    
-    token = auth_header.split(' ')[1]
-    auth_service = AuthService(current_app.supabase_service.supabase)
-    user_id = auth_service.verify_token(token)
-    return user_id
-except Exception as e:
+        
+        token = auth_header.split(' ')[1]
+        auth_service = AuthService(current_app.supabase_service.supabase)
+        user_id = auth_service.verify_token(token)
+        return user_id
+    except Exception as e:
         print(f"Authentication error: {e}")
         return None
 

@@ -22,6 +22,6 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: CORS_ORIGINS
-        value: "https://meallens-ai.vercel.app,http://localhost:5173"
+        value: "https://meallensai.com,https://www.meallensai.com,https://meallens-ai.vercel.app,http://localhost:5173"
     healthCheckPath: /health
     autoDeploy: true 

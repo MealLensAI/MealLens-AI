@@ -263,7 +263,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       const trialStart = new Date(trialStartDate);
       const now = new Date();
       const trialDaysElapsed = Math.floor((now.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
-      return Math.max(0, 7 - trialDaysElapsed);
+      return Math.max(0, 3 - trialDaysElapsed);
     }
     return 0;
   };
@@ -274,7 +274,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       const trialStart = new Date(trialStartDate);
       const now = new Date();
       const trialDaysElapsed = Math.floor((now.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
-      return trialDaysElapsed < 7;
+      return trialDaysElapsed < 3;
     }
     return false;
   };
@@ -285,7 +285,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       const trialStart = new Date(trialStartDate);
       const now = new Date();
       const trialDaysElapsed = Math.floor((now.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
-      return trialDaysElapsed >= 7;
+      return trialDaysElapsed >= 3;
     }
     return false;
   };

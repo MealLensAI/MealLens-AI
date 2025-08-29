@@ -181,6 +181,10 @@ const Signup = () => {
             localStorage.removeItem('seen_welcome_modal')
             localStorage.removeItem('onboarding_complete')
             
+            // Start 3-day trial immediately for new users
+            localStorage.setItem('trialStartDate', new Date().toISOString())
+            console.log('3-day trial started for new user')
+            
             // Redirect to onboarding for new users
             navigate('/onboarding', { replace: true })
           } else {

@@ -71,10 +71,10 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
               <CardTitle>Welcome to MealLens 🎉</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Badge className="bg-orange-500 text-white">3 Free Detections</Badge>
-              <p>Enjoy 3 free AI detections to get started. Upgrade anytime for unlimited access.</p>
+              <Badge className="bg-orange-500 text-white">3 Days Free Trial</Badge>
+              <p>You have 3 days of unlimited access to all features! Enjoy unlimited AI detections, meal planning, and more.</p>
               <div className="flex gap-2 justify-center">
-                <Button onClick={() => { setShowWelcome(false); navigate('/detect-food') }} className="bg-orange-500 hover:bg-orange-600">Try Detection</Button>
+                <Button onClick={() => { setShowWelcome(false); navigate('/detect-food') }} className="bg-orange-500 hover:bg-orange-600">Start Using App</Button>
                 <Button variant="outline" onClick={() => setShowWelcome(false)}>Close</Button>
               </div>
             </CardContent>

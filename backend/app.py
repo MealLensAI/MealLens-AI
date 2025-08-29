@@ -119,6 +119,9 @@ if payment_routes_available:
 else:
     logger.warning("Payment routes disabled.")
 
+# Initialize all services
+initialize_services()
+
 # Global error handler
 @app.errorhandler(Exception)
 def handle_exception(e):
@@ -139,6 +142,23 @@ def log_request():
     """Log incoming requests for debugging"""
     if app.debug:
         logger.info(f"{request.method} {request.path} - {request.remote_addr}")
+
+@app.before_request
+def ensure_services():
+    """Ensure all services are initialized for each request"""
+    if not hasattr(app, 'supabase_service') or app.supabase_service is None:
+        try:
+            app.supabase_service = SupabaseService()
+            logger.info("Supabase service initialized in request context")
+        except Exception as e:
+            logger.error(f"Failed to initialize Supabase service in request context: {e}")
+    
+    if not hasattr(app, 'auth_service') or app.auth_service is None:
+        try:
+            app.auth_service = AuthService()
+            logger.info("Auth service initialized in request context")
+        except Exception as e:
+            logger.error(f"Failed to initialize Auth service in request context: {e}")
 
 @app.after_request
 def log_response(response):

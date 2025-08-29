@@ -18,7 +18,7 @@ const Login = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
-  const { isAuthenticated, refreshAuth } = useAuth()
+  const { isAuthenticated, refreshAuth, login } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -34,7 +34,16 @@ const Login = () => {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email || !password) {
+    
+    // Ensure we have the latest values (handles autofill)
+    const formData = new FormData(e.target as HTMLFormElement)
+    const emailValue = formData.get('email') as string || email
+    const passwordValue = formData.get('password') as string || password
+    
+    console.log('[LOGIN] Attempting login with:', { email: emailValue, passwordLength: passwordValue?.length })
+    
+    if (!emailValue || !passwordValue) {
+      console.log('[LOGIN] Missing email or password')
       toast({
         title: "Error",
         description: "Please fill in all fields.",
@@ -44,66 +53,54 @@ const Login = () => {
     }
 
     setIsLoading(true)
+    
     try {
-      // Use centralized API service
-      const result = await api.login({ email, password })
+      console.log('[LOGIN] Calling auth context login...')
       
-      if (result.status === 'success' && result.access_token) {
-        console.log('[LOGIN] Storing authentication data...')
-        
-        // Store the token and user data
-        localStorage.setItem('access_token', result.access_token)
-        localStorage.setItem('supabase_refresh_token', result.refresh_token || '')
-        localStorage.setItem('supabase_session_id', result.session_id || '')
-        localStorage.setItem('supabase_user_id', result.user_id || '')
-          
-        // Store user data
-        const userData = {
-          uid: result.user_id || '',
-          email: email,
-          displayName: result.name || email.split('@')[0],
-          photoURL: null,
-          role: result.user_role || 'user'
-        }
-        localStorage.setItem('user_data', JSON.stringify(userData))
-        
-        console.log('[LOGIN] Authentication data stored, refreshing auth context...')
-        
-        // Update auth context
-        await refreshAuth()
-        
-        console.log('[LOGIN] Auth context refreshed successfully')
-        
-        toast({
-          title: "Welcome back!",
-          description: "You have been successfully logged in.",
-        })
-        
-        // Regular users go to main app
-        const from = location.state?.from?.pathname || "/ai-kitchen"
-        navigate(from, { replace: true })
-      } else {
-        toast({
-          title: "Login Failed",
-          description: result.message || "Invalid email or password.",
-          variant: "destructive",
-        })
-      }
+      // Use the auth context login function
+      const result = await login(emailValue, passwordValue)
+      
+      console.log('[LOGIN] Login successful:', result)
+      
+      toast({
+        title: "Welcome back!",
+        description: "You have been successfully logged in.",
+      })
+      
+      // The auth context will handle the redirect automatically
+      // Regular users go to main app
+      const from = location.state?.from?.pathname || "/ai-kitchen"
+      console.log('[LOGIN] Redirecting to:', from)
+      navigate(from, { replace: true })
+      
     } catch (error) {
-      console.error('Login error:', error)
+      console.error('[LOGIN] Login error:', error)
+      let errorMessage = "Login failed. Please try again."
+      
       if (error instanceof APIError) {
-        toast({
-          title: "Login Failed",
-          description: error.message,
-          variant: "destructive",
-        })
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "An unexpected error occurred. Please try again.",
-          variant: "destructive",
-        })
+        console.log('[LOGIN] API Error status:', error.status)
+        if (error.status === 401) {
+          errorMessage = "Invalid email or password. Please check your credentials."
+        } else if (error.status === 0) {
+          errorMessage = "Network error. Please check your internet connection and try again."
+        } else if (error.status === 408) {
+          errorMessage = "Request timed out. This might be due to a slow connection. Please try again."
+        } else if (error.status >= 500) {
+          errorMessage = "Server error. Please try again in a few minutes."
+        } else {
+          errorMessage = error.message || errorMessage
+        }
+      } else if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMessage = "Connection error. Please check your internet connection and try again."
+      } else if (error.message && error.message.includes('timeout')) {
+        errorMessage = "Request timed out. Please check your connection and try again."
       }
+      
+      toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
@@ -114,7 +111,7 @@ const Login = () => {
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-[url('/placeholder.svg?height=100&width=100')] opacity-5"></div>
 
-      <div className="w-full max-w-md relative z-10">
+      <div className="w-full max-w-md">
         {/* Logo Section */}
         <div className="text-center mb-8">
           <Logo size="xl" className="justify-center mb-4" />
@@ -138,12 +135,18 @@ const Login = () => {
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     id="email"
+                    name="email"
                     type="email"
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                    className="pl-10"
                     required
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
+                    inputMode="email"
                   />
                 </div>
               </div>
@@ -156,12 +159,17 @@ const Login = () => {
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                    className="pl-10 pr-12"
                     required
+                    autoComplete="current-password"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
                   />
                   <Button
                     type="button"
@@ -169,11 +177,12 @@ const Login = () => {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
+                      <EyeOff className="h-5 w-5 text-gray-400" />
                     ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
+                      <Eye className="h-5 w-5 text-gray-400" />
                     )}
                   </Button>
                 </div>
@@ -182,7 +191,7 @@ const Login = () => {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="w-full"
               >
                 {isLoading ? (
                   <>
@@ -193,6 +202,7 @@ const Login = () => {
                   "Sign In"
                 )}
               </Button>
+
             </form>
 
             {/* Sign Up Link */}

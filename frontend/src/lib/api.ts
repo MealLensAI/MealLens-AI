@@ -1,11 +1,7 @@
 import { useAuth } from './utils'
 
-// API base URL - always use remote backend for launch
+// API base URL - always use remote backend for now
 const API_BASE_URL = 'https://meallens-ai-cmps.onrender.com/api'
-
-// Debug logging
-console.log('[API] Environment:', import.meta.env.MODE)
-console.log('[API] Using remote backend for launch:', API_BASE_URL)
 
 // Custom error class for API errors
 export class APIError extends Error {
@@ -69,14 +65,27 @@ class APIService {
       body,
       headers = {},
       skipAuth = false,
-      timeout = 60000  // Increased to 60 seconds for cold starts
+      timeout = 90000  // Increased to 90 seconds for mobile networks
     } = options
+
+    const fullUrl = `${API_BASE_URL}${endpoint}`
+    console.log('[API] Making request to:', fullUrl)
+    console.log('[API] Request method:', method)
+    console.log('[API] Request headers:', headers)
+    console.log('[API] Request body:', body)
+    console.log('[API] Config body:', JSON.stringify(body))
 
     // Add auth header if not skipped
     if (!skipAuth) {
       const token = this.getAuthToken()
       if (!token) {
-        // Don't redirect immediately, let the auth context handle it
+        // Clear any stale data and redirect to login
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('user_data')
+        localStorage.removeItem('supabase_refresh_token')
+        localStorage.removeItem('supabase_session_id')
+        localStorage.removeItem('supabase_user_id')
+        window.location.href = '/login'
         throw new APIError('No authentication token found. Please log in again.', 401)
       }
       headers['Authorization'] = `Bearer ${token}`
@@ -90,343 +99,263 @@ class APIService {
     // Prepare request config
     const config: RequestInit = {
       method,
-      headers,
-      signal: AbortSignal.timeout(timeout)
+      headers
     }
 
-    // Add body if present
-    if (body) {
-      config.body = typeof body === 'string' ? body : JSON.stringify(body)
+    // Add body for non-GET requests
+    if (body && method !== 'GET') {
+      config.body = JSON.stringify(body)
     }
+
+    // Create AbortController for timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
+    config.signal = controller.signal
 
     try {
-      const fullUrl = `${API_BASE_URL}${endpoint}`
-      console.log("[API] Making request to:", fullUrl);
-      console.log("[API] Request method:", method);
-      console.log("[API] Request headers:", headers);
-      console.log("[API] Request body:", body);
-      console.log("[API] Config body:", config.body);
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, config)
       
-      const response = await fetch(fullUrl, config)
-      
-      console.log("[API] Response status:", response.status);
-      console.log("[API] Response headers:", Object.fromEntries(response.headers.entries()));
-      
-      // Handle different response types
+      console.log(`[API] Response status: ${response.status}`)
+      console.log(`[API] Response headers:`, Object.fromEntries(response.headers.entries()))
+
+      // Clear timeout
+      clearTimeout(timeoutId)
+
+      // Handle non-JSON responses
       const contentType = response.headers.get('content-type')
-      let data: any
-
-      if (contentType?.includes('application/json')) {
-        data = await response.json()
-      } else {
-        data = await response.text()
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text()
+        console.log(`[API] Non-JSON response:`, text)
+        throw new APIError(`Unexpected response format: ${text}`, response.status)
       }
-      
-      console.log("[API] Response data:", data);
 
-      // Handle HTTP errors
+      const data = await response.json()
+      console.log(`[API] Response data:`, data)
+
       if (!response.ok) {
-        // Handle 401 Unauthorized
-        if (response.status === 401) {
-          // Don't clear session data immediately, let the auth context handle token refresh
-          console.log('[API] 401 Unauthorized - letting auth context handle refresh')
-          throw new APIError('Authentication required. Please log in again.', 401)
-        }
-
-        // Handle 403 Forbidden
-        if (response.status === 403) {
-          throw new APIError('Access denied. You do not have permission to perform this action.', 403)
-        }
-
-        // Handle 404 Not Found
-        if (response.status === 404) {
-          throw new APIError('Resource not found. Please check the URL and try again.', 404)
-        }
-
-        // Handle 500+ server errors with better fallback messages
-        if (response.status >= 500) {
-          console.error(`Server error ${response.status}:`, data)
-          
-          // Provide user-friendly fallback messages based on endpoint
-          let fallbackMessage = 'Server error. Please try again later.'
-          if (endpoint.includes('detection_history')) {
-            fallbackMessage = 'Unable to load detection history. Please try again later.'
-          } else if (endpoint.includes('meal_plan')) {
-            fallbackMessage = 'Unable to save/load meal plans. Please try again later.'
-          } else if (endpoint.includes('feedback')) {
-            fallbackMessage = 'Unable to save feedback. Please try again later.'
-          }
-          
-          throw new APIError(fallbackMessage, response.status, data)
-        }
-
-        // Handle other client errors
-        const errorMessage = data?.message || data || `HTTP ${response.status}: ${response.statusText}`
-        throw new APIError(errorMessage, response.status, data)
+        throw new APIError(
+          data.message || `HTTP error! status: ${response.status}`,
+          response.status,
+          data
+        )
       }
 
       return data
     } catch (error) {
-      // Handle network errors
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new APIError('Network error. Please check your connection and try again.', 0)
-      }
-
-      // Handle timeout errors
-      if (error instanceof DOMException && error.name === 'TimeoutError') {
-        throw new APIError('Request timeout. Please try again.', 0)
-      }
-
-      // Re-throw API errors
+      clearTimeout(timeoutId)
+      
       if (error instanceof APIError) {
         throw error
       }
-
-      // Handle other errors
-      throw new APIError(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`, 0)
+      
+      if (error.name === 'AbortError') {
+        throw new APIError('Request timeout. Please check your connection and try again.', 408)
+      }
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new APIError('Network error. Please check your connection and try again.', 0)
+      }
+      
+      console.error(`[API] Request failed:`, error)
+      throw new APIError('An unexpected error occurred. Please try again.', 500)
     }
   }
 
-  // Generic request methods
-  async get<T = any>(endpoint: string, options?: Omit<RequestOptions, 'method'>): Promise<T> {
-    return this.makeRequest<T>(endpoint, { ...options, method: 'GET' })
-  }
-
-  async post<T = any>(endpoint: string, body?: any, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
-    return this.makeRequest<T>(endpoint, { ...options, method: 'POST', body })
-  }
-
-  async put<T = any>(endpoint: string, body?: any, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
-    return this.makeRequest<T>(endpoint, { ...options, method: 'PUT', body })
-  }
-
-  async delete<T = any>(endpoint: string, options?: Omit<RequestOptions, 'method'>): Promise<T> {
-    return this.makeRequest<T>(endpoint, { ...options, method: 'DELETE' })
-  }
-
-  async patch<T = any>(endpoint: string, body?: any, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
-    return this.makeRequest<T>(endpoint, { ...options, method: 'PATCH', body })
-  }
-
-  // Auth-specific methods
-  async login(credentials: { email: string; password: string }): Promise<APIResponse> {
-    return this.post('/login', credentials, { skipAuth: true })
-  }
-
-  async register(userData: { email: string; password: string; first_name: string; last_name: string }): Promise<APIResponse> {
-    return this.post('/register', userData, { skipAuth: true })
-  }
-
-  async refreshToken(tokenData: { refresh_token: string }): Promise<APIResponse> {
-    return this.post('/refresh-token', tokenData, { skipAuth: true })
-  }
-
-  // Profile methods
-  async getUserProfile(): Promise<ProfileResponse> {
-    return this.get('/profile')
-  }
-
-  async updateUserProfile(profileData: any): Promise<ProfileResponse> {
-    return this.put('/profile', profileData)
-  }
-
-  // Settings methods (Flask backend) - Sickness settings moved to profile
-
-  async getAllSettings(): Promise<APIResponse> {
-    return this.get('/settings')
-  }
-
-  // Meal plan methods (Flask backend)
-  async getMealPlansFromFlask(): Promise<MealPlansResponse> {
+  // Authentication endpoints
+  async login(credentials: { email: string; password: string }): Promise<any> {
+    console.log('[API] Login attempt for:', credentials.email)
     try {
-      return await this.get('/meal_plan')
+      const response = await this.makeRequest('/login', {
+        method: 'POST',
+        body: credentials,
+        skipAuth: true,
+        timeout: 120000  // 2 minutes for login requests (cold start can be slow)
+      })
+      console.log('[API] Login response:', response)
+      return response
     } catch (error) {
-      console.warn('Meal plans API error (normal for new users):', error);
-      return { status: 'success', meal_plans: [] }
+      console.error('[API] Login error:', error)
+      throw error
     }
   }
 
-  async saveMealPlanToFlask(planData: any): Promise<APIResponse> {
-    return this.post('/meal_plan', planData)
+  async register(userData: any): Promise<any> {
+    return this.makeRequest('/register', {
+      method: 'POST',
+      body: userData,
+      skipAuth: true
+    })
   }
 
-  async updateMealPlanInFlask(id: string, planData: any): Promise<APIResponse> {
-    return this.put(`/meal_plans/${id}`, planData)
+  async refreshToken(data: { refresh_token: string }): Promise<any> {
+    return this.makeRequest('/refresh-token', {
+      method: 'POST',
+      body: data,
+      skipAuth: true
+    })
   }
 
-  async deleteMealPlanFromFlask(id: string): Promise<APIResponse> {
-    return this.delete(`/meal_plans/${id}`)
+  async getUserProfile(): Promise<any> {
+    return this.makeRequest('/profile')
   }
 
-  async clearAllMealPlansFromFlask(): Promise<APIResponse> {
-    return this.delete('/meal_plans/clear')
+  async updateUserProfile(profileData: any): Promise<any> {
+    return this.makeRequest('/profile', {
+      method: 'PUT',
+      body: profileData
+    })
   }
 
-  // Food detection methods (Flask backend)
-  async saveDetectionHistory(detectionData: any): Promise<DetectionHistoryResponse> {
-    console.log("[API] saveDetectionHistory called with data:", detectionData);
-    console.log("[API] Making POST request to /food_detection/detection_history");
-    const result = await this.post('/food_detection/detection_history', detectionData);
-    console.log("[API] saveDetectionHistory response:", result);
-    
-    // After saving detection history, ensure usage is recorded in backend
-    try {
-      const featureName = detectionData.recipe_type === 'food_detection' ? 'food_detection' : 'ingredient_detection';
-      await this.post(`/payment/record-usage/${featureName}`, {
-        feature: featureName,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.warn('Failed to record usage after saving detection history:', error);
-    }
-    
-    return result;
-  }
-
-  async updateDetectionHistoryWithResources(updateData: any): Promise<DetectionHistoryResponse> {
-    return this.post('/food_detection/update_resources', updateData)
-  }
-
-  async getDetectionHistory(page: number = 1, limit: number = 10): Promise<DetectionHistoryResponse> {
-    console.log("🔍 [API] getDetectionHistory called")
-    const result = await this.get(`/food_detection/detection_history?page=${page}&limit=${limit}`)
-    console.log("🔍 [API] getDetectionHistory result:", result)
-    return result
-  }
-
-
-
-  // Session methods (Flask backend)
-  async saveSession(sessionData: any): Promise<APIResponse> {
-    return this.post('/session', sessionData)
-  }
-
-  async getSession(sessionId: string): Promise<APIResponse> {
-    return this.get(`/session/${sessionId}`)
-  }
-
-  async updateSession(sessionId: string, sessionData: any): Promise<APIResponse> {
-    return this.put(`/session/${sessionId}`, sessionData)
-  }
-
-  async getAllSessions(): Promise<APIResponse> {
-    return this.get('/session')
-  }
-
-  // AI Session methods (Flask backend)
-  async storeAISession(sessionData: any): Promise<APIResponse> {
-    return this.post('/store-session', sessionData)
-  }
-
-  // Payment methods (Flask backend)
-  async getPaymentPlans(): Promise<APIResponse> {
-    return this.get('/payment/plans')
-  }
-
-  async getPaymentSubscription(): Promise<APIResponse> {
-    return this.get('/payment/subscription-status')
-  }
-
-  async getPaymentUsage(): Promise<APIResponse> {
-    return this.get('/payment/usage')
-  }
-
-  async checkPaymentUsage(service: string): Promise<APIResponse> {
-    return this.get(`/payment/check-usage/${service}`)
-  }
-
-  async initializePayment(paymentData: any): Promise<APIResponse> {
-    return this.post('/payment/initialize-payment', paymentData)
-  }
-
-  async verifyPayment(reference: string): Promise<APIResponse> {
-    return this.get(`/payment/verify-payment/${reference}`)
-  }
-
-  async cancelSubscription(): Promise<APIResponse> {
-    return this.post('/payment/cancel-subscription')
-  }
-
-  async upgradeSubscription(upgradeData: any): Promise<APIResponse> {
-    return this.post('/payment/upgrade-subscription', upgradeData)
-  }
-
-  // External AI services (these don't use our auth token)
-  async smartPlan(input: string | FormData): Promise<any> {
-    if (typeof input === 'string') {
-      return this.post('https://ai-utu2.onrender.com/smart_plan', { ingredients: input }, { skipAuth: true })
-    } else {
-      return this.post('https://ai-utu2.onrender.com/smart_plan', input, { skipAuth: true })
-    }
-  }
-
-  async processAI(formData: FormData): Promise<any> {
-    return this.post('https://ai-utu2.onrender.com/process', formData, { skipAuth: true })
-  }
-
-  async getInstructions(formData: FormData): Promise<any> {
-    return this.post('https://ai-utu2.onrender.com/instructions', formData, { skipAuth: true })
-  }
-
-  async getResources(formData: FormData): Promise<any> {
-    return this.post('https://ai-utu2.onrender.com/resources', formData, { skipAuth: true })
-  }
-
-  async detectFood(image: File): Promise<any> {
+  // Food detection endpoints
+  async detectFood(imageFile: File): Promise<any> {
     const formData = new FormData()
-    formData.append('image', image)
-    return this.post('https://ai-utu2.onrender.com/food_detect', formData, { 
-      skipAuth: true,
+    formData.append('image', imageFile)
+
+    return this.makeRequest('/food_detection/detect', {
+      method: 'POST',
+      body: formData,
       headers: {} // Let browser set Content-Type for FormData
     })
   }
 
-  async getFoodDetectResources(foodDetected: string): Promise<any> {
-    return this.post('https://ai-utu2.onrender.com/food_detect_resources', { food_detected: foodDetected }, { skipAuth: true })
+  async getDetectionHistory(page: number = 1, limit: number = 10): Promise<any> {
+    return this.makeRequest(`/food_detection/detection_history?page=${page}&limit=${limit}`)
   }
 
-  async getImage(prompt: string): Promise<any> {
-    return this.post('https://get-images-qa23.onrender.com/image', { prompt }, { skipAuth: true })
+  async saveDetectionHistory(detectionData: any): Promise<any> {
+    return this.makeRequest('/food_detection/detection_history', {
+      method: 'POST',
+      body: detectionData
+    })
   }
 
-  // Proxy method for external URLs
-  async proxyRequest(url: string): Promise<any> {
-    const proxyUrl = '/api/proxy?url='
-    return this.get(proxyUrl + encodeURIComponent(url), { skipAuth: true })
+  // Meal planning endpoints
+  async generateMealPlan(planData: any): Promise<any> {
+    return this.makeRequest('/meal_plan/generate', {
+      method: 'POST',
+      body: planData
+    })
   }
 
-  // Admin methods
-  async getAdminUsers(params?: any): Promise<APIResponse> {
-    const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
-    return this.get(`/admin/users${queryString}`)
+  async getMealPlans(): Promise<any> {
+    return this.makeRequest('/meal_plan')
   }
 
-  async getAdminSubscriptionSummary(): Promise<APIResponse> {
-    return this.get('/admin/subscriptions/summary')
+  async saveMealPlan(planData: any): Promise<any> {
+    return this.makeRequest('/meal_plan', {
+      method: 'POST',
+      body: planData
+    })
   }
 
-  async getAdminRevenueMetrics(params?: any): Promise<APIResponse> {
-    const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
-    return this.get(`/admin/metrics/revenue${queryString}`)
+  async updateMealPlan(id: string, planData: any): Promise<any> {
+    return this.makeRequest(`/meal_plan/${id}`, {
+      method: 'PUT',
+      body: planData
+    })
   }
 
-  async getAdminUsageMetrics(params?: any): Promise<APIResponse> {
-    const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
-    return this.get(`/admin/metrics/usage${queryString}`)
+  async deleteMealPlan(id: string): Promise<any> {
+    return this.makeRequest(`/meal_plan/${id}`, {
+      method: 'DELETE'
+    })
   }
 
-  async getAdminUserDetails(userId: string): Promise<APIResponse> {
-    return this.get(`/admin/users/${userId}/details`)
+  // AI session endpoints
+  async startAISession(sessionData: any): Promise<any> {
+    return this.makeRequest('/ai_session/start', {
+      method: 'POST',
+      body: sessionData
+    })
   }
 
-  async updateAdminSubscription(subscriptionId: string, data: any): Promise<APIResponse> {
-    return this.put(`/admin/subscriptions/${subscriptionId}/update`, data)
+  async sendMessage(sessionId: string, message: string): Promise<any> {
+    return this.makeRequest(`/ai_session/${sessionId}/message`, {
+      method: 'POST',
+      body: { message }
+    })
   }
 
-  async cancelAdminSubscription(subscriptionId: string): Promise<APIResponse> {
-    return this.post(`/admin/subscriptions/${subscriptionId}/cancel`)
+  // Feedback endpoints
+  async submitFeedback(feedbackData: any): Promise<any> {
+    return this.makeRequest('/feedback', {
+      method: 'POST',
+      body: feedbackData
+    })
+  }
+
+  // Settings endpoints
+  async getSettings(): Promise<any> {
+    return this.makeRequest('/settings')
+  }
+
+  async updateSettings(settingsData: any): Promise<any> {
+    return this.makeRequest('/settings', {
+      method: 'PUT',
+      body: settingsData
+    })
+  }
+
+  // Payment endpoints
+  async initializePayment(paymentData: any): Promise<any> {
+    return this.makeRequest('/payment/initialize-payment', {
+      method: 'POST',
+      body: paymentData
+    })
+  }
+
+  async verifyPayment(reference: string): Promise<any> {
+    return this.makeRequest(`/payment/verify-payment/${reference}`)
+  }
+
+  async getSubscriptionStatus(): Promise<any> {
+    return this.makeRequest('/payment/subscription-status')
+  }
+
+  async canUseFeature(featureName: string): Promise<any> {
+    return this.makeRequest(`/payment/can-use-feature/${featureName}`)
+  }
+
+  // Admin endpoints
+  async getAdminUsers(params?: any): Promise<any> {
+    const queryParams = params ? `?${new URLSearchParams(params).toString()}` : ''
+    return this.makeRequest(`/admin/users${queryParams}`)
+  }
+
+  async getAdminSubscriptionSummary(): Promise<any> {
+    return this.makeRequest('/admin/subscriptions/summary')
+  }
+
+  async getAdminRevenueMetrics(period: string = 'monthly'): Promise<any> {
+    return this.makeRequest(`/admin/metrics/revenue?period=${period}`)
+  }
+
+  async getAdminUsageMetrics(): Promise<any> {
+    return this.makeRequest('/admin/metrics/usage')
+  }
+
+  async getAdminUserDetails(userId: string): Promise<any> {
+    return this.makeRequest(`/admin/users/${userId}/details`)
+  }
+
+  async updateAdminSubscription(subscriptionId: string, updateData: any): Promise<any> {
+    return this.makeRequest(`/admin/subscriptions/${subscriptionId}/update`, {
+      method: 'PUT',
+      body: updateData
+    })
+  }
+
+  async cancelAdminSubscription(subscriptionId: string): Promise<any> {
+    return this.makeRequest(`/admin/subscriptions/${subscriptionId}/cancel`, {
+      method: 'POST'
+    })
+  }
+
+  // Public endpoints
+  async getUserCount(): Promise<any> {
+    return this.makeRequest('/public/user-count', { skipAuth: true })
   }
 }
 
-// Create singleton instance
+// Export singleton instance
 export const api = new APIService()

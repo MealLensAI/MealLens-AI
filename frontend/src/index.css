@@ -216,6 +216,76 @@
   }
 }
 
+/* Mobile-specific improvements for login and forms */
+@layer utilities {
+  /* Ensure proper viewport handling on mobile */
+  .mobile-viewport {
+    @apply min-h-screen;
+    min-height: -webkit-fill-available;
+  }
+  
+  /* Better mobile form handling */
+  .mobile-form-input {
+    @apply text-base;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Improved touch targets for mobile */
+  .mobile-touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Better mobile button handling */
+  .mobile-button {
+    @apply touch-manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Prevent zoom on input focus (iOS) */
+  .mobile-input {
+    @apply text-base;
+    font-size: 16px;
+    transform: translateZ(0);
+  }
+  
+  /* Better mobile card handling */
+  .mobile-card {
+    @apply shadow-lg;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Improved mobile navigation */
+  .mobile-nav-safe {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Better mobile scrolling */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Mobile-specific focus states */
+  .mobile-focus {
+    @apply focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2;
+  }
+  
+  /* Prevent text selection on mobile */
+  .mobile-no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Better mobile loading states */
+  .mobile-loading {
+    @apply pointer-events-none;
+    -webkit-user-select: none;
+  }
+}
+
 /* Custom scrollbar for better mobile experience */
 @layer utilities {
   .scrollbar-thin {
@@ -247,8 +317,9 @@
     @apply focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2;
   }
   
-  .focus-visible-dark {
-    @apply focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-gray-900;
+  .focus-visible-mobile {
+    @apply focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 

@@ -129,10 +129,23 @@ const Signup = () => {
     return Object.keys(errors).length === 0
   }
 
-  const handleEmailSignup = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!validateForm()) {
+    // Mark all as touched
+    const allTouched: Record<string, boolean> = {}
+    Object.keys(formData).forEach(key => { allTouched[key] = true })
+    setTouched(allTouched)
+
+    // Validate all fields
+    const errors: ValidationErrors = {}
+    Object.keys(formData).forEach(key => {
+      const error = validateField(key, formData[key as keyof typeof formData])
+      if (error) errors[key as keyof ValidationErrors] = error
+    })
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors)
       toast({
         title: "Validation Error",
         description: "Please fix the errors in the form.",
@@ -142,108 +155,57 @@ const Signup = () => {
     }
 
     setIsLoading(true)
-    setIsValidating(true)
-    
     try {
-      // Use centralized API service for registration
-      const registerResult: any = await api.register({
-        email: formData.email.trim(),
+      const result = await api.signup({
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
         password: formData.password,
-        first_name: formData.firstName.trim(),
-        last_name: formData.lastName.trim()
       })
-      
-      if (registerResult.status !== 'success') {
-        // Handle specific error types
-        if ((registerResult as any).error_type === 'duplicate_email') {
-          toast({
-            title: "Email Already Exists",
-            description: "An account with this email already exists. Please try logging in instead.",
-            variant: "destructive",
-          })
-          navigate("/login")
-          return
-        }
-        
-        toast({
-          title: "Registration Failed",
-          description: registerResult.message || "Failed to create account. Please try again.",
-          variant: "destructive",
-        })
-        return
-      }
 
-      // Auto-login after successful registration
-      const loginResult: any = await api.login({ 
-        email: formData.email.trim(), 
-        password: formData.password 
-      })
-      
-      if (loginResult.status === 'success') {
-        // Store the token in localStorage for future authenticated requests
-        const accessToken = (loginResult as any).access_token
-        const refreshToken = (loginResult as any).refresh_token
-        const sessionId = (loginResult as any).session_id
-        const userId = (loginResult as any).user_id
-        const userDataResp = (loginResult as any).user_data
+      if (result.status === 'success') {
+        toast({
+          title: "Account Created!",
+          description: "Your account has been created successfully. Please check your email to verify your account.",
+        })
         
-        if (accessToken) {
-          localStorage.setItem('access_token', accessToken)
-          if (refreshToken) localStorage.setItem('supabase_refresh_token', refreshToken)
-          if (sessionId) localStorage.setItem('supabase_session_id', sessionId)
-          if (userId) localStorage.setItem('supabase_user_id', userId)
-          
-          // Store user data for auth context
-          const userData = {
-            uid: userId || userDataResp?.id,
-            email: userDataResp?.email || formData.email.trim(),
-            displayName: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
-            photoURL: null
-          }
-          localStorage.setItem('user_data', JSON.stringify(userData))
-          
-          // Refresh auth context
-          await refreshAuth()
-          
-          toast({
-            title: "Welcome to MealLensAI!",
-            description: "Your account has been successfully created. Let's get started!",
-          })
-          
-          // Redirect to home page for new users with 3-day free trial
-          navigate("/ai-kitchen", { replace: true })
-        } else {
-          toast({
-            title: "Registration Complete",
-            description: "Account created successfully! Please log in to continue.",
-          })
-          navigate("/login")
-        }
+        // Redirect to login
+        navigate('/login', { 
+          state: { 
+            message: 'Account created successfully! Please log in with your new credentials.' 
+          } 
+        })
       } else {
         toast({
-          title: "Registration Complete",
-          description: "Account created successfully! Please log in to continue.",
+          title: "Signup Failed",
+          description: result.message || "Failed to create account. Please try again.",
+          variant: "destructive",
         })
-        navigate("/login")
       }
     } catch (error) {
-      console.error('Signup error:', error)
+      let errorMessage = "Failed to create account. Please try again."
+      
       if (error instanceof APIError) {
-        toast({
-          title: "Registration Failed",
-          description: error.message,
-          variant: "destructive",
-        })
-      } else {
-        toast({
-          title: "Registration Failed",
-          description: "An unexpected error occurred. Please try again.",
-          variant: "destructive",
-        })
+        if (error.status === 409) {
+          errorMessage = "An account with this email already exists. Please try logging in instead."
+        } else if (error.status === 0) {
+          errorMessage = "Network error. Please check your internet connection and try again."
+        } else if (error.status >= 500) {
+          errorMessage = "Server error. Please try again in a few minutes."
+        } else {
+          errorMessage = error.message || errorMessage
+        }
+      } else if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMessage = "Connection error. Please check your internet connection and try again."
       }
+      
+      toast({
+        title: "Signup Failed",
+        description: errorMessage,
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
-      setIsValidating(false)
     }
   }
 
@@ -272,7 +234,7 @@ const Signup = () => {
           </CardHeader>
           
           <CardContent className="space-y-4">
-            <form onSubmit={handleEmailSignup} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
@@ -287,21 +249,21 @@ const Signup = () => {
                       value={formData.firstName}
                       onChange={handleInputChange}
                       onBlur={handleBlur}
-                      className={`h-10 ${
-                        getFieldError('firstName') 
-                          ? 'border-red-500 focus:border-red-500' 
-                          : isFieldValid('firstName')
-                          ? 'border-green-500 focus:border-green-500'
-                          : ''
+                      className={`h-12 ${
+                        validationErrors.firstName ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-orange-500 focus:ring-orange-500'
                       }`}
                       placeholder="John"
                       disabled={isLoading}
+                      autoComplete="given-name"
+                      autoCapitalize="words"
+                      autoCorrect="off"
+                      spellCheck="false"
                     />
                     {isFieldValid('firstName') && (
-                      <CheckCircle className="absolute right-3 top-2.5 h-5 w-5 text-green-500" />
+                      <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
                     )}
                     {getFieldError('firstName') && (
-                      <XCircle className="absolute right-3 top-2.5 h-5 w-5 text-red-500" />
+                      <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-500" />
                     )}
                   </div>
                   {getFieldError('firstName') && (
@@ -324,21 +286,21 @@ const Signup = () => {
                       value={formData.lastName}
                       onChange={handleInputChange}
                       onBlur={handleBlur}
-                      className={`h-10 ${
-                        getFieldError('lastName') 
-                          ? 'border-red-500 focus:border-red-500' 
-                          : isFieldValid('lastName')
-                          ? 'border-green-500 focus:border-green-500'
-                          : ''
+                      className={`h-12 ${
+                        validationErrors.lastName ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-orange-500 focus:ring-orange-500'
                       }`}
                       placeholder="Doe"
                       disabled={isLoading}
+                      autoComplete="family-name"
+                      autoCapitalize="words"
+                      autoCorrect="off"
+                      spellCheck="false"
                     />
                     {isFieldValid('lastName') && (
-                      <CheckCircle className="absolute right-3 top-2.5 h-5 w-5 text-green-500" />
+                      <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
                     )}
                     {getFieldError('lastName') && (
-                      <XCircle className="absolute right-3 top-2.5 h-5 w-5 text-red-500" />
+                      <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-500" />
                     )}
                   </div>
                   {getFieldError('lastName') && (
@@ -356,7 +318,7 @@ const Signup = () => {
                   Email Address
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     id="email"
                     name="email"
@@ -364,22 +326,22 @@ const Signup = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
-                    className={`h-10 pl-10 ${
-                      getFieldError('email') 
-                        ? 'border-red-500 focus:border-red-500' 
-                        : isFieldValid('email')
-                        ? 'border-green-500 focus:border-green-500'
-                        : ''
+                    className={`pl-10 h-12 ${
+                      validationErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-orange-500 focus:ring-orange-500'
                     }`}
                     placeholder="john@example.com"
                     disabled={isLoading}
                     autoComplete="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
+                    inputMode="email"
                   />
                   {isFieldValid('email') && (
-                    <CheckCircle className="absolute right-3 top-2.5 h-5 w-5 text-green-500" />
+                    <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
                   )}
                   {getFieldError('email') && (
-                    <XCircle className="absolute right-3 top-2.5 h-5 w-5 text-red-500" />
+                    <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-500" />
                   )}
                 </div>
                 {getFieldError('email') && (
@@ -396,7 +358,7 @@ const Signup = () => {
                   Password
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     id="password"
                     name="password"
@@ -404,30 +366,30 @@ const Signup = () => {
                     value={formData.password}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
-                    className={`h-10 pl-10 pr-10 ${
-                      getFieldError('password') 
-                        ? 'border-red-500 focus:border-red-500' 
-                        : isFieldValid('password')
-                        ? 'border-green-500 focus:border-green-500'
-                        : ''
+                    className={`pl-10 pr-12 h-12 ${
+                      validationErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-orange-500 focus:ring-orange-500'
                     }`}
                     placeholder="Create a strong password"
                     disabled={isLoading}
                     autoComplete="new-password"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                    className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-gray-600"
                     disabled={isLoading}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                   {isFieldValid('password') && (
-                    <CheckCircle className="absolute right-12 top-2.5 h-5 w-5 text-green-500" />
+                    <CheckCircle className="absolute right-14 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
                   )}
                   {getFieldError('password') && (
-                    <XCircle className="absolute right-12 top-2.5 h-5 w-5 text-red-500" />
+                    <XCircle className="absolute right-14 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-500" />
                   )}
                 </div>
                 {getFieldError('password') && (
@@ -456,7 +418,7 @@ const Signup = () => {
                   Confirm Password
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
@@ -464,30 +426,30 @@ const Signup = () => {
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     onBlur={handleBlur}
-                    className={`h-10 pl-10 pr-10 ${
-                      getFieldError('confirmPassword') 
-                        ? 'border-red-500 focus:border-red-500' 
-                        : isFieldValid('confirmPassword')
-                        ? 'border-green-500 focus:border-green-500'
-                        : ''
+                    className={`pl-10 pr-12 h-12 ${
+                      validationErrors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-orange-500 focus:ring-orange-500'
                     }`}
                     placeholder="Confirm your password"
                     disabled={isLoading}
                     autoComplete="new-password"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                    className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-gray-600"
                     disabled={isLoading}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                   >
                     {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                   {isFieldValid('confirmPassword') && (
-                    <CheckCircle className="absolute right-12 top-2.5 h-5 w-5 text-green-500" />
+                    <CheckCircle className="absolute right-14 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
                   )}
                   {getFieldError('confirmPassword') && (
-                    <XCircle className="absolute right-12 top-2.5 h-5 w-5 text-red-500" />
+                    <XCircle className="absolute right-14 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-500" />
                   )}
                 </div>
                 {getFieldError('confirmPassword') && (
@@ -501,12 +463,12 @@ const Signup = () => {
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full h-11 bg-orange-500 hover:bg-orange-600 text-white font-semibold"
-                disabled={isLoading || isValidating}
+                className="w-full h-14 bg-orange-500 hover:bg-orange-600 text-white font-semibold"
+                disabled={isLoading}
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Creating Account...
                   </>
                 ) : (

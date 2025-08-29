@@ -1,8 +1,10 @@
-import React, { ReactNode } from "react"
-import { AuthContext, useProvideAuth } from "./utils"
+import React, { ReactNode } from 'react'
+import { AuthContext, useProvideAuth } from './utils'
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+// Auth provider component
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const auth = useProvideAuth()
+  
   return (
     <AuthContext.Provider value={auth}>
       {children}

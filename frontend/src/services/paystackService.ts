@@ -516,7 +516,7 @@ class PaystackService {
    */
   async getUserSubscription(): Promise<UserSubscription | null> {
     try {
-      const response = await api.get('/payment/subscription-status');
+      const response = await api.makeRequest('/payment/subscription-status', { method: 'GET' });
       if (response.status === 'success') {
         return response.subscription;
       }
@@ -532,7 +532,7 @@ class PaystackService {
    */
   async checkFeatureUsage(featureName: string): Promise<any> {
     try {
-      const response = await api.get(`/payment/can-use-feature/${featureName}`);
+      const response = await api.makeRequest(`/payment/can-use-feature/${featureName}`, { method: 'GET' });
       return response;
     } catch (error) {
       console.error('Error checking feature usage:', error);
@@ -545,9 +545,12 @@ class PaystackService {
    */
   async recordFeatureUsage(featureName: string): Promise<any> {
     try {
-      const response = await api.post(`/payment/record-usage/${featureName}`, { 
-        feature: featureName,
-        timestamp: new Date().toISOString()
+      const response = await api.makeRequest(`/payment/record-usage/${featureName}`, { 
+        method: 'POST',
+        body: { 
+          feature: featureName,
+          timestamp: new Date().toISOString()
+        }
       });
       return response;
     } catch (error) {

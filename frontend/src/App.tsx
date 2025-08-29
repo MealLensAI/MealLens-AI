@@ -41,8 +41,7 @@ const LaunchCountdownWrapper: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     const checkLaunchStatus = async () => {
       try {
-        const base = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '' : 'https://meallens-ai-cmps.onrender.com');
-        const response = await fetch(`${base}/api/server-time`);
+        const response = await fetch('https://meallens-ai-cmps.onrender.com/api/server-time');
         const data = await response.json();
         const serverTime = new Date(data.serverTime);
         const launchDate = new Date('2024-12-25T00:00:00Z');
@@ -172,7 +171,9 @@ const router = createBrowserRouter([
     path: "/payment",
     element: (
       <ProtectedRoute>
+        <MainLayout>
           <Payment />
+        </MainLayout>
       </ProtectedRoute>
     )
   },

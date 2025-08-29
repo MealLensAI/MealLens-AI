@@ -1,68 +1,108 @@
-import { clsx, type ClassValue } from "clsx"
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { api, APIError } from './api'
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { createContext, useContext, useEffect, useState, useCallback } from "react"
-import { api } from "./api"
 
+// Utility function for merging class names
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-interface User {
+// Constants
+const TOKEN_KEY = 'access_token'
+const USER_KEY = 'user_data'
+
+// User interface
+export interface User {
   uid: string
   email: string
-  displayName?: string
-  photoURL?: string
+  displayName: string
+  photoURL?: string | null
   role?: string
   created_at?: string
 }
 
+// Auth context interface
 interface AuthContextType {
   user: User | null
   token: string | null
-  loading: boolean
   isAuthenticated: boolean
+  loading: boolean
+  login: (email: string, password: string) => Promise<any>
+  logout: () => Promise<void>
   refreshAuth: () => Promise<void>
-  signOut: () => Promise<void>
   clearSession: () => void
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+// Create auth context
+export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Token storage keys
-const TOKEN_KEY = "access_token"
-const USER_KEY = "user_data"
+// Hook to use auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}
 
-// Pure TypeScript AuthProvider (no JSX)
-export function useProvideAuth(): AuthContextType {
+// Auth provider hook
+export const useProvideAuth = () => {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   // Clear session data
   const clearSession = useCallback(() => {
+    setUser(null)
+    setToken(null)
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
     localStorage.removeItem('supabase_refresh_token')
     localStorage.removeItem('supabase_session_id')
     localStorage.removeItem('supabase_user_id')
-    setUser(null)
-    setToken(null)
   }, [])
 
-  // Sign out function - Supabase doesn't need explicit sign out call
-  const signOut = useCallback(async () => {
-    try {
-      // Clear all session data
-      clearSession()
-      // Redirect to login page
-      window.location.href = '/login'
-    } catch (error) {
-      console.error('Error signing out:', error)
-      // Even if there's an error, clear session and redirect
-      clearSession()
-      window.location.href = '/login'
-    }
+  // Logout function
+  const logout = useCallback(async () => {
+    clearSession()
+    window.location.href = '/login'
   }, [clearSession])
+
+  // Login function
+  const login = useCallback(async (email: string, password: string) => {
+    try {
+      const result = await api.login({ email, password })
+      if (result.status === 'success' && result.access_token) {
+        // Store the token and user data
+        localStorage.setItem(TOKEN_KEY, result.access_token)
+        localStorage.setItem('supabase_refresh_token', result.refresh_token || '')
+        localStorage.setItem('supabase_session_id', result.session_id || '')
+        localStorage.setItem('supabase_user_id', result.user_id || '')
+          
+        // Store user data
+        const userData = {
+          uid: result.user_id || '',
+          email: email,
+          displayName: result.name || email.split('@')[0],
+          photoURL: null,
+          role: result.user_role || 'user'
+        }
+        localStorage.setItem(USER_KEY, JSON.stringify(userData))
+        
+        // Update state
+        setToken(result.access_token)
+        setUser(userData)
+        
+        return result
+      } else {
+        throw new Error(result.message || 'Login failed')
+      }
+    } catch (error) {
+      console.error('[AUTH] Login error:', error)
+      throw error
+    }
+  }, [])
 
   // Refresh authentication state
   const refreshAuth = useCallback(async () => {
@@ -74,9 +114,11 @@ export function useProvideAuth(): AuthContextType {
       const storedUserData = localStorage.getItem(USER_KEY)
       const refreshToken = localStorage.getItem('supabase_refresh_token')
       
-      console.log('[AUTH] Stored token exists:', !!storedToken)
-      console.log('[AUTH] Stored user data exists:', !!storedUserData)
-      console.log('[AUTH] Refresh token exists:', !!refreshToken)
+      console.log('[AUTH] Stored data:', { 
+        hasToken: !!storedToken, 
+        hasUserData: !!storedUserData, 
+        hasRefreshToken: !!refreshToken 
+      })
       
       if (storedToken && storedUserData) {
         try {
@@ -84,12 +126,10 @@ export function useProvideAuth(): AuthContextType {
           
           // First, try to validate the current token by fetching profile
           try {
-            console.log('[AUTH] Attempting to validate current token...')
             setToken(storedToken)
             setUser(parsedUser as User)
             
             const profileResponse = await api.getUserProfile()
-            console.log('[AUTH] Profile response status:', profileResponse.status)
             
             if (profileResponse.status === 'success' && profileResponse.data) {
               const profile = profileResponse.data
@@ -105,21 +145,15 @@ export function useProvideAuth(): AuthContextType {
               // Update stored user data
               localStorage.setItem(USER_KEY, JSON.stringify(updatedUser))
               setLoading(false)
-              console.log('[AUTH] Token validation successful')
               return
             }
           } catch (profileError) {
-            console.error('[AUTH] Current token invalid, attempting refresh:', profileError)
-            
             // If current token is invalid, try to refresh using refresh token
             if (refreshToken) {
               try {
-                console.log('[AUTH] Attempting token refresh...')
                 const refreshResponse = await api.refreshToken({ refresh_token: refreshToken })
-                console.log('[AUTH] Refresh response status:', refreshResponse.status)
                 
                 if (refreshResponse.status === 'success' && refreshResponse.access_token) {
-                  console.log('[AUTH] Token refresh successful')
                   // Update stored tokens
                   localStorage.setItem(TOKEN_KEY, refreshResponse.access_token)
                   localStorage.setItem('supabase_refresh_token', refreshResponse.refresh_token || refreshToken)
@@ -130,7 +164,6 @@ export function useProvideAuth(): AuthContextType {
                   
                   // Try to fetch profile with new token
                   const newProfileResponse = await api.getUserProfile()
-                  console.log('[AUTH] New profile response status:', newProfileResponse.status)
                   
                   if (newProfileResponse.status === 'success' && newProfileResponse.data) {
                     const profile = newProfileResponse.data
@@ -334,21 +367,11 @@ export function useProvideAuth(): AuthContextType {
     loading, 
     isAuthenticated, 
     refreshAuth, 
-    signOut, 
-    clearSession 
+    logout, 
+    clearSession,
+    login 
   }
 }
-
-export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider")
-  }
-  return context
-}
-
-// Export AuthContext for use in a .tsx provider wrapper
-export { AuthContext }
 
 // Utility function to handle 401 errors and logout
 export const handleAuthError = (response: Response) => {

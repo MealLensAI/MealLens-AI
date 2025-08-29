@@ -32,7 +32,7 @@ interface DashboardNavigationProps {
 const DashboardNavigation: React.FC<DashboardNavigationProps> = ({ className = '' }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const { subscription, getPlanDisplayName } = useSubscription();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -51,7 +51,7 @@ const DashboardNavigation: React.FC<DashboardNavigationProps> = ({ className = '
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await logout();
       navigate('/login');
     } catch (error) {
       console.error('Error signing out:', error);

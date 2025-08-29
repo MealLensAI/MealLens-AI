@@ -166,15 +166,40 @@ const Signup = () => {
       if (result.status === 'success') {
         toast({
           title: "Account Created!",
-          description: "Your account has been created successfully. Please check your email to verify your account.",
+          description: "Welcome to MealLens! Your account has been created successfully.",
         })
         
-        // Redirect to login
-        navigate('/login', { 
-          state: { 
-            message: 'Account created successfully! Please log in with your new credentials.' 
-          } 
-        })
+        // Automatically log in the user with their credentials
+        try {
+          const loginResult = await api.login({
+            email: formData.email,
+            password: formData.password,
+          })
+          
+          if (loginResult.status === 'success') {
+            // Clear any existing welcome/onboarding flags for new user
+            localStorage.removeItem('seen_welcome_modal')
+            localStorage.removeItem('onboarding_complete')
+            
+            // Redirect to onboarding for new users
+            navigate('/onboarding', { replace: true })
+          } else {
+            // If auto-login fails, redirect to login page
+            navigate('/login', { 
+              state: { 
+                message: 'Account created successfully! Please log in with your new credentials.' 
+              } 
+            })
+          }
+        } catch (loginError) {
+          console.error('Auto-login failed:', loginError)
+          // If auto-login fails, redirect to login page
+          navigate('/login', { 
+            state: { 
+              message: 'Account created successfully! Please log in with your new credentials.' 
+            } 
+          })
+        }
       } else {
         toast({
           title: "Signup Failed",

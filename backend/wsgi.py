@@ -13,10 +13,11 @@ load_dotenv()
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from production import create_production_app
+# Import the app directly from app.py
+from app import app
 
 # Create the WSGI application
-application = create_production_app()
+application = app
 
 if __name__ == "__main__":
     application.run()

@@ -3,18 +3,49 @@ import requests
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
+class SimulatedPaymentService:
+    """Simulated payment service for testing and development"""
+    
+    def __init__(self):
+        pass
+    
+    def initialize_payment(self, email: str, amount: float, currency: str = 'USD', 
+                          plan_id: str = None, user_id: str = None, metadata: Dict = None) -> Dict:
+        """Simulate payment initialization"""
+        return {
+            'status': True,
+            'message': 'Payment initialized successfully (simulated)',
+            'authorization_url': 'https://example.com/simulated-payment',
+            'reference': f'sim_ref_{datetime.now().timestamp()}',
+            'access_code': f'sim_code_{datetime.now().timestamp()}'
+        }
+    
+    def verify_payment(self, reference: str) -> Dict:
+        """Simulate payment verification"""
+        return {
+            'status': True,
+            'message': 'Payment verified successfully (simulated)',
+            'data': {
+                'status': 'success',
+                'reference': reference,
+                'amount': 1000,
+                'currency': 'USD'
+            }
+        }
+    
+    def test_connection(self):
+        """Simulate connection test"""
+        class MockResponse:
+            status_code = 200
+        return MockResponse()
+
 class PaymentService:
     def __init__(self, supabase_client):
         self.supabase = supabase_client
         self.paystack_secret_key = os.getenv('PAYSTACK_SECRET_KEY')
         self.paystack_public_key = os.getenv('PAYSTACK_PUBLIC_KEY')
         
-        if not self.paystack_secret_key:
-            print("[PaymentService] PAYSTACK_SECRET_KEY not found in environment variables")
-        else:
-            print("[PaymentService] Paystack provider initialized")
-        
-        print("Payment service initialized successfully.")
+        # Payment service initialized
 
     def initialize_payment(self, email: str, amount: float, currency: str = 'USD', 
                           plan_id: str = None, user_id: str = None, metadata: Dict = None) -> Dict:
@@ -76,7 +107,6 @@ class PaymentService:
                 }
 
         except Exception as e:
-            print(f"Payment initialization error: {e}")
             return {
                 'status': False,
                 'message': f'Payment initialization failed: {str(e)}'
@@ -176,32 +206,69 @@ class PaymentService:
                 subscription_result = self.supabase.table('user_subscriptions').select('*').eq('user_id', user_id).eq('status', 'active').execute()
             except Exception as table_error:
                 print(f"user_subscriptions table not available: {table_error}")
-                # Return default free plan status
-                return {
-                    'subscription': None,
-                    'plan': 'free',
-                    'status': 'active',
-                    'is_subscribed': False,
-                    'trial_days_left': 3,
-                    'is_in_trial': True
-                }
+                # Check if it's trying to access the old 'subscriptions' table
+                if "subscriptions" in str(table_error) and "does not exist" in str(table_error):
+                    print("⚠️  Detected attempt to access old 'subscriptions' table. Using 'user_subscriptions' instead.")
+                    try:
+                        subscription_result = self.supabase.table('user_subscriptions').select('*').eq('user_id', user_id).eq('status', 'active').execute()
+                    except Exception as retry_error:
+                        print(f"user_subscriptions table also not available: {retry_error}")
+                        # Return default free plan status
+                        return {
+                            'status': 'success',
+                            'subscription': None,
+                            'plan': 'free',
+                            'subscription_status': 'active',
+                            'is_subscribed': False,
+                            'trial_days_left': 3,
+                            'is_in_trial': True
+                        }
+                else:
+                    # Return default free plan status
+                    return {
+                        'status': 'success',
+                        'subscription': None,
+                        'plan': 'free',
+                        'subscription_status': 'active',
+                        'is_subscribed': False,
+                        'trial_days_left': 3,
+                        'is_in_trial': True
+                    }
 
             if not subscription_result.data:
                 # No subscription, return free plan status
                 return {
+                    'status': 'success',
                     'subscription': None,
                     'plan': 'free',
-                    'status': 'active',
+                    'subscription_status': 'active',
                     'is_subscribed': False,
                     'trial_days_left': 3,
                     'is_in_trial': True
                 }
 
             subscription = subscription_result.data[0]
+            
+            # Get plan details from subscription_plans table
+            try:
+                plan_result = self.supabase.table('subscription_plans').select('name, display_name').eq('id', subscription.get('plan_id')).execute()
+                if plan_result.data:
+                    plan_name = plan_result.data[0].get('name', 'free')
+                    plan_display_name = plan_result.data[0].get('display_name', 'Free Plan')
+                else:
+                    plan_name = 'free'
+                    plan_display_name = 'Free Plan'
+            except Exception as plan_error:
+                print(f"subscription_plans table not available: {plan_error}")
+                plan_name = 'free'
+                plan_display_name = 'Free Plan'
+            
             return {
+                'status': 'success',
                 'subscription': subscription,
-                'plan': subscription.get('plan_id', 'free'),
-                'status': subscription.get('status', 'active'),
+                'plan': plan_name,
+                'plan_display_name': plan_display_name,
+                'subscription_status': subscription.get('status', 'active'),
                 'is_subscribed': True,
                 'trial_days_left': 0,
                 'is_in_trial': False
@@ -211,9 +278,10 @@ class PaymentService:
             print(f"Subscription status error: {e}")
             # Return default free plan status on error
             return {
+                'status': 'success',
                 'subscription': None,
                 'plan': 'free',
-                'status': 'active',
+                'subscription_status': 'active',
                 'is_subscribed': False,
                 'trial_days_left': 3,
                 'is_in_trial': True,
@@ -242,21 +310,30 @@ class PaymentService:
                 return self._check_trial_status(user_id, feature_name)
 
             subscription = subscription_result.data[0]
-            plan_name = subscription.get('plan_id', 'free')
+            plan_id = subscription.get('plan_id', 'free')
 
             # Check if usage_tracking table exists
             try:
                 # Get usage for this month
                 current_month = datetime.now().strftime('%Y-%m')
-                usage_result = self.supabase.table('usage_tracking').select('*').eq('user_id', user_id).eq('feature_name', feature_name).eq('usage_date', current_month).execute()
+                usage_result = self.supabase.table('usage_tracking').select('*').eq('user_id', user_id).eq('feature_name', feature_name).gte('usage_date', f'{current_month}-01').lt('usage_date', f'{current_month}-32').execute()
 
                 current_usage = len(usage_result.data) if usage_result.data else 0
             except Exception as usage_table_error:
                 print(f"usage_tracking table not available: {usage_table_error}")
                 current_usage = 0
 
-            # Get plan limits
-            plan_limits = self._get_plan_limits(plan_name)
+            # Get plan limits from subscription_plans table
+            try:
+                plan_result = self.supabase.table('subscription_plans').select('limits').eq('id', plan_id).execute()
+                if plan_result.data:
+                    plan_limits = plan_result.data[0].get('limits', {})
+                else:
+                    plan_limits = self._get_plan_limits('free')
+            except Exception as plan_error:
+                print(f"subscription_plans table not available: {plan_error}")
+                plan_limits = self._get_plan_limits('free')
+
             limit = plan_limits.get(feature_name, 0)
 
             can_use = limit == -1 or current_usage < limit  # -1 means unlimited
@@ -266,7 +343,7 @@ class PaymentService:
                 'current_usage': current_usage,
                 'limit': limit,
                 'remaining': -1 if limit == -1 else max(0, limit - current_usage),
-                'plan_name': plan_name
+                'plan_name': plan_id
             }
 
         except Exception as e:

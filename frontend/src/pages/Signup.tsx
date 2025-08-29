@@ -156,7 +156,7 @@ const Signup = () => {
 
     setIsLoading(true)
     try {
-      const result = await api.signup({
+      const result = await api.register({
         first_name: formData.firstName,
         last_name: formData.lastName,
         email: formData.email,

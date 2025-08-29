@@ -67,8 +67,15 @@ def initialize_services():
 
     # Initialize Supabase service
     try:
-        app.supabase_service = SupabaseService()
-        logger.info("Supabase service initialized successfully")
+        supabase_url = os.environ.get('SUPABASE_URL')
+        supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+        
+        if supabase_url and supabase_key:
+            app.supabase_service = SupabaseService(supabase_url, supabase_key)
+            logger.info("Supabase service initialized successfully")
+        else:
+            logger.warning("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not found - Supabase service will be disabled")
+            app.supabase_service = None
     except Exception as e:
         logger.error(f"Failed to initialize Supabase service: {e}")
         app.supabase_service = None
@@ -77,12 +84,12 @@ def initialize_services():
     try:
         paystack_secret_key = os.environ.get('PAYSTACK_SECRET_KEY')
         
-        if paystack_secret_key:
+        if paystack_secret_key and app.supabase_service:
             logger.info("Initializing Paystack payment service...")
             app.payment_service = PaymentService(app.supabase_service.supabase)
             logger.info("Payment service initialized successfully")
         else:
-            logger.warning("PAYSTACK_SECRET_KEY not found - payment features will be disabled")
+            logger.warning("PAYSTACK_SECRET_KEY not found or Supabase service not available - payment features will be disabled")
             app.payment_service = None
                 
     except Exception as e:
@@ -92,8 +99,12 @@ def initialize_services():
 
     # Initialize auth service
     try:
-        app.auth_service = AuthService()
-        logger.info("AuthService initialized successfully.")
+        if app.supabase_service:
+            app.auth_service = AuthService(app.supabase_service.supabase)
+            logger.info("AuthService initialized successfully.")
+        else:
+            logger.warning("Supabase service not available - AuthService will be disabled")
+            app.auth_service = None
     except Exception as e:
         logger.error(f"Failed to initialize AuthService: {str(e)}")
         logger.error("Authentication features will be disabled.")
@@ -148,15 +159,24 @@ def ensure_services():
     """Ensure all services are initialized for each request"""
     if not hasattr(app, 'supabase_service') or app.supabase_service is None:
         try:
-            app.supabase_service = SupabaseService()
-            logger.info("Supabase service initialized in request context")
+            supabase_url = os.environ.get('SUPABASE_URL')
+            supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+            
+            if supabase_url and supabase_key:
+                app.supabase_service = SupabaseService(supabase_url, supabase_key)
+                logger.info("Supabase service initialized in request context")
+            else:
+                logger.warning("Missing Supabase environment variables in request context")
         except Exception as e:
             logger.error(f"Failed to initialize Supabase service in request context: {e}")
     
     if not hasattr(app, 'auth_service') or app.auth_service is None:
         try:
-            app.auth_service = AuthService()
-            logger.info("Auth service initialized in request context")
+            if app.supabase_service:
+                app.auth_service = AuthService(app.supabase_service.supabase)
+                logger.info("Auth service initialized in request context")
+            else:
+                logger.warning("Supabase service not available for Auth service initialization")
         except Exception as e:
             logger.error(f"Failed to initialize Auth service in request context: {e}")
 

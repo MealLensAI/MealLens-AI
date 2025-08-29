@@ -33,12 +33,9 @@ from database import DatabaseConnectionPool
 app = Flask(__name__)
 
 # Configure CORS for production
-CORS(app, origins=[
-    "https://meallensai.com",
-    "https://www.meallensai.com",
-    "http://localhost:3000",
-    "http://localhost:5173"
-], supports_credentials=True)
+cors_origins = os.environ.get('CORS_ORIGINS', 'https://meallensai.com,https://www.meallensai.com,http://localhost:3000,http://localhost:5173').split(',')
+logger.info(f"CORS origins configured: {cors_origins}")
+CORS(app, origins=cors_origins, supports_credentials=True)
 
 # Load payment routes conditionally
 try:

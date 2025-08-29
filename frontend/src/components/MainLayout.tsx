@@ -24,14 +24,26 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
     if (!isAuthenticated) return
     const hasSeenWelcome = localStorage.getItem('seen_welcome_modal') === 'true'
     const onboardingComplete = localStorage.getItem('onboarding_complete') === 'true'
-    if (!hasSeenWelcome) {
+    
+    // Only show welcome modal if user hasn't seen it AND hasn't completed onboarding
+    // (if they completed onboarding, they would have seen the welcome modal already)
+    if (!hasSeenWelcome && !onboardingComplete) {
       setShowWelcome(true)
-      localStorage.setItem('seen_welcome_modal', 'true')
     }
+    
     if (!onboardingComplete) {
       setShowOnboardingReminder(true)
     }
   }, [isAuthenticated])
+
+  const handleCloseWelcome = () => {
+    setShowWelcome(false)
+    localStorage.setItem('seen_welcome_modal', 'true')
+  }
+
+  const handleCloseOnboardingReminder = () => {
+    setShowOnboardingReminder(false)
+  }
 
   const handleSignOut = async () => {
     try {
@@ -74,8 +86,8 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
               <Badge className="bg-orange-500 text-white">3 Days Free Trial</Badge>
               <p>You have 3 days of unlimited access to all features! Enjoy unlimited AI detections, meal planning, and more.</p>
               <div className="flex gap-2 justify-center">
-                <Button onClick={() => { setShowWelcome(false); navigate('/detect-food') }} className="bg-orange-500 hover:bg-orange-600">Start Using App</Button>
-                <Button variant="outline" onClick={() => setShowWelcome(false)}>Close</Button>
+                <Button onClick={() => { handleCloseWelcome(); navigate('/detect-food') }} className="bg-orange-500 hover:bg-orange-600">Start Using App</Button>
+                <Button variant="outline" onClick={handleCloseWelcome}>Close</Button>
               </div>
             </CardContent>
           </Card>
@@ -92,8 +104,8 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
             <CardContent className="space-y-4">
               <p>Please complete onboarding so we can personalize your experience.</p>
               <div className="flex gap-2 justify-center">
-                <Button onClick={() => { setShowOnboardingReminder(false); navigate('/onboarding') }} className="bg-orange-500 hover:bg-orange-600">Continue Onboarding</Button>
-                <Button variant="outline" onClick={() => setShowOnboardingReminder(false)}>Later</Button>
+                <Button onClick={() => { handleCloseOnboardingReminder(); navigate('/onboarding') }} className="bg-orange-500 hover:bg-orange-600">Continue Onboarding</Button>
+                <Button variant="outline" onClick={handleCloseOnboardingReminder}>Later</Button>
               </div>
             </CardContent>
           </Card>

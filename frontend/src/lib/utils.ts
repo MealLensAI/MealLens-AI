@@ -228,7 +228,7 @@ export const useProvideAuth = () => {
           console.log('[AUTH] Fallback to stored token on error')
         } catch (parseError) {
           console.error('[AUTH] Error parsing stored user data on fallback:', parseError)
-          clearSession()
+      clearSession()
         }
       } else {
         setToken(null)

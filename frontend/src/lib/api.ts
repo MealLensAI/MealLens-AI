@@ -147,7 +147,7 @@ class APIService {
       if (error instanceof APIError) {
         throw error
       }
-      
+
       if (error.name === 'AbortError') {
         throw new APIError('Request timeout. Please check your connection and try again.', 408)
       }

@@ -33,7 +33,21 @@ const DashboardNavigation: React.FC<DashboardNavigationProps> = ({ className = '
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { subscription, getPlanDisplayName } = useSubscription();
+  
+  // Safely use subscription context with error handling
+  let subscription = null;
+  let getPlanDisplayName = (plan: string) => plan;
+  
+  try {
+    const subscriptionContext = useSubscription();
+    if (subscriptionContext) {
+      subscription = subscriptionContext.subscription;
+      getPlanDisplayName = subscriptionContext.getPlanDisplayName || ((plan: string) => plan);
+    }
+  } catch (error) {
+    console.warn('Subscription context not available:', error);
+  }
+  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
 

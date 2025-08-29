@@ -192,18 +192,18 @@ const Signup = () => {
           errorMessage = "Network error. Please check your internet connection and try again."
         } else if (error.status >= 500) {
           errorMessage = "Server error. Please try again in a few minutes."
-        } else {
+      } else {
           errorMessage = error.message || errorMessage
         }
       } else if (error instanceof TypeError && error.message.includes('fetch')) {
         errorMessage = "Connection error. Please check your internet connection and try again."
       }
       
-      toast({
+        toast({
         title: "Signup Failed",
         description: errorMessage,
-        variant: "destructive",
-      })
+          variant: "destructive",
+        })
     } finally {
       setIsLoading(false)
     }

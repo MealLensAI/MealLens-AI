@@ -96,9 +96,9 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       
       try {
         const [subResponse, plansResponse] = await Promise.all([
-          paystackService.getUserSubscription(),
-          paystackService.getSubscriptionPlans()
-        ]);
+        paystackService.getUserSubscription(),
+        paystackService.getSubscriptionPlans()
+      ]);
         
         subscriptionData = subResponse;
         plansData = plansResponse;
@@ -433,6 +433,6 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       {children}
     </SubscriptionContext.Provider>
   );
-};
+}; 
 
 export default SubscriptionProvider; 

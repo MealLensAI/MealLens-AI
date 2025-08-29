@@ -15,7 +15,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
-  const { user, signOut, isAuthenticated } = useAuth()
+  const { user, logout, isAuthenticated } = useAuth()
   const [showWelcome, setShowWelcome] = useState(false)
   const [showOnboardingReminder, setShowOnboardingReminder] = useState(false)
 
@@ -35,7 +35,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
 
   const handleSignOut = async () => {
     try {
-      await signOut()
+      await logout()
       toast({
         title: "Signed out successfully",
         description: "You have been logged out of your account.",

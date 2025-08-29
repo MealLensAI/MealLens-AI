@@ -65,10 +65,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
 
         // Fetch available payment providers from backend
         try {
-          const providersResponse = await api.get('/payment/providers');
-          if (providersResponse.status === 'success') {
-            setAvailableProviders(providersResponse.providers);
-          }
+          // Since there's no specific method for providers, we'll use a fallback
+          setAvailableProviders({
+            paystack: {
+              name: 'Paystack',
+              currencies: ['USD', 'NGN', 'GHS', 'ZAR', 'KES'],
+              features: ['Card Payment', 'Bank Transfer', 'Mobile Money']
+            }
+          });
         } catch (providerError) {
           console.warn('Could not fetch payment providers, using fallback:', providerError);
           // Use default providers if API fails
@@ -180,7 +184,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
 
       // Initialize payment
       try {
-        const response = await api.post('/payment/initialize-payment', paymentData);
+        const response = await api.initializePayment(paymentData);
         
         if (response.status === 'success' || response.status === true) {
           // Handle different providers

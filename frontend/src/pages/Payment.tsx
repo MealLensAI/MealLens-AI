@@ -11,7 +11,18 @@ import { APP_CONFIG, convertCurrency, formatCurrency, getPlanPrice, getPlanDurat
 import PaymentModal from '@/components/PaymentModal';
 
 const Payment: React.FC = () => {
-  const { subscription } = useSubscription();
+  // Safely use subscription context with error handling
+  let subscription = null;
+  
+  try {
+    const subscriptionContext = useSubscription();
+    if (subscriptionContext) {
+      subscription = subscriptionContext.subscription;
+    }
+  } catch (error) {
+    console.warn('Subscription context not available:', error);
+  }
+  
   const { user } = useAuth();
   const { toast } = useToast();
   

@@ -22,39 +22,28 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ className = '' }) => 
   
   // Safely use subscription context with error handling
   let subscriptionContext = null;
+  let subscription = null;
+  let isInTrial = () => false;
+  let getTrialDaysLeft = () => 0;
+  let getDaysUntilExpiry = () => 0;
+  let isSubscriptionExpired = () => false;
+  let getPlanDisplayName = (plan: string) => plan;
+  let getDaysUntilFreeTierReset = () => 30;
+  
   try {
     subscriptionContext = useSubscription();
+    if (subscriptionContext) {
+      subscription = subscriptionContext.subscription;
+      isInTrial = subscriptionContext.isInTrial || (() => false);
+      getTrialDaysLeft = subscriptionContext.getTrialDaysLeft || (() => 0);
+      getDaysUntilExpiry = subscriptionContext.getDaysUntilExpiry || (() => 0);
+      isSubscriptionExpired = subscriptionContext.isSubscriptionExpired || (() => false);
+      getPlanDisplayName = subscriptionContext.getPlanDisplayName || ((plan: string) => plan);
+      getDaysUntilFreeTierReset = subscriptionContext.getDaysUntilFreeTierReset || (() => 30);
+    }
   } catch (error) {
     console.warn('Subscription context not available:', error);
-    // Return a simplified header without subscription info
-    return (
-      <header className={`bg-white border-b border-gray-200 sticky top-0 z-40 ${className}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Logo size="lg" showText={false} variant="nav" />
-            </div>
-            <div className="hidden lg:flex items-center space-x-4">
-              <DashboardNavigation />
-            </div>
-            <div className="lg:hidden">
-              <DashboardNavigation />
-            </div>
-          </div>
-        </div>
-      </header>
-    );
   }
-
-  const { 
-    subscription, 
-    isInTrial, 
-    getTrialDaysLeft, 
-    getDaysUntilExpiry,
-    isSubscriptionExpired,
-    getPlanDisplayName,
-    getDaysUntilFreeTierReset
-  } = subscriptionContext;
 
   const getSubscriptionStatus = () => {
     if (subscription?.plan?.name === 'free') {

@@ -28,7 +28,27 @@ const DetectFoodPage = () => {
   const [showResults, setShowResults] = useState(false)
   const { toast } = useToast()
   const { token, isAuthenticated, loading } = useAuth()
-  const { isFeatureLocked, recordFeatureUsage, incrementFreeUsage, freeUsageCount, maxFreeUsage } = useSubscription()
+  
+  // Safely use subscription context with error handling
+  let isFeatureLocked = (feature: string) => false;
+  let recordFeatureUsage = async (feature: string) => {};
+  let incrementFreeUsage = () => {};
+  let freeUsageCount = 0;
+  let maxFreeUsage = 3;
+  
+  try {
+    const subscriptionContext = useSubscription();
+    if (subscriptionContext) {
+      isFeatureLocked = subscriptionContext.isFeatureLocked || ((feature: string) => false);
+      recordFeatureUsage = subscriptionContext.recordFeatureUsage || (async (feature: string) => {});
+      incrementFreeUsage = subscriptionContext.incrementFreeUsage || (() => {});
+      freeUsageCount = subscriptionContext.freeUsageCount || 0;
+      maxFreeUsage = subscriptionContext.maxFreeUsage || 3;
+    }
+  } catch (error) {
+    console.warn('Subscription context not available:', error);
+  }
+  
   const [detectionResult, setDetectionResult] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);

@@ -1,8 +1,44 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from '@/lib/utils';
-import paystackService, { UserSubscription, TrialStatus, SubscriptionPlan } from '@/services/paystackService';
+import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { APP_CONFIG, getPlanPrice, getPlanDisplayName, getPlanDurationText } from '@/lib/config';
+
+// Define types locally since we removed paystackService
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  display_name: string;
+  price_weekly: number;
+  price_two_weeks: number;
+  price_monthly: number;
+  currency: string;
+  features: string[];
+  limits: Record<string, any>;
+  is_active: boolean;
+  duration_days: number;
+  billing_cycle: string;
+}
+
+export interface UserSubscription {
+  subscription: {
+    id: string;
+    status: 'active' | 'inactive' | 'cancelled' | 'trial' | 'expired';
+    current_period_start: string;
+    current_period_end: string;
+    trial_end?: string;
+  };
+  plan: SubscriptionPlan;
+  usage: Record<string, any>;
+  free_trial_start?: string;
+  free_trial_end?: string;
+}
+
+export interface TrialStatus {
+  is_in_trial: boolean;
+  trial_end?: string;
+  days_remaining?: number;
+}
 
 interface SubscriptionContextType {
   // Subscription state
@@ -96,9 +132,9 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       
       try {
         const [subResponse, plansResponse] = await Promise.all([
-        paystackService.getUserSubscription(),
-        paystackService.getSubscriptionPlans()
-      ]);
+          api.getUserSubscription(),
+          api.getSubscriptionPlans()
+        ]);
         
         subscriptionData = subResponse;
         plansData = plansResponse;
@@ -133,7 +169,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   const loadPlans = async () => {
     try {
       setLoadingPlans(true);
-      const plansData = await paystackService.getSubscriptionPlans();
+              const plansData = await api.getSubscriptionPlans();
       setPlans(plansData);
     } catch (error) {
       console.error('Error loading plans:', error);
@@ -234,7 +270,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
         setTimeout(() => reject(new Error('Request timeout')), 10000); // 10 second timeout
       });
       
-      const usagePromise = paystackService.recordFeatureUsage(featureName);
+              const usagePromise = api.recordFeatureUsage(featureName);
       
       await Promise.race([usagePromise, timeoutPromise]);
       

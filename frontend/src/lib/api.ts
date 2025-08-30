@@ -355,6 +355,21 @@ class APIService {
   async getUserCount(): Promise<any> {
     return this.makeRequest('/public/user-count', { skipAuth: true })
   }
+
+  // Subscription endpoints
+  async getUserSubscription(): Promise<any> {
+    return this.makeRequest('/payment/subscription-status')
+  }
+
+  async getSubscriptionPlans(): Promise<any> {
+    return this.makeRequest('/payment/plans')
+  }
+
+  async recordFeatureUsage(featureName: string): Promise<any> {
+    return this.makeRequest(`/payment/record-usage/${featureName}`, {
+      method: 'POST'
+    })
+  }
 }
 
 // Export singleton instance

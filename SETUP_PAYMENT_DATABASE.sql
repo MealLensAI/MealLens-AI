@@ -35,20 +35,35 @@ CREATE TABLE IF NOT EXISTS public.user_subscriptions (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 3. Create payment_transactions table
-CREATE TABLE IF NOT EXISTS public.payment_transactions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    reference TEXT UNIQUE NOT NULL,
-    amount DECIMAL(10,2) NOT NULL,
-    currency TEXT DEFAULT 'USD',
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'success', 'failed', 'cancelled')),
-    provider TEXT DEFAULT 'paystack',
-    plan_id UUID REFERENCES public.subscription_plans(id),
-    metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- 3. Create payment_transactions table (if not exists)
+-- Note: This table already exists in your database with different structure
+-- We'll just ensure it has the necessary columns
+DO $$
+BEGIN
+    -- Add reference column if it doesn't exist (for compatibility)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'payment_transactions' 
+                   AND column_name = 'reference' 
+                   AND table_schema = 'public') THEN
+        ALTER TABLE public.payment_transactions ADD COLUMN reference TEXT;
+    END IF;
+    
+    -- Add plan_id column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'payment_transactions' 
+                   AND column_name = 'plan_id' 
+                   AND table_schema = 'public') THEN
+        ALTER TABLE public.payment_transactions ADD COLUMN plan_id UUID REFERENCES public.subscription_plans(id);
+    END IF;
+    
+    -- Add provider column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'payment_transactions' 
+                   AND column_name = 'provider' 
+                   AND table_schema = 'public') THEN
+        ALTER TABLE public.payment_transactions ADD COLUMN provider TEXT DEFAULT 'paystack';
+    END IF;
+END $$;
 
 -- 4. Create usage_tracking table
 CREATE TABLE IF NOT EXISTS public.usage_tracking (

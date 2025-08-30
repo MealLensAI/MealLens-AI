@@ -209,16 +209,16 @@ class PaymentService:
                 # Create new subscription
                 result = self.supabase.table('user_subscriptions').insert(subscription_data).execute()
             
-            # Record payment transaction
+            # Record payment transaction (using existing table structure)
             transaction_data = {
                 'user_id': user_id,
-                'reference': reference,
+                'paystack_reference': reference,  # Use paystack_reference instead of reference
                 'amount': amount,
                 'currency': currency,
                 'status': 'success',
-                'provider': 'paystack',
-                'plan_id': plan_id,
-                'created_at': datetime.now().isoformat()
+                'payment_method': 'paystack',  # Use payment_method instead of provider
+                'description': f'Subscription payment for plan {plan_id}',
+                'metadata': metadata or {}
             }
             
             self.supabase.table('payment_transactions').insert(transaction_data).execute()

@@ -67,17 +67,9 @@ class SupabaseService:
             # Test the connection by making a simple query
             print("[INFO] Testing Supabase connection...")
             try:
-                # Try to fetch first user from auth schema (if any exists)
-                # This is a lightweight operation to test the connection
-                result = self.supabase.table('auth.users').select('*').limit(1).execute()
-                print("[INFO] Successfully connected to Supabase. User table accessible.")
-                
-                # Also check if profiles table exists
-                try:
-                    profiles = self.supabase.table('profiles').select('*').limit(1).execute()
-                    print("[INFO] Successfully queried profiles table.")
-                except Exception as profiles_error:
-                    print("[WARNING] Could not query profiles table. It may not exist yet.")
+                # Test connection by querying profiles table (public schema)
+                profiles = self.supabase.table('profiles').select('*').limit(1).execute()
+                print("[INFO] Successfully connected to Supabase. Profiles table accessible.")
                     
             except Exception as connection_error:
                 error_msg = str(connection_error)

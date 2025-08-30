@@ -48,7 +48,8 @@ def verify_paystack_signature(payload, signature):
     """Verify Paystack webhook signature"""
     try:
         secret_key = os.getenv('PAYSTACK_SECRET_KEY')
-        if not secret_key:
+        if not secret_key or not signature:
+            print(f"Missing secret key or signature: secret_key={bool(secret_key)}, signature={bool(signature)}")
             return False
         
         # Create HMAC SHA512 hash
@@ -62,6 +63,110 @@ def verify_paystack_signature(payload, signature):
     except Exception as e:
         print(f"Signature verification error: {e}")
         return False
+
+@payment_bp.route('/plans', methods=['GET'])
+def get_subscription_plans():
+    """Get available subscription plans"""
+    try:
+        payment_service = get_payment_service()
+        if not payment_service:
+            return jsonify({'error': 'Payment service not available'}), 503
+        
+        # Get subscription plans from database
+        try:
+            result = payment_service.supabase.table('subscription_plans').select('*').eq('is_active', True).execute()
+            plans = result.data if result.data else []
+            
+            return jsonify({
+                'status': 'success',
+                'plans': plans
+            }), 200
+            
+        except Exception as db_error:
+            print(f"Database error getting plans: {db_error}")
+            # Return default plans if database is not available
+            default_plans = [
+                {
+                    'id': 'free',
+                    'name': 'free',
+                    'display_name': 'Free Plan',
+                    'price_monthly': 0.00,
+                    'price_yearly': 0.00,
+                    'features': {
+                        'food_detection': True,
+                        'ai_kitchen': True,
+                        'basic_support': True
+                    },
+                    'limits': {
+                        'food_detection': 5,
+                        'meal_planning': 3,
+                        'ai_kitchen': 5
+                    }
+                },
+                {
+                    'id': 'weekly',
+                    'name': 'weekly',
+                    'display_name': 'Weekly Plan',
+                    'price_monthly': 2.50,
+                    'price_yearly': 0.00,
+                    'features': {
+                        'food_detection': True,
+                        'meal_planning': True,
+                        'ai_kitchen': True,
+                        'priority_support': True
+                    },
+                    'limits': {
+                        'food_detection': -1,
+                        'meal_planning': -1,
+                        'ai_kitchen': -1
+                    }
+                },
+                {
+                    'id': 'two_weeks',
+                    'name': 'two_weeks',
+                    'display_name': 'Two Weeks Plan',
+                    'price_monthly': 5.00,
+                    'price_yearly': 0.00,
+                    'features': {
+                        'food_detection': True,
+                        'meal_planning': True,
+                        'ai_kitchen': True,
+                        'priority_support': True
+                    },
+                    'limits': {
+                        'food_detection': -1,
+                        'meal_planning': -1,
+                        'ai_kitchen': -1
+                    }
+                },
+                {
+                    'id': 'monthly',
+                    'name': 'monthly',
+                    'display_name': 'Monthly Plan',
+                    'price_monthly': 10.00,
+                    'price_yearly': 0.00,
+                    'features': {
+                        'food_detection': True,
+                        'meal_planning': True,
+                        'ai_kitchen': True,
+                        'priority_support': True
+                    },
+                    'limits': {
+                        'food_detection': -1,
+                        'meal_planning': -1,
+                        'ai_kitchen': -1
+                    }
+                }
+            ]
+            
+            return jsonify({
+                'status': 'success',
+                'plans': default_plans
+            }), 200
+            
+    except Exception as e:
+        print(f"Error getting subscription plans: {e}")
+        return jsonify({'error': 'Failed to get subscription plans'}), 500
 
 @payment_bp.route('/webhook', methods=['POST'])
 def paystack_webhook():

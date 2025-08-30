@@ -42,15 +42,7 @@ const WelcomePage: React.FC = () => {
   const { user, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userCount, setUserCount] = useState(1000); // Default fallback
-  const [countdown, setCountdown] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  });
 
-  // Launch date - set to Aug 29, 2025 at 23:59
-  const launchDate = new Date('2025-08-29T23:59:00Z');
 
   // Fetch user count - start from 1000 and fetch actual count if available
   useEffect(() => {
@@ -74,26 +66,7 @@ const WelcomePage: React.FC = () => {
     fetchUserCount();
   }, []);
 
-  // Countdown timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date().getTime();
-      const distance = launchDate.getTime() - now;
 
-      if (distance > 0) {
-        setCountdown({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000)
-        });
-      } else {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   // Don't redirect authenticated users - let them see the landing page
   // They can navigate to the app using the "Get Started" or "Try MealLens AI" buttons
@@ -289,28 +262,7 @@ const WelcomePage: React.FC = () => {
                 cooking tips, and personalized suggestions. Your smart kitchen companion.
               </p>
 
-              {/* Live Countdown */}
-              <div className="mb-6 sm:mb-8">
-                <h3 className="text-gray-900 text-lg sm:text-xl font-semibold mb-4">Launching Soon!</h3>
-                <div className="flex justify-center lg:justify-start space-x-2 sm:space-x-4">
-                  <div className="bg-white rounded-lg p-3 sm:p-4 text-center min-w-[60px] sm:min-w-[80px] border border-gray-200">
-                    <div className="text-2xl sm:text-3xl font-bold text-gray-900">{countdown.days}</div>
-                    <div className="text-xs sm:text-sm text-gray-600">Days</div>
-                  </div>
-                  <div className="bg-white rounded-lg p-3 sm:p-4 text-center min-w-[60px] sm:min-w-[80px] border border-gray-200">
-                    <div className="text-2xl sm:text-3xl font-bold text-gray-900">{countdown.hours}</div>
-                    <div className="text-xs sm:text-sm text-gray-600">Hours</div>
-                  </div>
-                  <div className="bg-white rounded-lg p-3 sm:p-4 text-center min-w-[60px] sm:min-w-[80px] border border-gray-200">
-                    <div className="text-2xl sm:text-3xl font-bold text-gray-900">{countdown.minutes}</div>
-                    <div className="text-xs sm:text-sm text-gray-600">Minutes</div>
-                  </div>
-                  <div className="bg-white rounded-lg p-3 sm:p-4 text-center min-w-[60px] sm:min-w-[80px] border border-gray-200">
-                    <div className="text-2xl sm:text-3xl font-bold text-gray-900">{countdown.seconds}</div>
-                    <div className="text-xs sm:text-sm text-gray-600">Seconds</div>
-                  </div>
-                </div>
-              </div>
+
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Button 

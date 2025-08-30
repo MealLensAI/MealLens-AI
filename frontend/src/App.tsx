@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React from "react"
 import {
   createBrowserRouter,
   RouterProvider,
@@ -24,50 +24,12 @@ import Settings from "./pages/Settings"
 import WelcomePage from "./pages/WelcomePage"
 import HomePage from "./pages/HomePage"
 import OnboardingPage from "./pages/OnboardingPage"
-import LaunchCountdown from "./components/LaunchCountdown"
-import LoadingScreen from "./components/LoadingScreen"
 import AdminPanel from "./components/AdminPanel"
 import AdminDashboard from "./pages/AdminDashboard"
 import AdminLoginPage from "./pages/AdminLoginPage"
 import AdminRoute from "./components/AdminRoute"
 
 import ErrorBoundary from "./components/ErrorBoundary"
-
-// Launch countdown wrapper component
-const LaunchCountdownWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isLaunched, setIsLaunched] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const checkLaunchStatus = async () => {
-      try {
-        const response = await fetch('https://meallens-ai-cmps.onrender.com/api/server-time');
-        const data = await response.json();
-        const serverTime = new Date(data.serverTime);
-        const launchDate = new Date('2024-12-25T00:00:00Z');
-        if (serverTime >= launchDate) {
-          setIsLaunched(true);
-        }
-      } catch (error) {
-        console.error('Failed to check launch status:', error);
-        setIsLaunched(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    checkLaunchStatus();
-  }, []);
-
-  if (isLoading) {
-    return <LoadingScreen size="md" />;
-  }
-
-  if (!isLaunched) {
-    return <LaunchCountdown onLaunchComplete={() => setIsLaunched(true)} />;
-  }
-
-  return <>{children}</>;
-};
 
 // Create router with future flags to eliminate deprecation warnings
 const router = createBrowserRouter([
@@ -228,16 +190,14 @@ const router = createBrowserRouter([
 
 const RouterWrapper = () => {
   return (
-    <LaunchCountdownWrapper>
-      <AuthProvider>
-        <SubscriptionProvider>
-          <ErrorBoundary>
-            <RouterProvider router={router} />
-            <Toaster />
-          </ErrorBoundary>
-        </SubscriptionProvider>
-      </AuthProvider>
-    </LaunchCountdownWrapper>
+    <AuthProvider>
+      <SubscriptionProvider>
+        <ErrorBoundary>
+          <RouterProvider router={router} />
+          <Toaster />
+        </ErrorBoundary>
+      </SubscriptionProvider>
+    </AuthProvider>
   )
 }
 

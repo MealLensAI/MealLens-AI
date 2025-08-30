@@ -265,6 +265,7 @@ def initialize_payment():
         currency = data.get('currency', 'USD')
         plan_id = data.get('plan_id')
         provider = data.get('provider', 'paystack')
+        payment_method = data.get('payment_method')
         metadata = data.get('metadata', {})
 
         if not email or not amount or not plan_id:
@@ -283,7 +284,8 @@ def initialize_payment():
             currency=currency,
             plan_id=plan_id,
             user_id=user_id,
-            metadata=metadata
+            metadata=metadata,
+            payment_method=payment_method
         )
         
         if result.get('status'):

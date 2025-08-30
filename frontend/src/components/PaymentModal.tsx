@@ -37,6 +37,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
   const [userCurrency, setUserCurrency] = useState('USD');
   const [userProfile, setUserProfile] = useState<any>(null);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [availableProviders, setAvailableProviders] = useState<any>({});
   const [currentStep, setCurrentStep] = useState<'plan' | 'payment' | 'processing' | 'success'>('plan');
   const [selectedPlan, setSelectedPlan] = useState<any>(initialSelectedPlan);
@@ -108,6 +109,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
     if (userCurrency && availableProviders) {
       const bestProvider = getBestProviderForCurrency(userCurrency);
       setSelectedProvider(bestProvider);
+      
+      // Set default payment method based on currency
+      if (userCurrency === 'KES') {
+        setSelectedPaymentMethod('mpesa'); // Default to M-Pesa for Kenya
+      } else if (userCurrency === 'NGN') {
+        setSelectedPaymentMethod('bank_transfer'); // Default to bank transfer for Nigeria
+      } else {
+        setSelectedPaymentMethod('card'); // Default to card for other currencies
+      }
     }
   }, [userCurrency, availableProviders]);
 
@@ -173,12 +183,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
         currency: userCurrency,
         plan_id: plan.name,
         provider: selectedProvider,
+        payment_method: selectedPaymentMethod,
         metadata: {
           original_usd_amount: usdAmount,
           converted_amount: convertedAmount,
           user_currency: userCurrency,
           plan_name: plan.display_name,
-          billing_cycle: plan.billing_cycle
+          billing_cycle: plan.billing_cycle,
+          selected_payment_method: selectedPaymentMethod
         }
       };
 
@@ -447,43 +459,117 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
                 </CardContent>
               </Card>
 
-              {/* Payment Provider Selection */}
-              {Object.keys(providersForCurrency).length > 0 && (
-                <div className="space-y-3 sm:space-y-4">
-                  <h4 className="font-medium text-base sm:text-lg text-gray-900">Payment Method</h4>
-                  <div className="space-y-2 sm:space-y-3">
-                    {Object.entries(providersForCurrency).map(([providerKey, provider]: [string, any]) => (
-                      <Button
-                        key={providerKey}
-                        variant={selectedProvider === providerKey ? "default" : "outline"}
-                        className={`w-full justify-start h-auto p-3 sm:p-4 text-left transition-all duration-200 min-h-[44px] ${
-                          selectedProvider === providerKey 
-                            ? 'bg-orange-500 text-white border-orange-500 shadow-lg' 
-                            : 'hover:border-orange-300 hover:bg-orange-50'
-                        }`}
-                        onClick={() => setSelectedProvider(providerKey)}
-                      >
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <div className={`p-2 rounded-lg ${selectedProvider === providerKey ? 'bg-white bg-opacity-20' : 'bg-orange-100'}`}>
-                            {getProviderIcon(providerKey)}
-                          </div>
-                          <div>
-                            <div className="font-medium text-sm sm:text-base">{getProviderName(providerKey)}</div>
-                            <div className="text-xs sm:text-sm opacity-75">
-                              {provider.features?.slice(0, 2).join(', ')}
-                            </div>
+              {/* Payment Method Selection */}
+              <div className="space-y-3 sm:space-y-4">
+                <h4 className="font-medium text-base sm:text-lg text-gray-900">Choose Payment Method</h4>
+                
+                {/* M-Pesa (Kenya) */}
+                {userCurrency === 'KES' && (
+                  <div className="space-y-2">
+                    <Button
+                      variant={selectedPaymentMethod === 'mpesa' ? "default" : "outline"}
+                      className={`w-full justify-start h-auto p-3 sm:p-4 text-left transition-all duration-200 min-h-[44px] ${
+                        selectedPaymentMethod === 'mpesa' 
+                          ? 'bg-green-500 text-white border-green-500 shadow-lg' 
+                          : 'hover:border-green-300 hover:bg-green-50'
+                      }`}
+                      onClick={() => setSelectedPaymentMethod('mpesa')}
+                    >
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className={`p-2 rounded-lg ${selectedPaymentMethod === 'mpesa' ? 'bg-white bg-opacity-20' : 'bg-green-100'}`}>
+                          <Smartphone className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm sm:text-base">M-Pesa</div>
+                          <div className="text-xs sm:text-sm opacity-75">
+                            Pay with your phone - Most popular in Kenya
                           </div>
                         </div>
-                      </Button>
-                    ))}
+                      </div>
+                    </Button>
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* Bank Transfer (Nigeria) */}
+                {userCurrency === 'NGN' && (
+                  <div className="space-y-2">
+                    <Button
+                      variant={selectedPaymentMethod === 'bank_transfer' ? "default" : "outline"}
+                      className={`w-full justify-start h-auto p-3 sm:p-4 text-left transition-all duration-200 min-h-[44px] ${
+                        selectedPaymentMethod === 'bank_transfer' 
+                          ? 'bg-blue-500 text-white border-blue-500 shadow-lg' 
+                          : 'hover:border-blue-300 hover:bg-blue-50'
+                      }`}
+                      onClick={() => setSelectedPaymentMethod('bank_transfer')}
+                    >
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className={`p-2 rounded-lg ${selectedPaymentMethod === 'bank_transfer' ? 'bg-white bg-opacity-20' : 'bg-blue-100'}`}>
+                          <Globe className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm sm:text-base">Bank Transfer</div>
+                          <div className="text-xs sm:text-sm opacity-75">
+                            Pay directly from your bank account
+                          </div>
+                        </div>
+                      </div>
+                    </Button>
+                  </div>
+                )}
+
+                {/* USSD (Nigeria & Kenya) */}
+                {(userCurrency === 'NGN' || userCurrency === 'KES') && (
+                  <Button
+                    variant={selectedPaymentMethod === 'ussd' ? "default" : "outline"}
+                    className={`w-full justify-start h-auto p-3 sm:p-4 text-left transition-all duration-200 min-h-[44px] ${
+                      selectedPaymentMethod === 'ussd' 
+                        ? 'bg-purple-500 text-white border-purple-500 shadow-lg' 
+                        : 'hover:border-purple-300 hover:bg-purple-50'
+                    }`}
+                    onClick={() => setSelectedPaymentMethod('ussd')}
+                  >
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className={`p-2 rounded-lg ${selectedPaymentMethod === 'ussd' ? 'bg-white bg-opacity-20' : 'bg-purple-100'}`}>
+                        <Phone className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm sm:text-base">USSD</div>
+                        <div className="text-xs sm:text-sm opacity-75">
+                          Dial *996# to pay - Works on any phone
+                        </div>
+                      </div>
+                    </div>
+                  </Button>
+                )}
+
+                {/* Card Payment (All currencies) */}
+                <Button
+                  variant={selectedPaymentMethod === 'card' ? "default" : "outline"}
+                  className={`w-full justify-start h-auto p-3 sm:p-4 text-left transition-all duration-200 min-h-[44px] ${
+                    selectedPaymentMethod === 'card' 
+                      ? 'bg-orange-500 text-white border-orange-500 shadow-lg' 
+                      : 'hover:border-orange-300 hover:bg-orange-50'
+                  }`}
+                  onClick={() => setSelectedPaymentMethod('card')}
+                >
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className={`p-2 rounded-lg ${selectedPaymentMethod === 'card' ? 'bg-white bg-opacity-20' : 'bg-orange-100'}`}>
+                      <CreditCard className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm sm:text-base">Card Payment</div>
+                      <div className="text-xs sm:text-sm opacity-75">
+                        Visa, Mastercard, or local cards
+                      </div>
+                    </div>
+                  </div>
+                </Button>
+              </div>
 
               {/* Payment Button */}
               <Button
                 onClick={() => handlePayment(selectedPlan)}
-                disabled={isProcessing || !selectedProvider}
+                disabled={isProcessing || !selectedProvider || !selectedPaymentMethod}
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 sm:py-4 text-base font-semibold shadow-lg min-h-[44px]"
               >
                 {isProcessing ? (
@@ -500,7 +586,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
                         userCurrency
                       ),
                       userCurrency
-                    )} with {getProviderName(selectedProvider || '')}
+                    )} with {selectedPaymentMethod === 'mpesa' ? 'M-Pesa' : 
+                              selectedPaymentMethod === 'bank_transfer' ? 'Bank Transfer' :
+                              selectedPaymentMethod === 'ussd' ? 'USSD' :
+                              selectedPaymentMethod === 'card' ? 'Card' : 'Paystack'}
                   </>
                 )}
               </Button>

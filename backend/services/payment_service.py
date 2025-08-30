@@ -12,7 +12,8 @@ class PaymentService:
         # Payment service initialized
 
     def initialize_payment(self, email: str, amount: float, currency: str = 'USD', 
-                          plan_id: str = None, user_id: str = None, metadata: Dict = None) -> Dict:
+                          plan_id: str = None, user_id: str = None, metadata: Dict = None, 
+                          payment_method: str = None) -> Dict:
         """Initialize a payment with Paystack"""
         try:
             if not self.paystack_secret_key:
@@ -33,9 +34,31 @@ class PaymentService:
                 'metadata': {
                     'user_id': user_id,
                     'plan_id': plan_id,
+                    'payment_method': payment_method,
                     **(metadata or {})
                 }
             }
+            
+            # Add payment method specific configurations
+            if payment_method:
+                if payment_method == 'mpesa' and currency == 'KES':
+                    # M-Pesa specific configuration
+                    payment_data['channels'] = ['mobile_money']
+                elif payment_method == 'bank_transfer':
+                    # Bank transfer specific configuration
+                    payment_data['channels'] = ['bank']
+                elif payment_method == 'ussd':
+                    # USSD specific configuration
+                    payment_data['channels'] = ['ussd']
+                elif payment_method == 'card':
+                    # Card specific configuration
+                    payment_data['channels'] = ['card']
+                else:
+                    # Default: let Paystack show all available methods
+                    payment_data['channels'] = ['card', 'bank', 'ussd', 'mobile_money']
+            else:
+                # Default: show all available payment methods
+                payment_data['channels'] = ['card', 'bank', 'ussd', 'mobile_money']
 
             # Make request to Paystack
             headers = {

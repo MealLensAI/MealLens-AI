@@ -41,30 +41,23 @@ class PaymentService:
             
             # Add payment method specific configurations
             if payment_method:
-                print(f"[PaymentService] Setting payment method: {payment_method} for currency: {currency}")
                 if payment_method == 'mpesa' and currency == 'KES':
                     # M-Pesa specific configuration
                     payment_data['channels'] = ['mobile_money']
-                    print(f"[PaymentService] Set channels to: {payment_data['channels']}")
                 elif payment_method == 'bank_transfer':
                     # Bank transfer specific configuration
                     payment_data['channels'] = ['bank']
-                    print(f"[PaymentService] Set channels to: {payment_data['channels']}")
                 elif payment_method == 'ussd':
                     # USSD specific configuration
                     payment_data['channels'] = ['ussd']
-                    print(f"[PaymentService] Set channels to: {payment_data['channels']}")
                 elif payment_method == 'card':
                     # Card specific configuration
                     payment_data['channels'] = ['card']
-                    print(f"[PaymentService] Set channels to: {payment_data['channels']}")
                 else:
                     # Default: let Paystack show all available methods
                     payment_data['channels'] = ['card', 'bank', 'ussd', 'mobile_money']
-                    print(f"[PaymentService] Set channels to: {payment_data['channels']}")
             else:
                 # Default: show all available payment methods
-                print(f"[PaymentService] No payment method specified, using default channels")
                 payment_data['channels'] = ['card', 'bank', 'ussd', 'mobile_money']
 
             # Make request to Paystack

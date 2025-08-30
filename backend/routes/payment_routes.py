@@ -268,9 +268,7 @@ def initialize_payment():
         payment_method = data.get('payment_method')
         metadata = data.get('metadata', {})
 
-        print(f"[PaymentRoutes] Received payment method: {payment_method}")
-        print(f"[PaymentRoutes] Currency: {currency}")
-        print(f"[PaymentRoutes] Provider: {provider}")
+
 
         if not email or not amount or not plan_id:
             return jsonify({'error': 'Missing required fields'}), 400

@@ -131,16 +131,11 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       let plansData = [];
       
       try {
-        console.log('[SubscriptionContext] Testing API methods...');
-        console.log('[SubscriptionContext] api.getUserSubscription:', typeof api.getUserSubscription);
-        console.log('[SubscriptionContext] api.getSubscriptionPlans:', typeof api.getSubscriptionPlans);
-        
         const [subResponse, plansResponse] = await Promise.all([
           api.getUserSubscription(),
           api.getSubscriptionPlans()
         ]);
         
-        console.log('[SubscriptionContext] API responses:', { subResponse, plansResponse });
         subscriptionData = subResponse;
         plansData = plansResponse;
       } catch (paymentError) {

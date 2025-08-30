@@ -194,8 +194,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
         }
       };
 
-      console.log('[PaymentModal] Payment data being sent:', paymentData);
-      console.log('[PaymentModal] Selected payment method:', selectedPaymentMethod);
+
 
       // Initialize payment
       try {

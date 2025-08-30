@@ -207,56 +207,21 @@ The payment system is fully implemented and ready to use:
 ## 🌈 Enjoy Cooking Smarter!  
 > _MealLens: Your AI sous-chef, always ready to help!_ 🍳🤖
 
-## Payment Flow: Local Simulation & Testing
+## Production Payment Integration
 
-This project supports a full payment flow simulation for local development. No real Paystack calls are made, but the backend and database are updated as if real payments occurred.
+This app uses Paystack for payment processing. To enable payments:
 
-### 1. Login and Get Access Token
-```bash
-curl -X POST http://localhost:5001/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@gmail.com", "password": "123Admin##"}' \
-  -o login_response.json
-cat login_response.json | jq -r '.access_token' > access_token.txt
-TOKEN=$(cat access_token.txt)
-```
+1. Set your Paystack keys in `.env`:
+   ```
+   PAYSTACK_SECRET_KEY=sk_live_xxx
+   PAYSTACK_PUBLIC_KEY=pk_live_xxx
+   ```
 
-### 2. Check Subscription Status
-```bash
-curl http://localhost:5001/api/payment/subscription \
-  -H "Authorization: Bearer $TOKEN"
-```
+2. Configure your Paystack webhook URL to point to your backend:
+   ```
+   https://your-backend-url.com/api/payment/webhook
+   ```
 
-### 3. Initialize Payment (Simulated)
-```bash
-curl -X POST http://localhost:5001/api/payment/initialize-payment \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"email": "test@gmail.com", "amount": 1000, "plan_id": "sim-premium"}'
-```
-- Copy the `reference` from the response.
-
-### 4. Verify Payment (Simulated)
-```bash
-curl http://localhost:5001/api/payment/verify-payment/<reference> \
-  -H "Authorization: Bearer $TOKEN"
-```
-- Replace `<reference>` with the value from the previous step.
-
-### 5. Check Upgraded Subscription
-```bash
-curl http://localhost:5001/api/payment/subscription \
-  -H "Authorization: Bearer $TOKEN"
-```
-- You should now see your plan as `premium` (or as set in simulation).
-
-### 6. Switching to Real Paystack Integration
-- Remove or disable simulation mode in `services/payment_service.py`.
-- Set your real Paystack keys in `.env`:
-  ```
-  PAYSTACK_SECRET_KEY=sk_live_xxx
-  PAYSTACK_PUBLIC_KEY=pk_live_xxx
-  ```
-- Restart your backend. All endpoints will now use real Paystack and update the database accordingly.
+3. Restart your backend to apply the configuration.
 
 ---

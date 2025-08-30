@@ -3,42 +3,6 @@ import requests
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
-class SimulatedPaymentService:
-    """Simulated payment service for testing and development"""
-    
-    def __init__(self):
-        pass
-    
-    def initialize_payment(self, email: str, amount: float, currency: str = 'USD', 
-                          plan_id: str = None, user_id: str = None, metadata: Dict = None) -> Dict:
-        """Simulate payment initialization"""
-        return {
-            'status': True,
-            'message': 'Payment initialized successfully (simulated)',
-            'authorization_url': 'https://example.com/simulated-payment',
-            'reference': f'sim_ref_{datetime.now().timestamp()}',
-            'access_code': f'sim_code_{datetime.now().timestamp()}'
-        }
-    
-    def verify_payment(self, reference: str) -> Dict:
-        """Simulate payment verification"""
-        return {
-            'status': True,
-            'message': 'Payment verified successfully (simulated)',
-            'data': {
-                'status': 'success',
-                'reference': reference,
-                'amount': 1000,
-                'currency': 'USD'
-            }
-        }
-    
-    def test_connection(self):
-        """Simulate connection test"""
-        class MockResponse:
-            status_code = 200
-        return MockResponse()
-
 class PaymentService:
     def __init__(self, supabase_client):
         self.supabase = supabase_client
@@ -165,6 +129,157 @@ class PaymentService:
                 'status': False,
                 'message': f'Payment verification failed: {str(e)}'
             }
+
+    def test_connection(self):
+        """Test Paystack connection"""
+        try:
+            if not self.paystack_secret_key:
+                return {'status': False, 'message': 'Paystack not configured'}
+            
+            headers = {
+                'Authorization': f'Bearer {self.paystack_secret_key}',
+                'Content-Type': 'application/json'
+            }
+            
+            response = requests.get(
+                'https://api.paystack.co/transaction/verify/test',
+                headers=headers
+            )
+            
+            return {
+                'status': response.status_code == 200,
+                'status_code': response.status_code,
+                'message': 'Connection test completed'
+            }
+        except Exception as e:
+            print(f"Connection test error: {e}")
+            return {
+                'status': False,
+                'status_code': 500,
+                'message': f'Connection test failed: {str(e)}'
+            }
+
+    def handle_successful_payment(self, reference: str, amount: int, currency: str, metadata: Dict) -> Dict:
+        """Handle successful payment and update database"""
+        try:
+            user_id = metadata.get('user_id')
+            plan_id = metadata.get('plan_id')
+            
+            if not user_id:
+                return {'status': False, 'message': 'User ID not found in metadata'}
+            
+            # Get plan details
+            plan_result = self.supabase.table('subscription_plans').select('*').eq('id', plan_id).execute()
+            if not plan_result.data:
+                return {'status': False, 'message': 'Plan not found'}
+            
+            plan = plan_result.data[0]
+            
+            # Calculate subscription end date
+            billing_cycle = plan.get('billing_cycle', 'monthly')
+            if billing_cycle == 'weekly':
+                end_date = datetime.now() + timedelta(weeks=1)
+            elif billing_cycle == 'two_weeks':
+                end_date = datetime.now() + timedelta(weeks=2)
+            elif billing_cycle == 'monthly':
+                end_date = datetime.now() + timedelta(days=30)
+            else:
+                end_date = datetime.now() + timedelta(days=30)
+            
+            # Create or update subscription
+            subscription_data = {
+                'user_id': user_id,
+                'plan_id': plan_id,
+                'status': 'active',
+                'start_date': datetime.now().isoformat(),
+                'end_date': end_date.isoformat(),
+                'paystack_reference': reference,
+                'amount_paid': amount,
+                'currency': currency,
+                'billing_cycle': billing_cycle
+            }
+            
+            # Check if user already has a subscription
+            existing_sub = self.supabase.table('user_subscriptions').select('*').eq('user_id', user_id).execute()
+            
+            if existing_sub.data:
+                # Update existing subscription
+                result = self.supabase.table('user_subscriptions').update(subscription_data).eq('user_id', user_id).execute()
+            else:
+                # Create new subscription
+                result = self.supabase.table('user_subscriptions').insert(subscription_data).execute()
+            
+            # Record payment transaction
+            transaction_data = {
+                'user_id': user_id,
+                'reference': reference,
+                'amount': amount,
+                'currency': currency,
+                'status': 'success',
+                'provider': 'paystack',
+                'plan_id': plan_id,
+                'created_at': datetime.now().isoformat()
+            }
+            
+            self.supabase.table('payment_transactions').insert(transaction_data).execute()
+            
+            print(f"✅ Payment processed successfully for user {user_id}")
+            return {'status': True, 'message': 'Payment processed successfully'}
+            
+        except Exception as e:
+            print(f"❌ Payment processing error: {e}")
+            return {'status': False, 'message': f'Payment processing failed: {str(e)}'}
+
+    def handle_subscription_created(self, subscription_code: str, customer_email: str, metadata: Dict) -> Dict:
+        """Handle subscription creation webhook"""
+        try:
+            user_id = metadata.get('user_id')
+            plan_id = metadata.get('plan_id')
+            
+            if not user_id:
+                return {'status': False, 'message': 'User ID not found in metadata'}
+            
+            # Update subscription with Paystack subscription code
+            update_data = {
+                'paystack_subscription_code': subscription_code,
+                'status': 'active'
+            }
+            
+            result = self.supabase.table('user_subscriptions').update(update_data).eq('user_id', user_id).execute()
+            
+            print(f"✅ Subscription created for user {user_id}")
+            return {'status': True, 'message': 'Subscription created successfully'}
+            
+        except Exception as e:
+            print(f"❌ Subscription creation error: {e}")
+            return {'status': False, 'message': f'Subscription creation failed: {str(e)}'}
+
+    def handle_subscription_disabled(self, subscription_code: str) -> Dict:
+        """Handle subscription cancellation webhook"""
+        try:
+            # Find subscription by Paystack code
+            sub_result = self.supabase.table('user_subscriptions').select('*').eq('paystack_subscription_code', subscription_code).execute()
+            
+            if not sub_result.data:
+                return {'status': False, 'message': 'Subscription not found'}
+            
+            subscription = sub_result.data[0]
+            user_id = subscription.get('user_id')
+            
+            # Update subscription status
+            update_data = {
+                'status': 'cancelled',
+                'cancelled_at': datetime.now().isoformat()
+            }
+            
+            result = self.supabase.table('user_subscriptions').update(update_data).eq('paystack_subscription_code', subscription_code).execute()
+            
+            print(f"✅ Subscription cancelled for user {user_id}")
+            return {'status': True, 'message': 'Subscription cancelled successfully'}
+            
+        except Exception as e:
+            print(f"❌ Subscription cancellation error: {e}")
+            return {'status': False, 'message': f'Subscription cancellation failed: {str(e)}'}
 
     def record_usage(self, user_id: str, feature_name: str) -> Dict:
         """Record feature usage for subscription tracking"""

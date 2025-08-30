@@ -1,94 +1,98 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Loader2, XCircle, ArrowRight, Home } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/utils';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import paystackService from '@/services/paystackService';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Check, Loader2, XCircle, ArrowRight, Home } from 'lucide-react';
+import { api } from '@/lib/api';
 
 const PaymentSuccess: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { toast } = useToast();
+  const { user } = useAuth();
   const { refreshSubscription } = useSubscription();
+  const { toast } = useToast();
   
-  const [isVerifying, setIsVerifying] = useState(true);
-  const [verificationStatus, setVerificationStatus] = useState<'success' | 'error' | 'pending'>('pending');
+  const [verificationStatus, setVerificationStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMessage, setErrorMessage] = useState('');
-  const [countdown, setCountdown] = useState(5);
-
-  const reference = searchParams.get('reference');
+  const [paymentDetails, setPaymentDetails] = useState<any>(null);
 
   useEffect(() => {
     const verifyPayment = async () => {
-      console.log('[PaymentSuccess] Starting payment verification with reference:', reference);
-      
-      if (!reference) {
-        console.error('[PaymentSuccess] No payment reference found');
-        setErrorMessage('No payment reference found');
-        setVerificationStatus('error');
-        setIsVerifying(false);
-        return;
-      }
-
       try {
-        console.log('[PaymentSuccess] Calling paystackService.verifyPayment...');
-        // Verify the payment with Paystack
-        const verificationResult = await paystackService.verifyPayment(reference);
-        console.log('[PaymentSuccess] Verification result:', verificationResult);
+        // Get payment reference from URL params or localStorage
+        const reference = searchParams.get('reference') || searchParams.get('trxref');
+        const pendingPayment = localStorage.getItem('pendingPayment');
         
-        if (verificationResult.status === 'success') {
-          console.log('[PaymentSuccess] Payment verification successful');
+        if (!reference) {
+          setVerificationStatus('error');
+          setErrorMessage('Payment reference not found');
+          return;
+        }
+
+        // Get stored payment details
+        if (pendingPayment) {
+          setPaymentDetails(JSON.parse(pendingPayment));
+        }
+
+        // Verify payment with backend
+        const response = await api.verifyPayment(reference);
+        
+        if (response.status === 'success' || response.data?.status === 'success') {
           setVerificationStatus('success');
           
-          // Refresh user subscription
-          console.log('[PaymentSuccess] Refreshing subscription...');
-          await refreshSubscription();
+          // Clear pending payment from localStorage
+          localStorage.removeItem('pendingPayment');
           
+          // Refresh subscription status
+          if (refreshSubscription) {
+            await refreshSubscription();
+          }
+          
+          // Show success toast
           toast({
             title: "Payment Successful!",
-            description: "Welcome to MealLens Pro! You now have access to all premium features.",
+            description: "Welcome to MealLens Pro! Your subscription is now active.",
+            variant: "default",
           });
+          
         } else {
-          console.error('[PaymentSuccess] Payment verification failed:', verificationResult);
-          setErrorMessage('Payment verification failed');
           setVerificationStatus('error');
+          setErrorMessage('Payment verification failed. Please contact support.');
         }
+        
       } catch (error) {
-        console.error('[PaymentSuccess] Payment verification error:', error);
-        setErrorMessage('Failed to verify payment. Please contact support.');
+        console.error('Payment verification error:', error);
         setVerificationStatus('error');
-      } finally {
-        setIsVerifying(false);
+        setErrorMessage('Payment verification failed. Please try again.');
       }
     };
 
     verifyPayment();
-  }, [reference, refreshSubscription, toast]);
+  }, [searchParams, refreshSubscription, toast]);
 
-  useEffect(() => {
-    if (verificationStatus === 'success' && countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (verificationStatus === 'success' && countdown === 0) {
-      navigate('/ai-kitchen');
-    }
-  }, [verificationStatus, countdown, navigate]);
+  const handleContinue = () => {
+    navigate('/ai-kitchen');
+  };
 
-  if (isVerifying) {
+  const handleHome = () => {
+    navigate('/');
+  };
+
+  if (verificationStatus === 'verifying') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center">
-          <CardContent className="p-8">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
             <div className="flex justify-center mb-6">
-              <Loader2 className="h-12 w-12 text-orange-500 animate-spin" />
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
+              </div>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Verifying Payment...</h2>
-            <p className="text-gray-600">
-              Please wait while we verify your payment.
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Verifying Payment...</h2>
+            <p className="text-gray-600">Please wait while we verify your payment with Paystack.</p>
           </CardContent>
         </Card>
       </div>
@@ -97,32 +101,23 @@ const PaymentSuccess: React.FC = () => {
 
   if (verificationStatus === 'error') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center">
-          <CardContent className="p-8">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
             <div className="flex justify-center mb-6">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                <XCircle className="h-8 w-8 text-red-600" />
+                <XCircle className="h-8 w-8 text-red-500" />
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Verification Failed</h2>
-            <p className="text-gray-600 mb-6">
-              {errorMessage || 'There was an issue verifying your payment. Please contact support if you believe this is an error.'}
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Payment Verification Failed</h2>
+            <p className="text-gray-600 mb-6">{errorMessage}</p>
             <div className="space-y-3">
-              <Button 
-                onClick={() => navigate('/ai-kitchen')}
-                className="w-full bg-orange-500 hover:bg-orange-600"
-              >
-                Go to AI Kitchen
-              </Button>
-              <Button 
-                onClick={() => navigate('/')}
-                variant="outline"
-                className="w-full"
-              >
+              <Button onClick={handleHome} className="w-full">
                 <Home className="h-4 w-4 mr-2" />
-                Go Home
+                Go to Home
+              </Button>
+              <Button variant="outline" onClick={() => window.history.back()} className="w-full">
+                Try Again
               </Button>
             </div>
           </CardContent>
@@ -132,56 +127,34 @@ const PaymentSuccess: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md text-center">
-        <CardContent className="p-8">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="p-8 text-center">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-              <CheckCircle className="h-8 w-8 text-green-600" />
+              <Check className="h-8 w-8 text-green-500" />
             </div>
           </div>
-          
-          <Badge className="mb-4 bg-green-100 text-green-700 border-green-200">
-            <CheckCircle className="h-3 w-3 mr-2" />
-            Payment Successful
-          </Badge>
-          
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to MealLens Pro!</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Payment Successful!</h2>
           <p className="text-gray-600 mb-6">
-            Your payment has been processed successfully. You now have access to all premium features.
+            Welcome to MealLens Pro! Your subscription is now active and you have access to all premium features.
           </p>
           
-          <div className="space-y-4">
-            <div className="bg-white rounded-lg p-4 border border-green-200">
-              <h3 className="font-semibold text-gray-900 mb-2">What's Next?</h3>
-              <ul className="text-sm text-gray-600 space-y-1 text-left">
-                <li className="flex items-center">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                  Unlimited AI-powered food detection
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                  Advanced meal planning tools
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                  Priority customer support
-                </li>
-              </ul>
+          {paymentDetails && (
+            <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+              <h3 className="font-semibold text-gray-900 mb-2">Payment Details:</h3>
+              <div className="space-y-1 text-sm text-gray-600">
+                <div>Plan: {paymentDetails.plan}</div>
+                <div>Amount: {paymentDetails.currency} {paymentDetails.amount}</div>
+                <div>Status: Verified</div>
+              </div>
             </div>
-            
-            <div className="text-sm text-gray-500">
-              Redirecting to AI Kitchen in {countdown} seconds...
-            </div>
-            
-            <Button 
-              onClick={() => navigate('/ai-kitchen')}
-              className="w-full bg-orange-500 hover:bg-orange-600"
-            >
-              <ArrowRight className="h-4 w-4 mr-2" />
-              Go to AI Kitchen Now
-            </Button>
-          </div>
+          )}
+          
+          <Button onClick={handleContinue} className="w-full bg-orange-500 hover:bg-orange-600">
+            Start Using Pro Features
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
         </CardContent>
       </Card>
     </div>

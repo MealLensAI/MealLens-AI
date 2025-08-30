@@ -102,7 +102,7 @@
   cursor: not-allowed;
 }
 
-/* Responsive improvements */
+/* Enhanced Responsive Design */
 @media (max-width: 640px) {
   .instructions-content {
     font-size: 0.9rem;
@@ -111,6 +111,39 @@
   
   .instruction-card {
     padding: 1rem;
+  }
+  
+  /* Mobile-specific improvements */
+  .ai-response-container {
+    padding: 0.5rem;
+  }
+  
+  /* Ensure buttons are touch-friendly */
+  .loading-button {
+    min-height: 44px;
+    font-size: 1rem;
+  }
+  
+  /* Better spacing for mobile cards */
+  .instruction-step,
+  .instruction-substep,
+  .instruction-bullet {
+    padding: 10px 12px;
+    margin: 6px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small screens */
+  .instructions-content {
+    font-size: 0.85rem;
+  }
+  
+  .instruction-step,
+  .instruction-substep,
+  .instruction-bullet {
+    padding: 8px 10px;
+    font-size: 0.85rem;
   }
 }
 
@@ -149,4 +182,101 @@
 .google-result:hover {
   border-color: #d1d5db;
   box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced card-based layout for resources */
+.resource-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.resource-card:hover {
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Improved suggestion cards */
+.suggestion-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.suggestion-card:hover {
+  border-color: #f59e0b;
+  background-color: #fef3c7;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.suggestion-card.selected {
+  border-color: #f59e0b;
+  background-color: #fef3c7;
+  box-shadow: 0 4px 12px 0 rgba(245, 158, 11, 0.2);
+}
+
+/* Responsive grid improvements */
+@media (max-width: 768px) {
+  .resource-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .suggestion-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .resource-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .suggestion-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  .resource-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .suggestion-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Fix for shaky UI and layout shifts */
+.ai-response-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Ensure consistent button sizing */
+.btn-primary {
+  min-height: 44px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Improved modal responsiveness */
+.modal-content {
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .modal-content {
+    max-width: 95vw;
+    margin: 1rem;
+  }
 }

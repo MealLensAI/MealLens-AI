@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { Users, ChefHat, Bookmark, Timer, Utensils, Loader2, Upload, ArrowLeft, Camera, Image as ImageIcon, X, Search, Lightbulb, ExternalLink, Play } from "lucide-react"
+import { Users, ChefHat, Bookmark, Timer, Utensils, Loader2, Upload, ArrowLeft, Camera, Image as ImageIcon, X, Search, Lightbulb, ExternalLink, Play, Clock, Users as UsersIcon, Star } from "lucide-react"
 import "@/styles/ai-response.css"
 import { useAuth } from "@/lib/utils"
 import { useSubscription } from "@/contexts/SubscriptionContext"
@@ -193,6 +193,7 @@ const AIResponsePage: FC = () => {
     setSuggestions([])
     setResources(null)
     setShowResults(false)
+    setSelectedSuggestion("")
 
     try {
       // Record feature usage
@@ -427,9 +428,9 @@ const AIResponsePage: FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-8">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 py-4 sm:py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto space-y-6">
             {/* Header */}
             <div className="text-center">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
@@ -441,7 +442,7 @@ const AIResponsePage: FC = () => {
             </div>
 
             {/* Input Card */}
-            <Card>
+            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-lg sm:text-xl">Input Method</CardTitle>
               </CardHeader>
@@ -528,7 +529,7 @@ const AIResponsePage: FC = () => {
           <Button
             onClick={handleSubmit}
             disabled={isLoading || (inputType === "image" && !selectedImage) || (inputType === "ingredient_list" && !ingredientList.trim())}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-base sm:text-lg font-semibold loading-button"
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-3 text-base sm:text-lg font-semibold loading-button shadow-lg"
           >
             {isLoading ? (
                     <>
@@ -546,7 +547,7 @@ const AIResponsePage: FC = () => {
             </Card>
 
             {/* How it works */}
-            <Card>
+            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-lg sm:text-xl">How it works</CardTitle>
               </CardHeader>
@@ -569,281 +570,321 @@ const AIResponsePage: FC = () => {
             </Card>
                 </div>
 
-          {/* Right Column - Results */}
-          <div className="space-y-6">
+          {/* Results Section */}
           {showResults && (
-              <Card>
+            <div className="space-y-6">
+              {/* Recipe Suggestions */}
+              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="text-lg sm:text-xl">Recipe Suggestions</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-              {/* Detected Ingredients */}
-              {detectedIngredients.length > 0 && (
+                    {/* Detected Ingredients */}
+                    {detectedIngredients.length > 0 && (
                       <div>
                         <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Detected Ingredients:</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {detectedIngredients.map((ingredient, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs sm:text-sm">
-                          {ingredient}
+                        <div className="flex flex-wrap gap-2">
+                          {detectedIngredients.map((ingredient, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs sm:text-sm bg-orange-100 text-orange-800 border-orange-200">
+                              {ingredient}
                             </Badge>
-                      ))}
-                    </div>
+                          ))}
+                        </div>
                       </div>
-              )}
+                    )}
 
-              {/* Recipe Suggestions */}
-              {suggestions.length > 0 && (
+                    {/* Recipe Suggestions */}
+                    {suggestions.length > 0 && (
                       <div>
                         <h3 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">Available Recipes:</h3>
-                        <div className="space-y-3">
-                      {suggestions.map((suggestion, index) => (
+                        <div className="grid gap-3 sm:grid-cols-1 lg:grid-cols-2">
+                          {suggestions.map((suggestion, index) => (
                             <div 
-                          key={index}
-                          onClick={() => handleSuggestionClick(suggestion)}
-                              className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200"
-                        >
+                              key={index}
+                              onClick={() => handleSuggestionClick(suggestion)}
+                              className={`bg-white p-4 rounded-lg cursor-pointer transition-all duration-200 border-2 hover:shadow-lg ${
+                                selectedSuggestion === suggestion 
+                                  ? 'border-orange-500 bg-orange-50 shadow-lg' 
+                                  : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50'
+                              }`}
+                            >
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
                                   <h4 className="font-medium text-gray-900 text-sm sm:text-base">
-                          {suggestion}
+                                    {suggestion}
                                   </h4>
                                   <p className="text-gray-600 text-xs sm:text-sm mt-1">
-                                    Click to view detailed recipe and instructions
+                                    {selectedSuggestion === suggestion 
+                                      ? '✓ Selected - View details below' 
+                                      : 'Click to view detailed recipe and instructions'
+                                    }
                                   </p>
                                 </div>
-                                <ChefHat className="h-5 w-5 text-orange-500" />
+                                <ChefHat className={`h-5 w-5 ${
+                                  selectedSuggestion === suggestion ? 'text-orange-600' : 'text-orange-500'
+                                }`} />
                               </div>
                             </div>
-                      ))}
-                    </div>
-                  </div>
-                    )}
-                </div>
-                  </CardContent>
-                </Card>
-              )}
-
-            {/* Detailed Recipe View */}
-              {instructions && (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg sm:text-xl">Recipe Details</CardTitle>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setInstructions("")
-                        setResources(null)
-                        setSelectedSuggestion("")
-                      }}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Close
-                    </Button>
-                  </div>
-                  </CardHeader>
-                  <CardContent>
-                  <div className="space-y-6">
-                    {/* Recipe Title */}
-                    {selectedSuggestion && (
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">{selectedSuggestion}</h3>
-                </div>
-              )}
-
-                    {/* Instructions */}
-                    {instructions && (
-                      <div className="bg-white border border-gray-200 rounded-lg p-4">
-                        <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base flex items-center gap-2">
-                          <Lightbulb className="h-4 w-4 text-yellow-500" />
-                          Step-by-Step Instructions:
-                        </h4>
-                        <div 
-                          className="prose prose-sm max-w-none text-gray-700 leading-relaxed space-y-3 instructions-content"
-                          dangerouslySetInnerHTML={{ __html: formatInstructionsForDisplay(instructions) }}
-                        />
+                          ))}
+                        </div>
                       </div>
                     )}
-
-              {/* Resources */}
-                    {loadingResources && (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-center py-8">
-                          <Loader2 className="h-6 w-6 animate-spin text-orange-500 mr-2" />
-                          <span className="text-gray-600">Loading resources...</span>
                   </div>
-                </div>
-              )}
+                </CardContent>
+              </Card>
 
-              {resources && !loadingResources && (
-                    <div className="space-y-4">
-                      {/* YouTube Videos */}
-                      {resources.YoutubeSearch && resources.YoutubeSearch.length > 0 && (
-                        <div>
-                            <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base flex items-center gap-2">
-                              <Play className="h-4 w-4 text-red-500" />
-                              YouTube Tutorials
-                          </h4>
-                            <div className="space-y-3">
-                              {resources.YoutubeSearch.slice(0, 3).map((video: any, index: number) => {
-                                const videoId = getYouTubeVideoId(video.link);
-                            return videoId ? (
-                                  <div key={index} className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-                                    <div className="aspect-video bg-gray-100">
-                                  <iframe
-                                        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
-                                        title={video.title}
-                                        className="w-full h-full"
-                                        frameBorder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                  />
+              {/* Detailed Recipe View */}
+              {instructions && (
+                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg sm:text-xl">Recipe Details</CardTitle>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setInstructions("")
+                          setResources(null)
+                          setSelectedSuggestion("")
+                        }}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Close
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {/* Recipe Title */}
+                      {selectedSuggestion && (
+                        <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200">
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">{selectedSuggestion}</h3>
+                          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4" />
+                              <span>30 mins</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <UsersIcon className="h-4 w-4" />
+                              <span>4 servings</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4" />
+                              <span>Easy</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Instructions */}
+                      {instructions && (
+                        <Card className="bg-white border border-gray-200 shadow-sm">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center gap-2">
+                              <Lightbulb className="h-5 w-5 text-yellow-500" />
+                              <h4 className="font-semibold text-gray-900 text-base">Step-by-Step Instructions</h4>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div 
+                              className="prose prose-sm max-w-none text-gray-700 leading-relaxed space-y-3 instructions-content"
+                              dangerouslySetInnerHTML={{ __html: formatInstructionsForDisplay(instructions) }}
+                            />
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Resources */}
+                      {loadingResources && (
+                        <Card className="bg-white border border-gray-200 shadow-sm">
+                          <CardContent className="p-6">
+                            <div className="flex items-center justify-center py-8">
+                              <Loader2 className="h-6 w-6 animate-spin text-orange-500 mr-2" />
+                              <span className="text-gray-600">Loading resources...</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {resources && !loadingResources && (
+                        <div className="space-y-6">
+                          {/* YouTube Videos */}
+                          {resources.YoutubeSearch && resources.YoutubeSearch.length > 0 && (
+                            <Card className="bg-white border border-gray-200 shadow-sm">
+                              <CardHeader className="pb-3">
+                                <div className="flex items-center gap-2">
+                                  <Play className="h-5 w-5 text-red-500" />
+                                  <h4 className="font-semibold text-gray-900 text-base">YouTube Tutorials</h4>
                                 </div>
-                                    <div className="p-3">
-                                      <h5 className="font-medium text-gray-900 text-sm mb-1 line-clamp-2">
-                                        {video.title}
-                                      </h5>
-                                      <p className="text-gray-600 text-xs mb-2">
-                                        {video.channel}
-                                      </p>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
+                                  {resources.YoutubeSearch.slice(0, 4).map((video: any, index: number) => {
+                                    const videoId = getYouTubeVideoId(video.link);
+                                    return videoId ? (
+                                      <div key={index} className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                        <div className="aspect-video bg-gray-100">
+                                          <iframe
+                                            src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
+                                            title={video.title}
+                                            className="w-full h-full"
+                                            frameBorder="0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                          />
+                                        </div>
+                                        <div className="p-3">
+                                          <h5 className="font-medium text-gray-900 text-sm mb-1 line-clamp-2">
+                                            {video.title}
+                                          </h5>
+                                          <p className="text-gray-600 text-xs mb-2">
+                                            {video.channel}
+                                          </p>
+                                          <a
+                                            href={video.link}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 text-red-600 hover:text-red-700 text-xs font-medium"
+                                          >
+                                            <ExternalLink className="h-3 w-3" />
+                                            Watch on YouTube
+                                          </a>
+                                        </div>
+                                      </div>
+                                    ) : (
                                       <a
+                                        key={index}
                                         href={video.link}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 text-red-600 hover:text-red-700 text-xs font-medium"
+                                        className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
                                       >
-                                        <ExternalLink className="h-3 w-3" />
-                                        Watch on YouTube
+                                        <div className="w-12 h-8 bg-red-500 rounded flex items-center justify-center">
+                                          <span className="text-white text-xs">▶</span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-medium text-gray-900 text-sm truncate">
+                                            {video.title}
+                                          </p>
+                                          <p className="text-gray-600 text-xs">
+                                            {video.channel}
+                                          </p>
+                                        </div>
+                                        <ExternalLink className="h-4 w-4 text-gray-400" />
                                       </a>
+                                    );
+                                  })}
                                 </div>
-                              </div>
-                            ) : (
-                                  <a
-                                key={index}
-                                href={video.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                                  >
-                                <div className="w-12 h-8 bg-red-500 rounded flex items-center justify-center">
-                                  <span className="text-white text-xs">▶</span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                      <p className="font-medium text-gray-900 text-sm truncate">
-                                    {video.title}
-                                  </p>
-                                      <p className="text-gray-600 text-xs">
-                                    {video.channel}
-                                  </p>
-                              </div>
-                                    <ExternalLink className="h-4 w-4 text-gray-400" />
-                              </a>
-                                );
-                          })}
-                            </div>
-                        </div>
-                      )}
+                              </CardContent>
+                            </Card>
+                          )}
 
-                        {/* Web Resources */}
-                      {resources.GoogleSearch && resources.GoogleSearch.length > 0 && (
-                        <div>
-                            <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base flex items-center gap-2">
-                              <ExternalLink className="h-4 w-4 text-blue-500" />
-                              Web Resources
-                          </h4>
-                            <div className="space-y-3">
-                            {resources.GoogleSearch.slice(0, 3).map((result: any, index: number) => (
-                              <a
-                                key={index}
-                                href={result.link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                              >
-                                <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
-                                  <span className="text-white text-xs">🔍</span>
+                          {/* Web Resources */}
+                          {resources.GoogleSearch && resources.GoogleSearch.length > 0 && (
+                            <Card className="bg-white border border-gray-200 shadow-sm">
+                              <CardHeader className="pb-3">
+                                <div className="flex items-center gap-2">
+                                  <ExternalLink className="h-5 w-5 text-blue-500" />
+                                  <h4 className="font-semibold text-gray-900 text-base">Web Resources</h4>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-gray-900 text-sm truncate">
-                                    {result.title}
-                                  </p>
-                                    <p className="text-gray-600 text-xs truncate">
-                                    {result.snippet}
-                                  </p>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="grid gap-3 sm:grid-cols-1 lg:grid-cols-2">
+                                  {resources.GoogleSearch.slice(0, 4).map((result: any, index: number) => (
+                                    <a
+                                      key={index}
+                                      href={result.link}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                                    >
+                                      <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
+                                        <span className="text-white text-xs">🔍</span>
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-gray-900 text-sm truncate">
+                                          {result.title}
+                                        </p>
+                                        <p className="text-gray-600 text-xs truncate">
+                                          {result.snippet}
+                                        </p>
+                                      </div>
+                                      <ExternalLink className="h-4 w-4 text-gray-400" />
+                                    </a>
+                                  ))}
                                 </div>
-                                  <ExternalLink className="h-4 w-4 text-gray-400" />
-                              </a>
-                            ))}
-                              </div>
-                            </div>
-                        )}
+                              </CardContent>
+                            </Card>
+                          )}
                         </div>
                       )}
                     </div>
                   </CardContent>
                 </Card>
               )}
-
-        {/* Upload Modal */}
-        {showUploadModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full p-6">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Upload Ingredient Image</h3>
-                <p className="text-gray-600">Choose how you'd like to upload your ingredient photo</p>
-              </div>
-              
-              <div className="space-y-4">
-                <Button 
-                  onClick={() => {
-                    document.getElementById('cameraInput')?.click();
-                    setShowUploadModal(false);
-                  }}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-4 px-6 rounded-lg transition-colors"
-                >
-                  <Camera className="h-5 w-5 mr-3" />
-                  Take Photo with Camera
-                </Button>
-                
-                <Button 
-                  onClick={() => {
-                    fileInputRef.current?.click();
-                    setShowUploadModal(false);
-                  }}
-                  variant="outline" 
-                  className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white font-medium py-4 px-6 rounded-lg transition-colors"
-                >
-                  <ImageIcon className="h-5 w-5 mr-3" />
-                  Choose from Gallery
-                </Button>
-              </div>
-              
-              <div className="mt-6 pt-4 border-t">
-                <Button
-                  onClick={() => setShowUploadModal(false)}
-                  variant="ghost"
-                  className="w-full text-gray-500 hover:text-gray-700"
-                >
-                  Cancel
-                </Button>
-                </div>
-            </div>
             </div>
           )}
 
-        {/* Hidden camera input */}
-        <input
-          id="cameraInput"
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleImageSelect}
-          className="hidden"
-        />
-        </div>
+        <>
+          {/* Upload Modal */}
+          {showUploadModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-md w-full p-6">
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Upload Ingredient Image</h3>
+                  <p className="text-gray-600">Choose how you'd like to upload your ingredient photo</p>
+                </div>
+                
+                <div className="space-y-4">
+                  <Button 
+                    onClick={() => {
+                      document.getElementById('cameraInput')?.click();
+                      setShowUploadModal(false);
+                    }}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-4 px-6 rounded-lg transition-colors"
+                  >
+                    <Camera className="h-5 w-5 mr-3" />
+                    Take Photo with Camera
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => {
+                      fileInputRef.current?.click();
+                      setShowUploadModal(false);
+                    }}
+                    variant="outline" 
+                    className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white font-medium py-4 px-6 rounded-lg transition-colors"
+                  >
+                    <ImageIcon className="h-5 w-5 mr-3" />
+                    Choose from Gallery
+                  </Button>
+                </div>
+                
+                <div className="mt-6 pt-4 border-t">
+                  <Button
+                    onClick={() => setShowUploadModal(false)}
+                    variant="ghost"
+                    className="w-full text-gray-500 hover:text-gray-700"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Hidden camera input */}
+          <input
+            id="cameraInput"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+        </>
       </div>
     </div>
   )

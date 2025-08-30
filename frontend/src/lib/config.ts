@@ -354,17 +354,6 @@ export const getProvidersForCurrency = (currency: string) => {
 };
 
 export const getBestProviderForCurrency = (currency: string): string | null => {
-  const providers = getProvidersForCurrency(currency);
-  const providerKeys = Object.keys(providers);
-  
-  // Priority order: Paystack > M-Pesa > Stripe
-  const priority = ['paystack', 'mpesa', 'stripe'];
-  
-  for (const provider of priority) {
-    if (providerKeys.includes(provider)) {
-      return provider;
-    }
-  }
-  
-  return providerKeys[0] || null;
+  // Force Paystack for all currencies - only provider we support
+  return 'paystack';
 };

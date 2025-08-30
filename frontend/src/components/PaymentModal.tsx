@@ -207,24 +207,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
           } else {
             // For other providers (Paystack, Stripe), redirect to payment URL
             if (response.authorization_url) {
-              // Open payment URL in new window/tab
-              const paymentWindow = window.open(response.authorization_url, '_blank');
-              
-              // Check if window opened successfully
-              if (paymentWindow) {
-                toast({
-                  title: "Payment Initiated",
-                  description: "Please complete your payment in the new window.",
-                  variant: "default",
-                });
-                
-                // For mobile devices or popup blocked, redirect directly
-                if (window.innerWidth <= 768 || !paymentWindow) {
-                  window.location.href = response.authorization_url;
-                }
-              } else {
-                // Fallback for mobile or popup blocked
-                // Store payment info in localStorage for redirect handling
+              // For mobile devices, redirect directly
+              if (window.innerWidth <= 768) {
+                // Store payment info for redirect handling
                 localStorage.setItem('pendingPayment', JSON.stringify({
                   reference: response.reference,
                   plan: selectedPlan.name,
@@ -234,6 +219,47 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
                 
                 // Redirect to Paystack
                 window.location.href = response.authorization_url;
+              } else {
+                // For desktop, try to open popup
+                const paymentWindow = window.open(response.authorization_url, '_blank', 'width=600,height=700');
+                
+                if (paymentWindow) {
+                  toast({
+                    title: "Payment Initiated",
+                    description: "Please complete your payment in the new window.",
+                    variant: "default",
+                  });
+                  
+                  // Monitor payment window
+                  const checkClosed = setInterval(() => {
+                    if (paymentWindow.closed) {
+                      clearInterval(checkClosed);
+                      // Payment window was closed - check if payment was successful
+                      setTimeout(() => {
+                        // Refresh subscription status
+                        window.location.reload();
+                      }, 1000);
+                    }
+                  }, 1000);
+                  
+                  // Timeout after 10 minutes
+                  setTimeout(() => {
+                    if (!paymentWindow.closed) {
+                      paymentWindow.close();
+                    }
+                    clearInterval(checkClosed);
+                  }, 600000);
+                } else {
+                  // Popup blocked - redirect directly
+                  localStorage.setItem('pendingPayment', JSON.stringify({
+                    reference: response.reference,
+                    plan: selectedPlan.name,
+                    amount: convertedAmount,
+                    currency: userCurrency
+                  }));
+                  
+                  window.location.href = response.authorization_url;
+                }
               }
             } else {
               setErrorMessage('Payment URL not received. Please try again.');
@@ -255,6 +281,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
         
         setErrorMessage('Payment initialization failed. Please try again.');
         setCurrentStep('payment');
+        
+        // Redirect to failure page after a delay
+        setTimeout(() => {
+          window.location.href = '/payment/failure?reason=initialization_failed';
+        }, 2000);
       }
     } catch (error: any) {
       console.error('Payment error:', error);

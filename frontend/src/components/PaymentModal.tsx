@@ -197,26 +197,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
             });
             
             // Poll for payment status instead of auto-success
-            const checkPaymentStatus = async () => {
-              try {
-                // In a real implementation, you would poll your backend for payment status
-                // For now, we'll simulate a proper payment flow with a timeout
-                setTimeout(() => {
-                  // Simulate successful payment after 5 seconds
-                  setCurrentStep('success');
-                }, 5000);
-              } catch (error) {
-                console.error('Payment status check failed:', error);
-                // Show error after timeout
-                setTimeout(() => {
-                  setErrorMessage('Payment verification failed. Please contact support.');
-                  setCurrentStep('payment');
-                }, 10000);
-              }
-            };
-            
-            // Start polling after 3 seconds
-            setTimeout(checkPaymentStatus, 3000);
+            // For M-Pesa, redirect to payment URL or show instructions
+            if (response.authorization_url) {
+              window.location.href = response.authorization_url;
+            } else {
+              setErrorMessage('M-Pesa payment URL not received. Please try again.');
+              setCurrentStep('payment');
+            }
           } else {
             // For other providers (Paystack, Stripe), redirect to payment URL
             if (response.authorization_url) {
@@ -231,26 +218,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
                   variant: "default",
                 });
                 
-                                 // Poll for payment completion
-                 const checkPaymentCompletion = () => {
-                   try {
-                     // In a real implementation, you would poll your backend
-                     // For now, we'll simulate proper payment verification
-                     if (paymentWindow.closed) {
-                       // Payment window closed, simulate success
-                       setTimeout(() => {
-                         setCurrentStep('success');
-                       }, 1000);
-                     } else {
-                       // Continue polling
-                       setTimeout(checkPaymentCompletion, 1000);
-                     }
-                   } catch (error) {
-                     console.error('Payment completion check failed:', error);
-                   }
-                 };
-                
-                setTimeout(checkPaymentCompletion, 1000);
+                // For mobile devices or popup blocked, redirect directly
+                if (window.innerWidth <= 768 || !paymentWindow) {
+                  window.location.href = response.authorization_url;
+                }
               } else {
                 // Fallback for mobile or popup blocked
                 // Store payment info in localStorage for redirect handling
@@ -275,14 +246,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, selectedPl
       } catch (paymentError) {
         console.error('Payment initialization failed:', paymentError);
         
-        // Show fallback message for development/testing
+        // Show error message for payment failure
         toast({
-          title: "Payment System Unavailable",
-          description: "Payment system is currently being updated. Please try again later or contact support.",
+          title: "Payment Failed",
+          description: "Unable to initialize payment. Please check your internet connection and try again.",
           variant: "destructive",
         });
         
-        setErrorMessage('Payment system is currently unavailable. Please try again later.');
+        setErrorMessage('Payment initialization failed. Please try again.');
         setCurrentStep('payment');
       }
     } catch (error: any) {

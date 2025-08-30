@@ -228,7 +228,7 @@ export const APP_CONFIG = {
       regions: ['Kenya', 'Tanzania', 'Uganda', 'Mozambique', 'Lesotho', 'Ghana', 'Egypt'],
       features: ['Mobile Money', 'SMS Payments', 'USSD'],
       icon: 'Smartphone',
-      is_available: true,
+      is_available: false,  // Disable direct M-Pesa - use Paystack instead
       description: 'Direct Safaricom M-Pesa integration'
     },
     stripe: {
@@ -238,7 +238,7 @@ export const APP_CONFIG = {
       regions: ['Global'],
       features: ['Card Payments', 'Digital Wallets', 'Bank Transfers', 'Buy Now Pay Later'],
       icon: 'CreditCard',
-      is_available: true,
+      is_available: false,  // Disable Stripe - only use Paystack
       description: 'Global payment processing'
     }
   },

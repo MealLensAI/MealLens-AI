@@ -88,11 +88,33 @@ def test_admin():
     })
 
 
+@admin_bp.route('/config-check', methods=['GET'])
+def check_config():
+    """Check if environment variables are configured."""
+    import os
+    if not os.environ.get('SUPABASE_URL') or not os.environ.get('SUPABASE_SERVICE_ROLE_KEY'):
+        return jsonify({
+            'status': 'error', 
+            'message': 'Database not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.',
+            'error_type': 'configuration_error',
+            'missing_vars': {
+                'SUPABASE_URL': not bool(os.environ.get('SUPABASE_URL')),
+                'SUPABASE_SERVICE_ROLE_KEY': not bool(os.environ.get('SUPABASE_SERVICE_ROLE_KEY'))
+            }
+        }), 500
+    
+    return jsonify({
+        'status': 'success',
+        'message': 'Environment variables are configured',
+        'timestamp': datetime.utcnow().isoformat()
+    })
+
+
 @admin_bp.route('/users', methods=['GET'])
 def get_all_users():
     """Get all users with their subscription and profile information."""
     try:
-        # Check if environment variables are configured
+        # Check if environment variables are configured FIRST
         import os
         if not os.environ.get('SUPABASE_URL') or not os.environ.get('SUPABASE_SERVICE_ROLE_KEY'):
             return jsonify({
@@ -128,26 +150,44 @@ def get_all_users():
             query = query.or_(f'email.ilike.%{search}%,first_name.ilike.%{search}%,last_name.ilike.%{search}%')
         
         # Execute query with pagination
-        response = query.range(offset, offset + limit - 1).order('created_at', desc=True).execute()
-        
-        if response.error:
-            current_app.logger.error(f"Database error: {response.error}")
+        try:
+            response = query.range(offset, offset + limit - 1).order('created_at', desc=True).execute()
+            
+            if response.error:
+                current_app.logger.error(f"Database error: {response.error}")
+                return jsonify({'status': 'error', 'message': 'Database query failed'}), 500
+            
+            users = response.data or []
+        except Exception as e:
+            current_app.logger.error(f"Exception executing user query: {str(e)}")
             return jsonify({'status': 'error', 'message': 'Database query failed'}), 500
         
-        users = response.data
-        
         # Get total count for pagination
-        count_query = supabase.table('profiles').select('id', count='exact')
-        if search:
-            count_query = count_query.or_(f'email.ilike.%{search}%,first_name.ilike.%{search}%,last_name.ilike.%{search}%')
-        
-        count_response = count_query.execute()
-        total_count = count_response.count if count_response.count else 0
+        try:
+            count_query = supabase.table('profiles').select('id', count='exact')
+            if search:
+                count_query = count_query.or_(f'email.ilike.%{search}%,first_name.ilike.%{search}%,last_name.ilike.%{search}%')
+            
+            count_response = count_query.execute()
+            total_count = count_response.count if count_response.count else 0
+        except Exception as e:
+            current_app.logger.warning(f"Error getting user count: {str(e)}")
+            total_count = len(users)  # Fallback to current page count
         
         # Get subscriptions for all users
         user_ids = [user['id'] for user in users]
-        subscriptions_response = supabase.table('user_subscriptions').select('*, subscription_plans(*)').in_('user_id', user_ids).execute()
-        subscriptions_data = subscriptions_response.data if not subscriptions_response.error else []
+        subscriptions_data = []
+        
+        if user_ids:
+            try:
+                subscriptions_response = supabase.table('user_subscriptions').select('*, subscription_plans(*)').in_('user_id', user_ids).execute()
+                if not subscriptions_response.error:
+                    subscriptions_data = subscriptions_response.data
+                else:
+                    current_app.logger.warning(f"Error fetching subscriptions: {subscriptions_response.error}")
+            except Exception as e:
+                current_app.logger.warning(f"Exception fetching subscriptions: {str(e)}")
+                subscriptions_data = []
         
         # Create subscription lookup
         subscriptions_lookup = {}
@@ -157,24 +197,33 @@ def get_all_users():
         # Format user data
         formatted_users = []
         for user in users:
-            subscription = subscriptions_lookup.get(user['id'], {})
-            plan = subscription.get('subscription_plans', {}) if subscription else {}
-            
-            formatted_user = {
-                'id': user['id'],
-                'email': user['email'],
-                'first_name': user.get('first_name', ''),
-                'last_name': user.get('last_name', ''),
-                'role': user.get('role', 'user'),
-                'created_at': user['created_at'],
-                'subscription_tier': plan.get('name', 'free'),
-                'subscription_status': subscription.get('status', 'none'),
-                'subscription_start': subscription.get('current_period_start'),
-                'subscription_end': subscription.get('current_period_end'),
-                'is_active': subscription.get('status') == 'active' and 
-                            subscription.get('current_period_end') > datetime.utcnow().isoformat()
-            }
-            formatted_users.append(formatted_user)
+            try:
+                subscription = subscriptions_lookup.get(user['id'], {})
+                plan = subscription.get('subscription_plans', {}) if subscription else {}
+                
+                # Handle potential missing fields gracefully
+                created_at = user.get('created_at') or user.get('createdAt') or datetime.utcnow().isoformat()
+                
+                formatted_user = {
+                    'id': user['id'],
+                    'email': user.get('email', ''),
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'role': user.get('role', 'user'),
+                    'created_at': created_at,
+                    'subscription_tier': plan.get('name', 'free'),
+                    'subscription_status': subscription.get('status', 'none'),
+                    'subscription_start': subscription.get('current_period_start'),
+                    'subscription_end': subscription.get('current_period_end'),
+                    'is_active': subscription.get('status') == 'active' and 
+                                subscription.get('current_period_end') and
+                                subscription.get('current_period_end') > datetime.utcnow().isoformat()
+                }
+                formatted_users.append(formatted_user)
+            except Exception as e:
+                current_app.logger.error(f"Error formatting user {user.get('id', 'unknown')}: {str(e)}")
+                # Skip this user and continue with others
+                continue
         
         return jsonify({
             'status': 'success',

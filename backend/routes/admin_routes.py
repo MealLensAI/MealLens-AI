@@ -92,6 +92,15 @@ def test_admin():
 def get_all_users():
     """Get all users with their subscription and profile information."""
     try:
+        # Check if environment variables are configured
+        import os
+        if not os.environ.get('SUPABASE_URL') or not os.environ.get('SUPABASE_SERVICE_ROLE_KEY'):
+            return jsonify({
+                'status': 'error', 
+                'message': 'Database not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.',
+                'error_type': 'configuration_error'
+            }), 500
+        
         # Verify admin access
         user_id, error = verify_admin_access()
         if error:
@@ -189,6 +198,15 @@ def get_all_users():
 def get_subscription_summary():
     """Get subscription summary statistics."""
     try:
+        # Check if environment variables are configured
+        import os
+        if not os.environ.get('SUPABASE_URL') or not os.environ.get('SUPABASE_SERVICE_ROLE_KEY'):
+            return jsonify({
+                'status': 'error', 
+                'message': 'Database not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.',
+                'error_type': 'configuration_error'
+            }), 500
+        
         # Verify admin access
         user_id, error = verify_admin_access()
         if error:
@@ -328,6 +346,15 @@ def export_subscriptions():
 def get_revenue_metrics():
     """Get revenue metrics over time."""
     try:
+        # Check if environment variables are configured
+        import os
+        if not os.environ.get('SUPABASE_URL') or not os.environ.get('SUPABASE_SERVICE_ROLE_KEY'):
+            return jsonify({
+                'status': 'error', 
+                'message': 'Database not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.',
+                'error_type': 'configuration_error'
+            }), 500
+        
         # Verify admin access
         user_id, error = verify_admin_access()
         if error:

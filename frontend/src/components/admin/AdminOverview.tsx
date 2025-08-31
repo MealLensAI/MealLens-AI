@@ -68,13 +68,24 @@ const AdminOverview: React.FC = () => {
       } else {
         throw new Error('Failed to fetch admin data');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching stats:', error);
-      toast({
-        title: "Error Loading Data",
-        description: "Failed to fetch admin dashboard data. Please try again.",
-        variant: "destructive"
-      });
+      
+      // Check if it's a configuration error
+      if (error.message?.includes('Database not configured') || 
+          error.message?.includes('configuration_error')) {
+        toast({
+          title: "Database Not Configured",
+          description: "Please set up the required environment variables (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) in the backend.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error Loading Data",
+          description: "Failed to fetch admin dashboard data. Please try again.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }

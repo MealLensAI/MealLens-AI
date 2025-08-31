@@ -407,6 +407,12 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   // Load data when user changes
   useEffect(() => {
     if (isAuthenticated && user) {
+      // Skip subscription loading for admin users
+      if (user.role === 'admin') {
+        setSubscription(null);
+        setTrialStatus(null);
+        return;
+      }
       loadSubscription();
     } else {
       setSubscription(null);
@@ -417,6 +423,12 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   // Calculate trial status when user changes
   useEffect(() => {
     if (isAuthenticated && user && (user as any).created_at && !subscription) {
+      // Skip trial calculation for admin users
+      if (user.role === 'admin') {
+        setTrialStatus(null);
+        return;
+      }
+      
       const userCreatedAt = new Date((user as any).created_at);
       const now = new Date();
       const trialDaysElapsed = Math.floor((now.getTime() - userCreatedAt.getTime()) / (1000 * 60 * 60 * 24));

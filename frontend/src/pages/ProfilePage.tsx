@@ -117,8 +117,6 @@ interface Profile {
   date_of_birth: string
   weight: number
   height: number
-  has_illness: boolean
-  illness_name: string
 }
 
 export default function ProfilePage() {
@@ -175,8 +173,6 @@ export default function ProfilePage() {
   const [dateOfBirth, setDateOfBirth] = useState("")
   const [weight, setWeight] = useState<number>(0)
   const [height, setHeight] = useState<number>(0)
-  const [hasIllness, setHasIllness] = useState(false)
-  const [illnessName, setIllnessName] = useState("")
 
   useEffect(() => {
     fetchProfile()
@@ -207,8 +203,6 @@ export default function ProfilePage() {
         setEmergencyContact(response.profile.emergency_contact || { name: "", phone: "", relationship: "" })
         setHasSickness(response.profile.has_sickness || false)
         setSicknessType(response.profile.sickness_type || "")
-        setHasIllness(response.profile.has_sickness || false)
-        setIllnessName(response.profile.sickness_type || "")
         setDateOfBirth(response.profile.date_of_birth || "")
         setWeight(response.profile.weight || 0)
         setHeight(response.profile.height || 0)
@@ -247,8 +241,8 @@ export default function ProfilePage() {
         dietary_preferences: dietaryPreferences,
         medical_history: medicalHistory,
         emergency_contact: emergencyContact,
-        has_sickness: hasIllness,
-        sickness_type: illnessName,
+        has_sickness: hasSickness,
+        sickness_type: sicknessType,
         date_of_birth: dateOfBirth,
         weight: weight,
         height: height
@@ -511,22 +505,22 @@ export default function ProfilePage() {
                       <div className="flex items-center gap-3 mb-3">
                         <input
                           type="checkbox"
-                          id="hasIllness"
-                          checked={hasIllness}
-                          onChange={(e) => setHasIllness(e.target.checked)}
+                          id="hasSickness"
+                          checked={hasSickness}
+                          onChange={(e) => setHasSickness(e.target.checked)}
                           disabled={!isEditing}
                           className="w-4 h-4 text-[#FF6B6B] border-gray-300 rounded focus:ring-[#FF6B6B]"
                         />
-                        <label htmlFor="hasIllness" className="text-sm sm:text-base font-medium text-gray-700">
+                        <label htmlFor="hasSickness" className="text-sm sm:text-base font-medium text-gray-700">
                           I have medical conditions that affect my diet
                         </label>
                       </div>
-                      {hasIllness && (
+                      {hasSickness && (
                         <input
                           type="text"
                           placeholder="Describe your medical conditions..."
-                          value={illnessName}
-                          onChange={(e) => setIllnessName(e.target.value)}
+                          value={sicknessType}
+                          onChange={(e) => setSicknessType(e.target.value)}
                           disabled={!isEditing}
                           className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B6B] focus:border-transparent disabled:bg-gray-50 text-sm sm:text-base"
                         />

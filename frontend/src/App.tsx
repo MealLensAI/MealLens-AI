@@ -173,7 +173,7 @@ const router = createBrowserRouter([
     element: <AdminLoginPage />
   },
   {
-    path: "/admin",
+    path: "/admin/*",
     element: (
       <AdminRoute>
         <AdminDashboard />

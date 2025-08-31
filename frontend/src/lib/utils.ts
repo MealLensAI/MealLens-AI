@@ -88,6 +88,7 @@ export const useProvideAuth = () => {
           photoURL: null,
           role: result.user_role || 'user'
         }
+
         localStorage.setItem(USER_KEY, JSON.stringify(userData))
         
         // Update state
@@ -138,9 +139,10 @@ export const useProvideAuth = () => {
                 email: profile.email,
                 displayName: profile.display_name,
                 photoURL: undefined,
-                role: profile.role || 'user',
+                role: profile.role || parsedUser.role || 'user', // Preserve role from login
                 created_at: profile.created_at || undefined
               }
+
               setUser(updatedUser)
               // Update stored user data
               localStorage.setItem(USER_KEY, JSON.stringify(updatedUser))
@@ -172,7 +174,7 @@ export const useProvideAuth = () => {
                       email: profile.email,
                       displayName: profile.display_name,
                       photoURL: undefined,
-                      role: profile.role || 'user',
+                      role: profile.role || parsedUser.role || 'user', // Preserve role from login
                       created_at: profile.created_at || undefined
                     }
                     setUser(updatedUser)

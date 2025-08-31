@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,43 +38,42 @@ const AdminOverview: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchStats = async () => {
     try {
       setLoading(true);
       // Fetch real data from API
-      const [usersResponse, subscriptionResponse] = await Promise.all([
+      const [usersResponse, subscriptionResponse, revenueResponse] = await Promise.all([
         api.getAdminUsers({ limit: '1' }),
-        api.getAdminSubscriptionSummary()
+        api.getAdminSubscriptionSummary(),
+        api.getAdminRevenueMetrics('monthly')
       ]);
 
       if (usersResponse.status === 'success' && subscriptionResponse.status === 'success') {
+        const totalUsers = usersResponse.data.pagination?.total || 0;
+        const activeUsers = Math.floor(totalUsers * 0.7); // 70% active estimate
+        const totalRevenue = subscriptionResponse.data.total_revenue || 0;
+        const monthlyGrowth = revenueResponse.status === 'success' ? 
+          (revenueResponse.data.monthly_growth || 0) : 0;
+        
         setStats({
-          totalUsers: usersResponse.data.pagination?.total || 0,
-          activeUsers: Math.floor((usersResponse.data.pagination?.total || 0) * 0.7), // 70% active
-          totalRevenue: subscriptionResponse.data.total_revenue || 0,
-          monthlyGrowth: 12.5, // Mock growth
+          totalUsers,
+          activeUsers,
+          totalRevenue,
+          monthlyGrowth,
           activeSubscriptions: subscriptionResponse.data.total_active || 0,
           trialUsers: subscriptionResponse.data.total_trials || 0
         });
+      } else {
+        throw new Error('Failed to fetch admin data');
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
-      // Use mock data if API fails (production server doesn't have admin routes yet)
-      setStats({
-        totalUsers: 1250,
-        activeUsers: 875,
-        totalRevenue: 12500.00,
-        monthlyGrowth: 12.5,
-        activeSubscriptions: 450,
-        trialUsers: 125
-      });
-      
-      // Show toast notification about using mock data
       toast({
-        title: "Using Demo Data",
-        description: "Admin routes not deployed yet. Showing demo data for testing.",
-        variant: "default"
+        title: "Error Loading Data",
+        description: "Failed to fetch admin dashboard data. Please try again.",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -96,28 +96,28 @@ const AdminOverview: React.FC = () => {
       title: 'View All Users',
       description: 'Manage user accounts and subscriptions',
       icon: Users,
-      action: () => window.location.href = '/admin-dashboard/users',
+      action: () => navigate('/admin/users'),
       color: 'bg-blue-500'
     },
     {
       title: 'Subscription Analytics',
       description: 'Monitor revenue and subscription trends',
       icon: DollarSign,
-      action: () => window.location.href = '/admin-dashboard/subscriptions',
+      action: () => navigate('/admin/subscriptions'),
       color: 'bg-green-500'
     },
     {
       title: 'Usage Analytics',
       description: 'Track feature usage and user engagement',
       icon: Activity,
-      action: () => window.location.href = '/admin-dashboard/analytics',
+      action: () => navigate('/admin/analytics'),
       color: 'bg-purple-500'
     },
     {
       title: 'Generate Reports',
       description: 'Create detailed reports and exports',
       icon: BarChart3,
-      action: () => window.location.href = '/admin-dashboard/reports',
+      action: () => navigate('/admin/reports'),
       color: 'bg-orange-500'
     }
   ];
@@ -146,22 +146,7 @@ const AdminOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* Deployment Notice */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <div className="flex items-start space-x-3">
-          <div className="flex-shrink-0">
-            <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-              <span className="text-yellow-800 text-sm font-bold">!</span>
-            </div>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-yellow-800">Demo Mode</h3>
-            <p className="text-sm text-yellow-700 mt-1">
-              Admin backend routes are not yet deployed to production. This dashboard is showing demo data for testing purposes.
-            </p>
-          </div>
-        </div>
-      </div>
+
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

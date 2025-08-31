@@ -14,6 +14,7 @@ import { handleAuthError } from "@/lib/utils"
 import { compressImage, validateImage, formatFileSize, generateThumbnail } from "@/utils/imageUtils"
 import { Badge } from "@/components/ui/badge"
 import { formatInstructionsForDisplay } from '@/utils/instructionFormatter';
+import useSwipeGestures from '@/hooks/useSwipeGestures';
 
 const DetectFoodPage = () => {
   const navigate = useNavigate()
@@ -28,6 +29,32 @@ const DetectFoodPage = () => {
   const [showResults, setShowResults] = useState(false)
   const { toast } = useToast()
   const { token, isAuthenticated, loading } = useAuth()
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  
+  // Swipe gesture support
+  const { attachSwipeListeners } = useSwipeGestures({
+    onSwipeRight: () => {
+      if (showResults) {
+        setShowResults(false)
+        setInstructions("")
+        setDetectedFoods([])
+        setResources(null)
+      }
+    },
+    onSwipeDown: () => {
+      if (showUploadModal) {
+        setShowUploadModal(false)
+      }
+    }
+  })
+
+  // Attach swipe listeners to the main container
+  useEffect(() => {
+    const container = document.getElementById('detect-food-container')
+    if (container) {
+      return attachSwipeListeners(container)
+    }
+  }, [attachSwipeListeners])
   
   // Safely use subscription context with error handling
   let isFeatureLocked = (feature: string) => false;
@@ -51,7 +78,6 @@ const DetectFoodPage = () => {
   
   const [detectionResult, setDetectionResult] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
 
   if (loading) {
     return <LoadingScreen size="md" />
@@ -354,7 +380,7 @@ const DetectFoodPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div id="detect-food-container" className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8">
@@ -431,10 +457,11 @@ const DetectFoodPage = () => {
             </CardContent>
           </Card>
 
-          {/* Instructions */}
+                    {/* How it Works - Only show when no results and no image is selected */}
+          {!showResults && !imagePreview && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">How it works</CardTitle>
+                <CardTitle className="text-lg sm:text-xl text-center">How it works</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 text-sm sm:text-base">
@@ -453,16 +480,18 @@ const DetectFoodPage = () => {
             </div>
             </CardContent>
           </Card>
+          )}
 
-              {/* Instructions Section */}
-              {instructions && (
-              <Card>
-                <CardHeader>
+          {/* Results Section */}
+          {showResults && (
+            <div className="detection-results-container space-y-6">
+              {/* Page Header with Back Button */}
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-                      <Utensils className="h-5 w-5 text-orange-500" />
-                      Cooking Instructions
-                    </CardTitle>
+                <div className="flex-1"></div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 flex-1">
+                  Detection Results
+                </h1>
+                <div className="flex justify-end flex-1">
                     <Button
                       onClick={() => {
                         setShowResults(false)
@@ -478,6 +507,16 @@ const DetectFoodPage = () => {
                       Back
                     </Button>
                   </div>
+              </div>
+
+              {/* Instructions Section - Show First */}
+              {instructions && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg sm:text-xl text-center flex items-center justify-center gap-2">
+                      <Utensils className="h-5 w-5 text-orange-500" />
+                      Cooking Instructions
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -514,11 +553,11 @@ const DetectFoodPage = () => {
               </Card>
             )}
 
-            {/* Resources Section */}
+              {/* Resources Section - Show Second */}
             {loadingResources && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Loading Resources</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl text-center">Loading Resources</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-center py-8">
@@ -532,7 +571,7 @@ const DetectFoodPage = () => {
               {resources && !loadingResources && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Cooking Resources</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl text-center">Cooking Resources</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -641,70 +680,40 @@ const DetectFoodPage = () => {
               </Card>
             )}
 
-            {detectionResult && detectionResult.food_detected && (
+              {/* How it Works Section - Show Last */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Detection Results</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl text-center">How it works</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {/* Detected Foods */}
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Detected Foods:</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {detectionResult.food_detected && Array.isArray(detectionResult.food_detected) && detectionResult.food_detected.map((food: any, index: number) => (
-                          <Badge key={index} variant="secondary" className="text-xs sm:text-sm">
-                            {typeof food === 'string' ? food : food.name || food}
-                          </Badge>
-                        ))}
+                  <div className="space-y-3 text-sm sm:text-base">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
+                      <p className="text-gray-700">Take a photo of your meal or upload an existing image</p>
                       </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
+                      <p className="text-gray-700">Our AI analyzes the image to identify food items and ingredients</p>
                     </div>
-
-                    {/* Nutritional Info */}
-                    {detectionResult.nutrition && detectionResult.nutrition.calories && (
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Nutritional Information:</h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm">
-                          <div className="bg-gray-50 p-2 rounded">
-                            <div className="font-medium text-gray-900">{detectionResult.nutrition.calories}</div>
-                            <div className="text-gray-600">Calories</div>
-                                </div>
-                          <div className="bg-gray-50 p-2 rounded">
-                            <div className="font-medium text-gray-900">{detectionResult.nutrition.protein}g</div>
-                            <div className="text-gray-600">Protein</div>
-                                </div>
-                          <div className="bg-gray-50 p-2 rounded">
-                            <div className="font-medium text-gray-900">{detectionResult.nutrition.carbs}g</div>
-                            <div className="text-gray-600">Carbs</div>
-                              </div>
-                          <div className="bg-gray-50 p-2 rounded">
-                            <div className="font-medium text-gray-900">{detectionResult.nutrition.fat}g</div>
-                            <div className="text-gray-600">Fat</div>
-                              </div>
-                        </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
+                      <p className="text-gray-700">Get detailed nutritional information and recipe suggestions</p>
                       </div>
-                    )}
-
-                    {/* Recipe Suggestions */}
-                    {detectionResult.recipes && Array.isArray(detectionResult.recipes) && detectionResult.recipes.length > 0 && (
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Recipe Suggestions:</h3>
-                        <div className="space-y-2">
-                          {detectionResult.recipes.slice(0, 3).map((recipe: any, index: number) => (
-                            <div key={index} className="bg-gray-50 p-3 rounded text-xs sm:text-sm">
-                              <div className="font-medium text-gray-900">{recipe.title}</div>
-                              <div className="text-gray-600">{recipe.description}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      )}
                     </div>
                 </CardContent>
               </Card>
-                      )}
+
+              {/* Done Button - Bottom Right */}
+              <div className="flex justify-end pt-4">
+                <Button
+                  onClick={() => navigate('/history')}
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  ✅ Done - View in History
+                </Button>
                     </div>
                   </div>
+          )}
                   
       {/* Upload Modal */}
       {showUploadModal && (
@@ -748,10 +757,12 @@ const DetectFoodPage = () => {
               >
                 Cancel
               </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
+            </div>
+          </div>
+        </div>
+      )}
+        </div>
+      </div>
     </div>
   );
 };

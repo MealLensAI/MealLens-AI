@@ -546,28 +546,30 @@ const AIResponsePage: FC = () => {
               </CardContent>
             </Card>
 
-            {/* How it works */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">How it works</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm sm:text-base">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
-                    <p className="text-gray-700">Upload a photo of your ingredients or list them manually</p>
+            {/* How it works - Only show when no results and no input is provided */}
+            {!showResults && !imagePreview && !ingredientList && (
+              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg sm:text-xl text-center">How it works</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 text-sm sm:text-base">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
+                      <p className="text-gray-700">Upload a photo of your ingredients or list them manually</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
+                      <p className="text-gray-700">Our AI analyzes your ingredients and suggests delicious recipes</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
+                      <p className="text-gray-700">Get step-by-step cooking instructions and video tutorials</p>
+                    </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
-                    <p className="text-gray-700">Our AI analyzes your ingredients and suggests delicious recipes</p>
-            </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
-                    <p className="text-gray-700">Get step-by-step cooking instructions and video tutorials</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
                 </div>
 
           {/* Results Section */}
@@ -824,6 +826,38 @@ const AIResponsePage: FC = () => {
                   </CardContent>
                 </Card>
               )}
+              {/* How it Works Section - Show Last */}
+              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg sm:text-xl text-center">How it works</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 text-sm sm:text-base">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
+                      <p className="text-gray-700">Upload a photo of your ingredients or list them manually</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
+                      <p className="text-gray-700">Our AI analyzes your ingredients and suggests delicious recipes</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
+                      <p className="text-gray-700">Get step-by-step cooking instructions and video tutorials</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Done Button - Bottom Right */}
+              <div className="flex justify-end pt-4">
+                <Button
+                  onClick={() => navigate('/history')}
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  ✅ Done - View in History
+                </Button>
+              </div>
             </div>
           )}
 

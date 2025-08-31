@@ -11,6 +11,7 @@ import FeatureLock from "@/components/FeatureLock"
 import { api } from "@/lib/api"
 import { handleAuthError } from "@/lib/utils"
 import { compressImage, validateImage, formatFileSize, generateThumbnail } from "@/utils/imageUtils"
+import useSwipeGestures from '@/hooks/useSwipeGestures';
 
 const DetectFoodPage = () => {
   const navigate = useNavigate()
@@ -26,6 +27,28 @@ const DetectFoodPage = () => {
   const { toast } = useToast()
   const { token, isAuthenticated, loading } = useAuth()
   const { isFeatureLocked, recordFeatureUsage, incrementFreeUsage, freeUsageCount, maxFreeUsage } = useSubscription()
+  
+  // Swipe gesture support
+  const { attachSwipeListeners } = useSwipeGestures({
+    onSwipeRight: () => {
+      if (showResults) {
+        setSelectedImage(null)
+        setImagePreview(null)
+        setInstructions("")
+        setDetectedFoods([])
+        setResources(null)
+        setShowResults(false)
+      }
+    }
+  })
+
+  // Attach swipe listeners to the main container
+  useEffect(() => {
+    const container = document.getElementById('detect-food-yess-container')
+    if (container) {
+      return attachSwipeListeners(container)
+    }
+  }, [attachSwipeListeners])
 
   if (loading) {
     return <LoadingScreen
@@ -343,6 +366,7 @@ const DetectFoodPage = () => {
 
   return (
     <div 
+      id="detect-food-yess-container"
       className="min-h-screen py-4 sm:py-6 lg:py-8 text-[#2D3436] leading-[1.6]"
       style={{
         fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
@@ -445,14 +469,37 @@ const DetectFoodPage = () => {
 
           {/* Results */}
           {showResults && (
-            <div className="mt-4">
-              {/* Instructions Section */}
+            <div className="detection-results-container mt-4 space-y-6">
+              {/* Page Header with Back Button */}
+              <div className="flex items-center justify-between">
+                <div className="flex-1"></div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-center text-[#2D3436] flex-1">
+                  Detection Results
+                </h1>
+                <div className="flex justify-end flex-1">
+                  <button
+                    onClick={() => {
+                      setSelectedImage(null)
+                      setImagePreview(null)
+                      setInstructions("")
+                      setDetectedFoods([])
+                      setResources(null)
+                      setShowResults(false)
+                    }}
+                    className="bg-gradient-to-r from-gray-500 to-gray-600 text-white border-none rounded-lg sm:rounded-xl py-2 px-4 text-sm font-medium transition-all duration-300 shadow-sm hover:shadow-md hover:from-gray-600 hover:to-gray-700 transform hover:-translate-y-1"
+                  >
+                    ← Back
+                  </button>
+                </div>
+              </div>
+
+              {/* Instructions Section - Show First */}
               {instructions && (
                 <div 
-                  className="mt-8 bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
+                  className="bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
                 >
                   <div className="p-4 mt-2.5">
-                    <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
+                    <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-center">
                       Cooking Instructions
                     </h5>
                     <div 
@@ -461,18 +508,18 @@ const DetectFoodPage = () => {
                       dangerouslySetInnerHTML={{ __html: instructions }}
                     />
                   </div>
-              </div>
+                </div>
               )}
 
-              {/* Resources Section */}
+              {/* Resources Section - Show Second */}
               {loadingResources && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* YouTube Resources Loading */}
                   <div 
                     className="bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
                   >
                     <div className="p-4 mt-2.5">
-                      <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
+                      <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-center">
                         Youtube Resources
                       </h5>
                       <h6 className="font-bold mb-3 text-left">Video Tutorials</h6>
@@ -493,7 +540,7 @@ const DetectFoodPage = () => {
                     className="bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
                   >
                     <div className="p-4 mt-2.5">
-                      <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
+                      <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-center">
                         Google Resources
                       </h5>
                       <h6 className="font-bold mb-3 text-left">Recommended Articles</h6>
@@ -513,13 +560,13 @@ const DetectFoodPage = () => {
 
               {/* Resources Content */}
               {resources && !loadingResources && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   {/* YouTube Resources */}
                   <div 
                     className="bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
                   >
                     <div className="p-4 mt-2.5">
-                      <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
+                      <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-center">
                         Youtube Resources
                       </h5>
                       <h6 className="font-bold mb-3 text-left">Video Tutorials</h6>
@@ -576,7 +623,7 @@ const DetectFoodPage = () => {
                     className="bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
                   >
                     <div className="p-4 mt-2.5">
-                      <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-left">
+                      <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-center">
                         Google Resources
                       </h5>
                       <h6 className="font-bold mb-3 text-left">Recommended Articles</h6>
@@ -604,42 +651,43 @@ const DetectFoodPage = () => {
                     )}
                     </div>
                   </div>
-                  
-                  {/* Navigation Actions */}
-                  <div className="mt-6 sm:mt-8 space-y-3 sm:space-y-4">
-                    {/* Primary Action */}
-                    <div className="flex justify-center">
-                      <button
-                        onClick={() => navigate('/history')}
-                        className="bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-[#FF5A5A] hover:to-[#FF7A3A] transform hover:-translate-y-1 text-base sm:text-lg"
-                      >
-                        ✅ Done - View in History
-                      </button>
+                </div>
+              )}
+
+              {/* How it Works Section - Show Last */}
+              <div 
+                className="bg-gradient-to-br from-[rgba(255,255,255,0.95)] to-[rgba(255,255,255,0.8)] rounded-[1.5rem] border-none overflow-hidden transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
+              >
+                <div className="p-4 mt-2.5">
+                  <h5 className="text-[#2D3436] font-bold text-xl mb-6 border-b-2 border-[rgba(255,107,107,0.2)] pb-3 text-center">
+                    How it works
+                  </h5>
+                  <div className="space-y-4 text-sm sm:text-base">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
+                      <p className="text-[#2D3436]">Take a photo of your meal or upload an existing image</p>
                     </div>
-                    
-                    {/* Secondary Actions */}
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                      <button
-                        onClick={() => {
-                          setSelectedImage(null)
-                          setImagePreview(null)
-                          setInstructions("")
-                          setDetectedFoods([])
-                          setResources(null)
-                          setShowResults(false)
-                        }}
-                        className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white border-none rounded-lg sm:rounded-xl py-3 px-4 sm:px-6 text-sm sm:text-base font-medium transition-all duration-300 shadow-sm hover:shadow-md hover:from-blue-600 hover:to-blue-700 transform hover:-translate-y-1"
-                      >
-                        🔄 Detect Another
-                      </button>
-                      <button
-                        onClick={() => navigate('/')}
-                        className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white border-none rounded-lg sm:rounded-xl py-3 px-4 sm:px-6 text-sm sm:text-base font-medium transition-all duration-300 shadow-sm hover:shadow-md hover:from-gray-600 hover:to-gray-700 transform hover:-translate-y-1"
-                      >
-                        🏠 Go Home
-                      </button>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
+                      <p className="text-[#2D3436]">Our AI analyzes the image to identify food items and ingredients</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
+                      <p className="text-[#2D3436]">Get detailed nutritional information and recipe suggestions</p>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Done Button - Bottom Right */}
+              <div className="flex justify-end pt-4">
+                <button
+                  onClick={() => navigate('/history')}
+                  className="bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-[#FF5A5A] hover:to-[#FF7A3A] transform hover:-translate-y-1 text-base sm:text-lg"
+                >
+                  ✅ Done - View in History
+                </button>
+              </div>
               </div>
             )}
             </div>

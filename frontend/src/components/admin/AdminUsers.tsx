@@ -31,45 +31,13 @@ const AdminUsers: React.FC = () => {
       if (response.status === 'success') {
         setUsers(response.data.users || []);
       } else {
-        // Use mock data for testing
-        setUsers([
-          {
-            id: '1',
-            email: 'john.doe@example.com',
-            first_name: 'John',
-            last_name: 'Doe',
-            role: 'user',
-            created_at: '2024-01-15T10:30:00Z'
-          },
-          {
-            id: '2',
-            email: 'jane.smith@example.com',
-            first_name: 'Jane',
-            last_name: 'Smith',
-            role: 'user',
-            created_at: '2024-01-10T14:20:00Z'
-          },
-          {
-            id: '3',
-            email: 'admin@meallens.com',
-            first_name: 'Admin',
-            last_name: 'User',
-            role: 'admin',
-            created_at: '2024-01-01T09:00:00Z'
-          }
-        ]);
-        
-        toast({
-          title: "Using Demo Data",
-          description: "Backend not available. Showing demo data.",
-          variant: "default"
-        });
+        throw new Error('Failed to fetch users');
       }
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
-        title: "Error",
-        description: "Failed to fetch users",
+        title: "Error Loading Users",
+        description: "Failed to fetch user data. Please try again.",
         variant: "destructive"
       });
     } finally {

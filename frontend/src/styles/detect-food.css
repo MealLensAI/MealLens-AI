@@ -4,6 +4,50 @@
   min-height: 100vh;
 }
 
+/* Mobile-first responsive improvements */
+@media (max-width: 640px) {
+  .detection-card {
+    margin: 0.5rem;
+    border-radius: 12px;
+  }
+  
+  .food-upload-area {
+    padding: 1rem;
+    margin: 0.5rem;
+  }
+  
+  .submit-button {
+    font-size: 1rem;
+    padding: 0.75rem 1.5rem;
+  }
+  
+  .cooking-instructions {
+    margin: 1rem 0.5rem;
+    padding: 1rem;
+  }
+  
+  .resources-grid {
+    gap: 1rem;
+    margin: 1rem 0.5rem;
+  }
+  
+  .resource-section {
+    padding: 1rem;
+  }
+}
+
+/* Consistent color scheme */
+:root {
+  --primary-orange: #f97316;
+  --primary-orange-hover: #ea580c;
+  --primary-orange-light: #fed7aa;
+  --primary-orange-dark: #c2410c;
+  --secondary-black: #1f2937;
+  --secondary-white: #ffffff;
+  --accent-gray: #6b7280;
+  --accent-gray-light: #f3f4f6;
+}
+
 .detection-card {
   background: white;
   border-radius: 16px;
@@ -264,4 +308,84 @@
   background: linear-gradient(135deg, #dc2626, #ea580c);
   transform: translateY(-2px);
   box-shadow: 0 15px 30px rgba(239, 68, 68, 0.4);
+}
+
+/* Additional responsive improvements */
+@media (max-width: 768px) {
+  .detection-card {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .food-image-preview {
+    max-width: 100%;
+    max-height: 250px;
+  }
+  
+  .video-container {
+    margin-bottom: 0.75rem;
+  }
+  
+  .article-card {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .feedback-content {
+    margin: 1rem;
+    padding: 1.5rem;
+    max-height: 85vh;
+  }
+}
+
+/* Prevent overlapping elements */
+.detection-results-container {
+  position: relative;
+  z-index: 1;
+}
+
+.detection-results-container .card {
+  margin-bottom: 1rem;
+}
+
+.detection-results-container .card:last-child {
+  margin-bottom: 0;
+}
+
+/* Smooth transitions for mobile */
+@media (max-width: 640px) {
+  .detection-card,
+  .food-upload-area,
+  .cooking-instructions,
+  .resource-section,
+  .article-card {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .detection-card:hover,
+  .food-upload-area:hover,
+  .cooking-instructions:hover,
+  .resource-section:hover,
+  .article-card:hover {
+    transform: none; /* Disable hover transforms on mobile */
+  }
+}
+
+/* Touch-friendly button improvements */
+.touch-button {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Improved spacing for mobile */
+@media (max-width: 640px) {
+  .space-y-6 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .space-y-4 > * + * {
+    margin-top: 0.75rem;
+  }
 }

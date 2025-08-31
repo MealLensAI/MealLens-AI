@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Shield, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { api } from '@/lib/api';
+import { useAuth } from '@/lib/utils';
 
 const AdminLoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -15,37 +15,29 @@ const AdminLoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const result = await api.login({ email, password });
+      const result = await login(email, password);
       
       if (result.status === 'success' && result.access_token) {
-        // Store the token and user data
-        localStorage.setItem('access_token', result.access_token);
-        localStorage.setItem('supabase_refresh_token', result.refresh_token || '');
-        localStorage.setItem('supabase_session_id', result.session_id || '');
-        localStorage.setItem('supabase_user_id', result.user_id || '');
-          
-        // Store user data
-        const userData = {
-          uid: result.user_id || '',
-          email: email,
-          displayName: result.name || email.split('@')[0],
-          photoURL: null
-        };
-        localStorage.setItem('user_data', JSON.stringify(userData));
-        
         // Check if user is admin
+        console.log('[ADMIN LOGIN] User role from login:', result.user_role);
+        console.log('[ADMIN LOGIN] Full login result:', result);
+        
         if (result.user_role === 'admin') {
           toast({
             title: "Admin Access Granted",
             description: "Welcome to the administrative panel",
           });
-          navigate('/admin');
+          // Small delay to ensure auth state is updated
+          setTimeout(() => {
+            navigate('/admin');
+          }, 100);
         } else {
           // User is not admin, clear session and show error
           localStorage.removeItem('access_token');

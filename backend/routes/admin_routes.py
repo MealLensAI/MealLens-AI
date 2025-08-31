@@ -111,24 +111,12 @@ def get_all_users():
         # Calculate offset
         offset = (page - 1) * limit
         
-        # Build the query
-        query = supabase.table('profiles').select('''
-            *,
-            user_subscriptions!inner(
-                *,
-                subscription_plans(*)
-            )
-        ''')
+        # Build the query - get all profiles first, then get subscriptions separately
+        query = supabase.table('profiles').select('*')
         
-        # Apply filters
+        # Apply search filter
         if search:
             query = query.or_(f'email.ilike.%{search}%,first_name.ilike.%{search}%,last_name.ilike.%{search}%')
-        
-        if status_filter:
-            query = query.eq('user_subscriptions.status', status_filter)
-        
-        if tier_filter:
-            query = query.eq('user_subscriptions.subscription_plans.name', tier_filter)
         
         # Execute query with pagination
         response = query.range(offset, offset + limit - 1).order('created_at', desc=True).execute()
@@ -143,18 +131,24 @@ def get_all_users():
         count_query = supabase.table('profiles').select('id', count='exact')
         if search:
             count_query = count_query.or_(f'email.ilike.%{search}%,first_name.ilike.%{search}%,last_name.ilike.%{search}%')
-        if status_filter:
-            count_query = count_query.eq('user_subscriptions.status', status_filter)
-        if tier_filter:
-            count_query = count_query.eq('user_subscriptions.subscription_plans.name', tier_filter)
         
         count_response = count_query.execute()
         total_count = count_response.count if count_response.count else 0
         
+        # Get subscriptions for all users
+        user_ids = [user['id'] for user in users]
+        subscriptions_response = supabase.table('user_subscriptions').select('*, subscription_plans(*)').in_('user_id', user_ids).execute()
+        subscriptions_data = subscriptions_response.data if not subscriptions_response.error else []
+        
+        # Create subscription lookup
+        subscriptions_lookup = {}
+        for sub in subscriptions_data:
+            subscriptions_lookup[sub['user_id']] = sub
+        
         # Format user data
         formatted_users = []
         for user in users:
-            subscription = user.get('user_subscriptions', [{}])[0] if user.get('user_subscriptions') else {}
+            subscription = subscriptions_lookup.get(user['id'], {})
             plan = subscription.get('subscription_plans', {}) if subscription else {}
             
             formatted_user = {
@@ -162,6 +156,7 @@ def get_all_users():
                 'email': user['email'],
                 'first_name': user.get('first_name', ''),
                 'last_name': user.get('last_name', ''),
+                'role': user.get('role', 'user'),
                 'created_at': user['created_at'],
                 'subscription_tier': plan.get('name', 'free'),
                 'subscription_status': subscription.get('status', 'none'),
@@ -206,34 +201,46 @@ def get_subscription_summary():
         # Get subscription statistics
         now = datetime.utcnow().isoformat()
         
-        # Active subscriptions
-        active_response = supabase.table('user_subscriptions').select('*').eq('status', 'active').execute()
-        active_subscriptions = active_response.data if not active_response.error else []
+        # Try to get subscription data, handle missing tables gracefully
+        try:
+            # Active subscriptions
+            active_response = supabase.table('user_subscriptions').select('*').eq('status', 'active').execute()
+            active_subscriptions = active_response.data if not active_response.error else []
+        except Exception as e:
+            current_app.logger.warning(f"user_subscriptions table not found or error: {e}")
+            active_subscriptions = []
         
-        # Expired subscriptions
-        expired_response = supabase.table('user_subscriptions').select('*').lt('current_period_end', now).execute()
-        expired_subscriptions = expired_response.data if not expired_response.error else []
+        try:
+            # Get payment transactions for revenue calculation
+            payment_response = supabase.table('payment_transactions').select('*').eq('status', 'success').execute()
+            payments = payment_response.data if not payment_response.error else []
+        except Exception as e:
+            current_app.logger.warning(f"payment_transactions table not found or error: {e}")
+            payments = []
         
-        # Trial users (users with no subscription or trial period)
-        trial_response = supabase.table('profiles').select('*').not_.eq('id', 'in', 
-            f"({','.join([f"'{sub['user_id']}'" for sub in active_subscriptions])})" if active_subscriptions else "('')"
-        ).execute()
-        trial_users = trial_response.data if not trial_response.error else []
+        # Calculate revenue from payments
+        total_revenue = sum(float(payment.get('amount', 0)) for payment in payments)
+        monthly_revenue = sum(float(payment.get('amount', 0)) for payment in payments 
+                           if payment.get('created_at', '').startswith(now[:7]))  # Current month
         
-        # Revenue by plan
-        revenue_by_plan = {}
-        for sub in active_subscriptions:
-            plan_name = sub.get('subscription_plans', {}).get('name', 'unknown')
-            if plan_name not in revenue_by_plan:
-                revenue_by_plan[plan_name] = 0
-            revenue_by_plan[plan_name] += float(sub.get('subscription_plans', {}).get('price_monthly', 0))
+        # Get total users
+        try:
+            users_response = supabase.table('profiles').select('id', count='exact').execute()
+            total_users = users_response.count if users_response.count else 0
+        except Exception as e:
+            current_app.logger.warning(f"Error getting user count: {e}")
+            total_users = 0
+        
+        # Calculate trial users (users without active subscriptions)
+        trial_users = max(0, total_users - len(active_subscriptions))
         
         summary = {
             'total_active': len(active_subscriptions),
-            'total_expired': len(expired_subscriptions),
-            'total_trials': len(trial_users),
-            'revenue_by_plan': revenue_by_plan,
-            'total_revenue': sum(revenue_by_plan.values())
+            'total_trials': trial_users,
+            'total_cancelled': 0,  # Placeholder
+            'total_revenue': total_revenue,
+            'monthly_revenue': monthly_revenue,
+            'subscriptions': []  # Will be populated if needed
         }
         
         return jsonify({
@@ -338,14 +345,13 @@ def get_revenue_metrics():
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=days)
         
-        # Get payment transactions
-        response = supabase.table('payment_transactions').select('*').gte('created_at', start_date.isoformat()).lte('created_at', end_date.isoformat()).execute()
-        
-        if response.error:
-            current_app.logger.error(f"Database error: {response.error}")
-            return jsonify({'status': 'error', 'message': 'Database query failed'}), 500
-        
-        transactions = response.data
+        # Try to get payment transactions, handle missing tables gracefully
+        try:
+            response = supabase.table('payment_transactions').select('*').gte('created_at', start_date.isoformat()).lte('created_at', end_date.isoformat()).execute()
+            transactions = response.data if not response.error else []
+        except Exception as e:
+            current_app.logger.warning(f"payment_transactions table not found or error: {e}")
+            transactions = []
         
         # Group by period
         revenue_data = {}
@@ -368,12 +374,21 @@ def get_revenue_metrics():
         revenue_list = [{'period': k, 'revenue': v} for k, v in revenue_data.items()]
         revenue_list.sort(key=lambda x: x['period'])
         
+        # Calculate monthly growth if we have enough data
+        monthly_growth = 0
+        if len(revenue_list) >= 2 and period == 'monthly':
+            current_month = revenue_list[-1]['revenue'] if revenue_list else 0
+            previous_month = revenue_list[-2]['revenue'] if len(revenue_list) > 1 else 0
+            if previous_month > 0:
+                monthly_growth = ((current_month - previous_month) / previous_month) * 100
+        
         return jsonify({
             'status': 'success',
             'data': {
                 'period': period,
                 'revenue_data': revenue_list,
-                'total_revenue': sum(revenue_data.values())
+                'total_revenue': sum(revenue_data.values()),
+                'monthly_growth': monthly_growth
             }
         })
         
@@ -399,32 +414,86 @@ def get_usage_metrics():
         days = request.args.get('days', 30, type=int)
         start_date = (datetime.utcnow() - timedelta(days=days)).strftime('%Y-%m-%d')
         
-        # Get usage data
-        response = supabase.table('usage_tracking').select('*').gte('usage_date', start_date).execute()
+        # Try to get usage data, handle missing tables gracefully
+        try:
+            response = supabase.table('usage_tracking').select('*').gte('usage_date', start_date).execute()
+            usage_data = response.data if not response.error else []
+        except Exception as e:
+            current_app.logger.warning(f"usage_tracking table not found or error: {e}")
+            usage_data = []
         
-        if response.error:
-            current_app.logger.error(f"Database error: {response.error}")
-            return jsonify({'status': 'error', 'message': 'Database query failed'}), 500
+        # Try to get detection history for usage metrics
+        try:
+            detection_response = supabase.table('detection_history').select('*').gte('created_at', start_date).execute()
+            detections = detection_response.data if not detection_response.error else []
+        except Exception as e:
+            current_app.logger.warning(f"detection_history table not found or error: {e}")
+            detections = []
         
-        usage_data = response.data
+        # Try to get meal plans for usage metrics
+        try:
+            meal_plans_response = supabase.table('meal_plans').select('*').gte('created_at', start_date).execute()
+            meal_plans = meal_plans_response.data if not meal_plans_response.error else []
+        except Exception as e:
+            current_app.logger.warning(f"meal_plans table not found or error: {e}")
+            meal_plans = []
         
-        # Group by feature
-        feature_usage = {}
+        # Calculate feature usage from available data
+        feature_usage = {
+            'food_detection': len(detections),
+            'meal_planning': len(meal_plans),
+            'nutrition_analysis': len(detections)  # Assume same as detections
+        }
+        
+        # Add usage tracking data if available
         for usage in usage_data:
             feature = usage.get('feature_name', 'unknown')
             if feature not in feature_usage:
                 feature_usage[feature] = 0
             feature_usage[feature] += usage.get('usage_count', 0)
         
-        # Get unique users
-        unique_users = len(set(usage.get('user_id') for usage in usage_data))
+        # Get unique users from all data sources
+        unique_users = set()
+        for detection in detections:
+            if detection.get('user_id'):
+                unique_users.add(detection['user_id'])
+        for meal_plan in meal_plans:
+            if meal_plan.get('user_id'):
+                unique_users.add(meal_plan['user_id'])
+        for usage in usage_data:
+            if usage.get('user_id'):
+                unique_users.add(usage['user_id'])
+        
+        # Generate daily usage data for the last 7 days
+        daily_usage = []
+        for i in range(7):
+            date = (datetime.utcnow() - timedelta(days=i)).strftime('%Y-%m-%d')
+            day_detections = len([d for d in detections if d.get('created_at', '').startswith(date)])
+            day_meal_plans = len([m for m in meal_plans if m.get('created_at', '').startswith(date)])
+            day_users = len(set(
+                [d.get('user_id') for d in detections if d.get('created_at', '').startswith(date) and d.get('user_id')] +
+                [m.get('user_id') for m in meal_plans if m.get('created_at', '').startswith(date) and m.get('user_id')]
+            ))
+            
+            daily_usage.append({
+                'date': date,
+                'detections': day_detections,
+                'meal_plans': day_meal_plans,
+                'users': day_users
+            })
         
         return jsonify({
             'status': 'success',
             'data': {
+                'total_detections': len(detections),
+                'total_meal_plans': len(meal_plans),
+                'active_users_today': len([u for u in unique_users if any(
+                    d.get('created_at', '').startswith(datetime.utcnow().strftime('%Y-%m-%d')) 
+                    for d in detections if d.get('user_id') == u
+                )]),
+                'active_users_week': len(unique_users),
                 'feature_usage': feature_usage,
-                'unique_users': unique_users,
-                'total_usage': sum(feature_usage.values())
+                'daily_usage': daily_usage
             }
         })
         

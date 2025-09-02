@@ -260,14 +260,14 @@ class APIService {
   }
 
   async updateMealPlan(id: string, planData: any): Promise<any> {
-    return this.makeRequest(`/meal_plan/${id}`, {
+    return this.makeRequest(`/meal_plans/${id}`, {
       method: 'PUT',
       body: planData
     })
   }
 
   async deleteMealPlan(id: string): Promise<any> {
-    return this.makeRequest(`/meal_plan/${id}`, {
+    return this.makeRequest(`/meal_plans/${id}`, {
       method: 'DELETE'
     })
   }

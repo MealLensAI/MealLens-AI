@@ -213,37 +213,66 @@ export const useMealPlans = () => {
   const deleteMealPlan = async (id: string) => {
     setLoading(true);
     try {
-      console.log('[DEBUG] Deleting meal plan:', id);
+      // Validate the ID
+      if (!id || typeof id !== 'string' || id.trim() === '') {
+        throw new Error('Invalid meal plan ID provided');
+      }
+
+      console.log('[DEBUG] Deleting meal plan with ID:', id);
+      console.log('[DEBUG] Current plans before deletion:', savedPlans);
 
       const result = await api.deleteMealPlan(id);
+      console.log('[DEBUG] Delete API response:', result);
       
-      if (result.status === 'success') {
+      if (result && result.status === 'success') {
         console.log('[DEBUG] Meal plan deleted successfully:', result);
         
         // Remove from current plan if it's the one being deleted
         if (currentPlan && currentPlan.id === id) {
+          console.log('[DEBUG] Removing current plan as it was deleted');
           setCurrentPlan(null);
         }
         
         // Update the plans list
-        const refreshResult = await api.getMealPlans();
-        if (refreshResult.status === 'success' && refreshResult.meal_plans) {
-          const plans = refreshResult.meal_plans.map((plan: any) => ({
-            id: plan.id,
-            name: plan.name,
-            startDate: plan.start_date,
-            endDate: plan.end_date,
-            mealPlan: plan.meal_plan,
-            createdAt: plan.created_at,
-            updatedAt: plan.updated_at,
-          }));
-          setSavedPlans(plans);
+        try {
+          const refreshResult = await api.getMealPlans();
+          console.log('[DEBUG] Refresh result after deletion:', refreshResult);
+          
+          if (refreshResult.status === 'success' && refreshResult.meal_plans) {
+            const plans = refreshResult.meal_plans.map((plan: any) => ({
+              id: plan.id,
+              name: plan.name,
+              startDate: plan.start_date,
+              endDate: plan.end_date,
+              mealPlan: plan.meal_plan,
+              createdAt: plan.created_at,
+              updatedAt: plan.updated_at,
+            }));
+            setSavedPlans(plans);
+            console.log('[DEBUG] Plans list updated after deletion:', plans);
+          } else {
+            console.warn('[DEBUG] Failed to refresh plans list, but deletion was successful');
+            // Remove the deleted plan from local state manually
+            setSavedPlans(prevPlans => prevPlans.filter(plan => plan.id !== id));
+          }
+        } catch (refreshError) {
+          console.warn('[DEBUG] Failed to refresh plans list after deletion:', refreshError);
+          // Remove the deleted plan from local state manually
+          setSavedPlans(prevPlans => prevPlans.filter(plan => plan.id !== id));
         }
       } else {
-        throw new Error(result.message || 'Failed to delete meal plan');
+        const errorMessage = result?.message || result?.error || 'Unknown error from backend';
+        console.error('[DEBUG] Backend returned error during deletion:', errorMessage);
+        throw new Error(`Failed to delete meal plan: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error deleting meal plan:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        mealPlanId: id,
+        currentPlans: savedPlans
+      });
       throw error;
     } finally {
       setLoading(false);

@@ -335,29 +335,48 @@ class SupabaseService:
 
     def get_detection_history(self, user_id: str) -> tuple[list | None, str | None]:
         """
-        Retrieves a user's food detection history directly from the table.
+        Get detection history for a user.
 
         Args:
-            user_id (str): The Supabase user ID.
+            user_id (str): The user ID
 
         Returns:
-            tuple[list | None, str | None]: (list of history records, None) on success,
-                                          (None, error_message) on failure.
+            tuple: (detection_history, error_message)
         """
         try:
-            print(f"[DEBUG] Fetching detection history for user: {user_id}")
             result = self.supabase.table('detection_history').select('*').eq('user_id', user_id).order('created_at', desc=True).execute()
             
             if result.data is not None:
-                print(f"[DEBUG] Successfully retrieved {len(result.data)} detection history records")
                 return result.data, None
             else:
-                print(f"[DEBUG] No detection history found for user: {user_id}")
                 return [], None
         except Exception as e:
-            error_msg = str(e)
+            error_msg = f"Error retrieving detection history: {str(e)}"
             print(f"[ERROR] Exception in get_detection_history: {error_msg}")
             return None, error_msg
+
+    def delete_detection_history(self, user_id: str, record_id: str) -> tuple[bool, str | None]:
+        """
+        Delete a specific detection history record for a user.
+
+        Args:
+            user_id (str): The user ID
+            record_id (str): The record ID to delete
+
+        Returns:
+            tuple: (success, error_message)
+        """
+        try:
+            result = self.supabase.table('detection_history').delete().eq('id', record_id).eq('user_id', user_id).execute()
+            
+            if result.data is not None:
+                return True, None
+            else:
+                return False, 'Failed to delete detection history record'
+        except Exception as e:
+            error_msg = f"Error deleting detection history record: {str(e)}"
+            print(f"[ERROR] Exception in delete_detection_history: {error_msg}")
+            return False, error_msg
 
     def normalize_meal_plan_entry(self, raw_plan, user_id=None):
         import uuid

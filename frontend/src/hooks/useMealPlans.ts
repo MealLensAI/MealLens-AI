@@ -123,18 +123,18 @@ export const useMealPlans = () => {
           const refreshResult = await api.getMealPlans();
           console.log('[DEBUG] Refresh result:', refreshResult);
           
-          if (refreshResult.status === 'success' && refreshResult.meal_plans) {
-            const plans = refreshResult.meal_plans.map((plan: any) => ({
-              id: plan.id,
-              name: plan.name,
-              startDate: plan.start_date,
-              endDate: plan.end_date,
-              mealPlan: plan.meal_plan,
-              createdAt: plan.created_at,
-              updatedAt: plan.updated_at,
-            }));
-            setSavedPlans(plans);
-            if (plans.length > 0) setCurrentPlan(plans[0]);
+        if (refreshResult.status === 'success' && refreshResult.meal_plans) {
+          const plans = refreshResult.meal_plans.map((plan: any) => ({
+            id: plan.id,
+            name: plan.name,
+            startDate: plan.start_date,
+            endDate: plan.end_date,
+            mealPlan: plan.meal_plan,
+            createdAt: plan.created_at,
+            updatedAt: plan.updated_at,
+          }));
+          setSavedPlans(plans);
+          if (plans.length > 0) setCurrentPlan(plans[0]);
             console.log('[DEBUG] Plans list updated successfully');
           }
         } catch (refreshError) {
@@ -238,17 +238,17 @@ export const useMealPlans = () => {
           const refreshResult = await api.getMealPlans();
           console.log('[DEBUG] Refresh result after deletion:', refreshResult);
           
-          if (refreshResult.status === 'success' && refreshResult.meal_plans) {
-            const plans = refreshResult.meal_plans.map((plan: any) => ({
-              id: plan.id,
-              name: plan.name,
-              startDate: plan.start_date,
-              endDate: plan.end_date,
-              mealPlan: plan.meal_plan,
-              createdAt: plan.created_at,
-              updatedAt: plan.updated_at,
-            }));
-            setSavedPlans(plans);
+        if (refreshResult.status === 'success' && refreshResult.meal_plans) {
+          const plans = refreshResult.meal_plans.map((plan: any) => ({
+            id: plan.id,
+            name: plan.name,
+            startDate: plan.start_date,
+            endDate: plan.end_date,
+            mealPlan: plan.meal_plan,
+            createdAt: plan.created_at,
+            updatedAt: plan.updated_at,
+          }));
+          setSavedPlans(plans);
             console.log('[DEBUG] Plans list updated after deletion:', plans);
           } else {
             console.warn('[DEBUG] Failed to refresh plans list, but deletion was successful');
@@ -347,8 +347,8 @@ export const useMealPlans = () => {
       await Promise.all(deletePromises);
       
       console.log('[DEBUG] All meal plans cleared successfully');
-      setSavedPlans([]);
-      setCurrentPlan(null);
+        setSavedPlans([]);
+        setCurrentPlan(null);
     } catch (error) {
       console.error('Error clearing meal plans:', error);
       throw error;

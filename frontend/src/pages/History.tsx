@@ -5,6 +5,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/utils';
@@ -37,8 +47,58 @@ export default function HistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedItem, setSelectedItem] = useState<SharedRecipe | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState<SharedRecipe | null>(null);
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { toast } = useToast();
+
+  // Show delete confirmation modal
+  const handleDeleteClick = (record: SharedRecipe, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    setRecordToDelete(record);
+    setShowDeleteConfirm(true);
+  };
+
+  // Confirm and execute deletion
+  const handleConfirmDelete = async () => {
+    if (!recordToDelete) return;
+    
+    setShowDeleteConfirm(false);
+    setDeletingId(recordToDelete.id);
+    
+    try {
+      const result = await api.deleteDetectionHistory(recordToDelete.id);
+      
+      if (result.status === 'success') {
+        // Remove the deleted record from local state
+        setHistory(prevHistory => prevHistory.filter(item => item.id !== recordToDelete.id));
+        
+        toast({
+          title: "Success",
+          description: "Detection record deleted successfully.",
+        });
+      } else {
+        throw new Error(result.message || 'Failed to delete record');
+      }
+    } catch (error) {
+      console.error('Error deleting detection record:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete detection record.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingId(null);
+      setRecordToDelete(null);
+    }
+  };
+
+  // Cancel deletion
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setRecordToDelete(null);
+  };
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -185,25 +245,53 @@ export default function HistoryPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredHistory.map((item) => (
-              <HistoryCard 
-                key={item.id} 
-                item={item} 
-                onCardClick={(item) => {
-                  // Navigate to detail page instead of opening modal
+              <HistoryCard
+                key={item.id}
+                item={item}
+                onCardClick={() => {
                   navigate(`/history/${item.id}`)
                 }}
-                onViewDetails={(item) => {
+                onViewDetails={() => {
                   navigate(`/history/${item.id}`)
                 }}
+                onDeleteRecord={handleDeleteClick}
+                isDeleting={deletingId === item.id}
+                onNavigate={navigate}
               />
             ))}
           </div>
         )}
       </div>
-      
 
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Detection Record</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this detection record? This action cannot be undone.
+              {recordToDelete && (
+                <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
+                  <strong>Record:</strong> {recordToDelete.recipe_type === "food_detection" ? "Food Detection" : "Ingredient Detection"}
+                  <br />
+                  <strong>Date:</strong> {new Date(recordToDelete.created_at).toLocaleDateString()}
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete Record
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
-  )
+  );
 }
 
 
@@ -250,9 +338,12 @@ interface HistoryCardProps {
   item: SharedRecipe
   onCardClick: (item: SharedRecipe) => void
   onViewDetails: (item: SharedRecipe) => void
+  onDeleteRecord: (record: SharedRecipe, e: React.MouseEvent) => void;
+  isDeleting: boolean;
+  onNavigate: (path: string) => void;
 }
 
-function HistoryCard({ item, onCardClick, onViewDetails }: HistoryCardProps) {
+function HistoryCard({ item, onCardClick, onViewDetails, onDeleteRecord, isDeleting, onNavigate }: HistoryCardProps) {
   const handleCardClick = () => {
     onCardClick(item)
   }
@@ -261,6 +352,10 @@ function HistoryCard({ item, onCardClick, onViewDetails }: HistoryCardProps) {
     e.stopPropagation()
     // Navigation is now handled directly in the button onClick
   }
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    onDeleteRecord(item, e);
+  };
 
   const getDetectedFoods = () => {
     try {
@@ -438,7 +533,7 @@ function HistoryCard({ item, onCardClick, onViewDetails }: HistoryCardProps) {
         {/* View Details Button */}
         <div className="mt-3 pt-2 border-t border-gray-100">
           <Button
-            onClick={() => navigate(`/history/${item.id}`)}
+            onClick={() => onNavigate(`/history/${item.id}`)}
             variant="outline"
             size="sm"
             className="w-full text-xs"
@@ -446,6 +541,30 @@ function HistoryCard({ item, onCardClick, onViewDetails }: HistoryCardProps) {
             View Details
           </Button>
         </div>
+
+        {/* Delete Button */}
+        {isDeleting ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full text-xs text-red-600 border-red-600 hover:bg-red-50"
+            onClick={handleDeleteClick}
+            disabled
+          >
+            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+            Deleting...
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full text-xs text-red-600 border-red-600 hover:bg-red-50"
+            onClick={handleDeleteClick}
+          >
+            <XCircle className="mr-2 h-3 w-3" />
+            Delete
+          </Button>
+        )}
       </div>
         </div>
   )

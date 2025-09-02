@@ -229,6 +229,12 @@ class APIService {
     })
   }
 
+  async deleteDetectionHistory(recordId: string): Promise<any> {
+    return this.makeRequest(`/food_detection/detection_history/${recordId}`, {
+      method: 'DELETE'
+    })
+  }
+
   // Meal planning endpoints
   async generateMealPlan(planData: any): Promise<any> {
     return this.makeRequest('/meal_plan/generate', {

@@ -558,3 +558,54 @@ def get_detection_history():
     except Exception as e:
         current_app.logger.error(f"Unexpected error in get_detection_history: {str(e)}")
         return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
+
+@food_detection_bp.route('/detection_history/<record_id>', methods=['DELETE'])
+def delete_detection_history(record_id):
+    """
+    Deletes a specific detection history record. Requires authentication.
+    """
+    try:
+        auth_header = request.headers.get('Authorization')
+        
+        auth_service = current_app.auth_service
+        user_id, auth_type = auth_service.get_supabase_user_id_from_token(auth_header)
+        
+        if not user_id:
+            current_app.logger.warning("Authentication failed: No user_id extracted")
+            return jsonify({'status': 'error', 'message': 'Authentication required.'}), 401
+
+        current_app.logger.info(f"Deleting detection history record {record_id} for user: {user_id}")
+        
+        supabase_service = current_app.supabase_service
+        
+        # First verify the record belongs to the user
+        detection_history, error = supabase_service.get_detection_history(user_id)
+        if error:
+            current_app.logger.error(f"Database error for user {user_id}: {error}")
+            return jsonify({'status': 'error', 'message': f'Failed to verify record ownership: {error}'}), 500
+        
+        # Check if record exists and belongs to user
+        record_exists = False
+        if detection_history:
+            for record in detection_history:
+                if str(record.get('id')) == str(record_id):
+                    record_exists = True
+                    break
+        
+        if not record_exists:
+            current_app.logger.warning(f"Record {record_id} not found or doesn't belong to user {user_id}")
+            return jsonify({'status': 'error', 'message': 'Record not found or access denied.'}), 404
+        
+        # Delete the record
+        success, error = supabase_service.delete_detection_history(user_id, record_id)
+        
+        if success:
+            current_app.logger.info(f"Successfully deleted detection history record {record_id} for user {user_id}")
+            return jsonify({'status': 'success', 'message': 'Detection history record deleted successfully.'}), 200
+        else:
+            current_app.logger.error(f"Failed to delete detection history record {record_id} for user {user_id}: {error}")
+            return jsonify({'status': 'error', 'message': f'Failed to delete record: {error}'}), 500
+            
+    except Exception as e:
+        current_app.logger.error(f"Unexpected error in delete_detection_history: {str(e)}")
+        return jsonify({'status': 'error', 'message': 'Internal server error'}), 500

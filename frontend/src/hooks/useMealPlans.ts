@@ -33,7 +33,7 @@ export const useMealPlans = () => {
     const fetchPlans = async () => {
       setLoading(true);
       try {
-        const result = await api.getMealPlansFromFlask();
+        const result = await api.getMealPlans();
         
         console.log('[DEBUG] Received meal plans response:', result);
         
@@ -98,13 +98,13 @@ export const useMealPlans = () => {
 
       console.log('[DEBUG] Sending meal plan data:', planData);
 
-      const result = await api.saveMealPlanToFlask(planData);
+      const result = await api.saveMealPlan(planData);
 
       if (result.status === 'success') {
         console.log('[DEBUG] Meal plan saved successfully:', result);
         
         // Refresh the plans list
-        const refreshResult = await api.getMealPlansFromFlask();
+        const refreshResult = await api.getMealPlans();
         if (refreshResult.status === 'success' && refreshResult.meal_plans) {
           const plans = refreshResult.meal_plans.map((plan: any) => ({
             id: plan.id,
@@ -140,7 +140,7 @@ export const useMealPlans = () => {
 
       console.log('[DEBUG] Updating meal plan:', id, planData);
 
-      const result = await api.updateMealPlanInFlask(id, planData);
+      const result = await api.updateMealPlan(id, planData);
       
       if (result.status === 'success') {
         console.log('[DEBUG] Meal plan updated successfully:', result);
@@ -155,7 +155,7 @@ export const useMealPlans = () => {
         }
         
         // Update the plans list
-        const refreshResult = await api.getMealPlansFromFlask();
+        const refreshResult = await api.getMealPlans();
         if (refreshResult.status === 'success' && refreshResult.meal_plans) {
           const plans = refreshResult.meal_plans.map((plan: any) => ({
             id: plan.id,
@@ -184,7 +184,7 @@ export const useMealPlans = () => {
     try {
       console.log('[DEBUG] Deleting meal plan:', id);
 
-      const result = await api.deleteMealPlanFromFlask(id);
+      const result = await api.deleteMealPlan(id);
       
       if (result.status === 'success') {
         console.log('[DEBUG] Meal plan deleted successfully:', result);
@@ -195,7 +195,7 @@ export const useMealPlans = () => {
         }
         
         // Update the plans list
-        const refreshResult = await api.getMealPlansFromFlask();
+        const refreshResult = await api.getMealPlans();
         if (refreshResult.status === 'success' && refreshResult.meal_plans) {
           const plans = refreshResult.meal_plans.map((plan: any) => ({
             id: plan.id,
@@ -246,13 +246,13 @@ export const useMealPlans = () => {
 
       console.log('[DEBUG] Duplicating meal plan:', planData);
 
-      const result = await api.saveMealPlanToFlask(planData);
+      const result = await api.saveMealPlan(planData);
 
       if (result.status === 'success') {
         console.log('[DEBUG] Meal plan duplicated successfully:', result);
         
         // Refresh the plans list
-        const refreshResult = await api.getMealPlansFromFlask();
+        const refreshResult = await api.getMealPlans();
         if (refreshResult.status === 'success' && refreshResult.meal_plans) {
           const plans = refreshResult.meal_plans.map((plan: any) => ({
             id: plan.id,
@@ -282,15 +282,13 @@ export const useMealPlans = () => {
     try {
       console.log('[DEBUG] Clearing all meal plans');
 
-      const result = await api.clearAllMealPlansFromFlask();
+      // Since there's no bulk delete method, delete plans one by one
+      const deletePromises = savedPlans.map(plan => api.deleteMealPlan(plan.id));
+      await Promise.all(deletePromises);
       
-      if (result.status === 'success') {
-        console.log('[DEBUG] All meal plans cleared successfully:', result);
-        setSavedPlans([]);
-        setCurrentPlan(null);
-      } else {
-        throw new Error(result.message || 'Failed to clear meal plans');
-      }
+      console.log('[DEBUG] All meal plans cleared successfully');
+      setSavedPlans([]);
+      setCurrentPlan(null);
     } catch (error) {
       console.error('Error clearing meal plans:', error);
       throw error;
@@ -302,7 +300,7 @@ export const useMealPlans = () => {
   const refreshMealPlans = async () => {
     setLoading(true);
     try {
-      const result = await api.getMealPlansFromFlask();
+      const result = await api.getMealPlans();
       
       if (result.status === 'success' && result.meal_plans) {
         const plans = result.meal_plans.map((plan: any) => ({

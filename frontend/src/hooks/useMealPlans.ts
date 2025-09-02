@@ -84,6 +84,19 @@ export const useMealPlans = () => {
   const saveMealPlan = async (mealPlan: MealPlan[], startDate?: Date) => {
     setLoading(true);
     try {
+      // Validate the meal plan data
+      if (!mealPlan || !Array.isArray(mealPlan) || mealPlan.length === 0) {
+        throw new Error('Invalid meal plan data: meal plan is empty or not an array');
+      }
+
+      // Validate each meal plan entry
+      for (let i = 0; i < mealPlan.length; i++) {
+        const day = mealPlan[i];
+        if (!day.day || !day.breakfast || !day.lunch || !day.dinner || !day.snack) {
+          throw new Error(`Invalid meal plan data at day ${i + 1}: missing required fields`);
+        }
+      }
+
       const now = new Date();
       const weekDates = startDate ? generateWeekDates(startDate) : generateWeekDates(now);
 
@@ -97,32 +110,50 @@ export const useMealPlans = () => {
       };
 
       console.log('[DEBUG] Sending meal plan data:', planData);
+      console.log('[DEBUG] Meal plan structure validation passed');
 
       const result = await api.saveMealPlan(planData);
+      console.log('[DEBUG] API response received:', result);
 
-      if (result.status === 'success') {
+      if (result && result.status === 'success') {
         console.log('[DEBUG] Meal plan saved successfully:', result);
         
         // Refresh the plans list
-        const refreshResult = await api.getMealPlans();
-        if (refreshResult.status === 'success' && refreshResult.meal_plans) {
-          const plans = refreshResult.meal_plans.map((plan: any) => ({
-            id: plan.id,
-            name: plan.name,
-            startDate: plan.start_date,
-            endDate: plan.end_date,
-            mealPlan: plan.meal_plan,
-            createdAt: plan.created_at,
-            updatedAt: plan.updated_at,
-          }));
-          setSavedPlans(plans);
-          if (plans.length > 0) setCurrentPlan(plans[0]);
+        try {
+          const refreshResult = await api.getMealPlans();
+          console.log('[DEBUG] Refresh result:', refreshResult);
+          
+          if (refreshResult.status === 'success' && refreshResult.meal_plans) {
+            const plans = refreshResult.meal_plans.map((plan: any) => ({
+              id: plan.id,
+              name: plan.name,
+              startDate: plan.start_date,
+              endDate: plan.end_date,
+              mealPlan: plan.meal_plan,
+              createdAt: plan.created_at,
+              updatedAt: plan.updated_at,
+            }));
+            setSavedPlans(plans);
+            if (plans.length > 0) setCurrentPlan(plans[0]);
+            console.log('[DEBUG] Plans list updated successfully');
+          }
+        } catch (refreshError) {
+          console.warn('[DEBUG] Failed to refresh plans list, but meal plan was saved:', refreshError);
+          // Don't throw this error since the main save was successful
         }
       } else {
-        throw new Error(result.message || 'Failed to save meal plan');
+        const errorMessage = result?.message || result?.error || 'Unknown error from backend';
+        console.error('[DEBUG] Backend returned error:', errorMessage);
+        throw new Error(`Failed to save meal plan: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error saving meal plan:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        mealPlan: mealPlan,
+        startDate: startDate
+      });
       throw error;
     } finally {
       setLoading(false);

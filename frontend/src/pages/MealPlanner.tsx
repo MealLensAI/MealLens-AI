@@ -270,22 +270,53 @@ const MealPlanner = () => {
           console.log('[MealPlanner] Auto Sick API Response:', data);
           console.log('[MealPlanner] Meal Plan Data:', data.meal_plan);
 
+          // Validate the generated meal plan data
+          if (!data.meal_plan || !Array.isArray(data.meal_plan) || data.meal_plan.length === 0) {
+            throw new Error('Generated meal plan data is invalid or empty');
+          }
+
+          console.log('[MealPlanner] Auto sick meal plan validation passed, attempting to save...');
+
           // Save the new meal plan
-          await saveMealPlan(data.meal_plan, selectedDate);
+          try {
+            await saveMealPlan(data.meal_plan, selectedDate);
+            console.log('[MealPlanner] Auto sick meal plan saved successfully');
+            
+            setShowInputModal(false);
+            setIngredientList('');
+            setSelectedImage(null);
+            setImagePreview(null);
+            setLocation('');
+            setBudget('');
+            setIsAutoGenerateEnabled(false);
 
-          setShowInputModal(false);
-          setIngredientList('');
-          setSelectedImage(null);
-          setImagePreview(null);
-          setLocation('');
-          setBudget('');
-          setIsAutoGenerateEnabled(false);
-
-          toast({
-            title: "Success!",
-            description: `Your auto-generated meal plan for ${weekDates.name} has been created and saved!`,
-          });
-          return;
+            toast({
+              title: "Success!",
+              description: `Your auto-generated meal plan for ${weekDates.name} has been created and saved!`,
+            });
+            return;
+          } catch (saveError: any) {
+            console.error('[MealPlanner] Error saving auto sick meal plan:', saveError);
+            
+            let saveErrorMessage = 'Failed to save the generated meal plan.';
+            if (saveError?.message) {
+              if (saveError.message.includes('duplicate key value') && saveError.message.includes('unique_user_week')) {
+                saveErrorMessage = 'A meal plan for this week already exists. Please choose a different week or edit the existing plan.';
+              } else if (saveError.message.includes('Invalid meal plan data')) {
+                saveErrorMessage = 'The generated meal plan data is invalid. Please try generating again.';
+              } else {
+                saveErrorMessage = `Save failed: ${saveError.message}`;
+              }
+            }
+            
+            toast({
+              title: "Save Failed",
+              description: saveErrorMessage,
+              variant: "destructive",
+            });
+            
+            throw saveError;
+          }
         } else {
           // Auto generate based on location and budget only
           formData.append('location', location);
@@ -303,22 +334,53 @@ const MealPlanner = () => {
           console.log('[MealPlanner] Auto Healthy API Response:', data);
           console.log('[MealPlanner] Meal Plan Data:', data.meal_plan);
 
+          // Validate the generated meal plan data
+          if (!data.meal_plan || !Array.isArray(data.meal_plan) || data.meal_plan.length === 0) {
+            throw new Error('Generated meal plan data is invalid or empty');
+          }
+
+          console.log('[MealPlanner] Auto healthy meal plan validation passed, attempting to save...');
+
           // Save the new meal plan
-          await saveMealPlan(data.meal_plan, selectedDate);
+          try {
+            await saveMealPlan(data.meal_plan, selectedDate);
+            console.log('[MealPlanner] Auto healthy meal plan saved successfully');
+            
+            setShowInputModal(false);
+            setIngredientList('');
+            setSelectedImage(null);
+            setImagePreview(null);
+            setLocation('');
+            setBudget('');
+            setIsAutoGenerateEnabled(false);
 
-          setShowInputModal(false);
-          setIngredientList('');
-          setSelectedImage(null);
-          setImagePreview(null);
-          setLocation('');
-          setBudget('');
-          setIsAutoGenerateEnabled(false);
-
-          toast({
-            title: "Success!",
-            description: `Your auto-generated meal plan for ${weekDates.name} has been created and saved!`,
-          });
-          return;
+            toast({
+              title: "Success!",
+              description: `Your auto-generated meal plan for ${weekDates.name} has been created and saved!`,
+            });
+            return;
+          } catch (saveError: any) {
+            console.error('[MealPlanner] Error saving auto healthy meal plan:', saveError);
+            
+            let saveErrorMessage = 'Failed to save the generated meal plan.';
+            if (saveError?.message) {
+              if (saveError.message.includes('duplicate key value') && saveError.message.includes('unique_user_week')) {
+                saveErrorMessage = 'A meal plan for this week already exists. Please choose a different week or edit the existing plan.';
+              } else if (saveError.message.includes('Invalid meal plan data')) {
+                saveErrorMessage = 'The generated meal plan data is invalid. Please try generating again.';
+              } else {
+                saveErrorMessage = `Save failed: ${saveError.message}`;
+              }
+            }
+            
+            toast({
+              title: "Save Failed",
+              description: saveErrorMessage,
+              variant: "destructive",
+            });
+            
+            throw saveError;
+          }
         }
       }
 
@@ -352,21 +414,54 @@ const MealPlanner = () => {
       console.log('[MealPlanner] API Response:', data);
       console.log('[MealPlanner] Meal Plan Data:', data.meal_plan);
 
+      // Validate the generated meal plan data
+      if (!data.meal_plan || !Array.isArray(data.meal_plan) || data.meal_plan.length === 0) {
+        throw new Error('Generated meal plan data is invalid or empty');
+      }
+
+      console.log('[MealPlanner] Meal plan validation passed, attempting to save...');
+
       // Save the new meal plan
-      await saveMealPlan(data.meal_plan, selectedDate);
+      try {
+        await saveMealPlan(data.meal_plan, selectedDate);
+        console.log('[MealPlanner] Meal plan saved successfully');
+        
+        setShowInputModal(false);
+        setIngredientList('');
+        setSelectedImage(null);
+        setImagePreview(null);
+        setLocation('');
+        setBudget('');
+        setIsAutoGenerateEnabled(false);
 
-      setShowInputModal(false);
-      setIngredientList('');
-      setSelectedImage(null);
-      setImagePreview(null);
-      setLocation('');
-      setBudget('');
-      setIsAutoGenerateEnabled(false);
-
-      toast({
-        title: "Success!",
-        description: `Your meal plan for ${weekDates.name} has been created and saved!`,
-      });
+        toast({
+          title: "Success!",
+          description: `Your meal plan for ${weekDates.name} has been created and saved!`,
+        });
+      } catch (saveError: any) {
+        console.error('[MealPlanner] Error saving meal plan:', saveError);
+        
+        // Provide specific error message for save failures
+        let saveErrorMessage = 'Failed to save the generated meal plan.';
+        if (saveError?.message) {
+          if (saveError.message.includes('duplicate key value') && saveError.message.includes('unique_user_week')) {
+            saveErrorMessage = 'A meal plan for this week already exists. Please choose a different week or edit the existing plan.';
+          } else if (saveError.message.includes('Invalid meal plan data')) {
+            saveErrorMessage = 'The generated meal plan data is invalid. Please try generating again.';
+          } else {
+            saveErrorMessage = `Save failed: ${saveError.message}`;
+          }
+        }
+        
+        toast({
+          title: "Save Failed",
+          description: saveErrorMessage,
+          variant: "destructive",
+        });
+        
+        // Don't clear the form since save failed - user might want to try again
+        throw saveError; // Re-throw to be caught by outer catch block
+      }
     } catch (error: any) {
       // Log the error in detail
       console.error('Error generating meal plan:', error);

@@ -242,10 +242,21 @@ class APIService {
   }
 
   async saveMealPlan(planData: any): Promise<any> {
-    return this.makeRequest('/meal_plan', {
-      method: 'POST',
-      body: planData
-    })
+    console.log('[API] saveMealPlan called with data:', planData);
+    console.log('[API] Data type:', typeof planData);
+    console.log('[API] Data keys:', Object.keys(planData));
+    
+    try {
+      const result = await this.makeRequest('/meal_plan', {
+        method: 'POST',
+        body: planData
+      });
+      console.log('[API] saveMealPlan response:', result);
+      return result;
+    } catch (error) {
+      console.error('[API] saveMealPlan error:', error);
+      throw error;
+    }
   }
 
   async updateMealPlan(id: string, planData: any): Promise<any> {
